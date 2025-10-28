@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  api:
+    build: ./api
+    container_name: forewatt_api
+    env_file: .env
+    ports:
+      - "${API_PORT}:8000"
+    depends_on:
+      - influxdb
+    networks:
+      - forewatt_net
+
+  dashboard:
+    build: ./dashboard
+    container_name: forewatt_dashboard
+    env_file: .env
+    ports:
+      - "${DASHBOARD_PORT}:8501"
+    depends_on:
+      - api
+    networks:
+      - forewatt_net
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.16.0
+    container_name: forewatt_mlflow
+    env_file: .env
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlflow
+      --host 0.0.0.0
+      --port 5000
+    volumes:
+      - ./mlflow:/mlflow
+    ports:
+      - "${MLFLOW_PORT}:5000"
+    networks:
+      - forewatt_net
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: forewatt_influxdb
+    env_file: .env
+    ports:
+      - "${INFLUXDB_PORT}:8086"
+    volumes:
+      - ./data/influx:/var/lib/influxdb2
+    networks:
+      - forewatt_net
+
+networks:
+  forewatt_net:
+    driver: bridge
