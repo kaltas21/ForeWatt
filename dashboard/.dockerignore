@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.git
+.gitignore
+.env
+.env.*
+data/
+artifacts/
+.mlruns/
+.mlflow/
+*.csv
+*.parquet
+*.xlsx
