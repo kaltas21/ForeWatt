@@ -1,6 +1,3 @@
-# ForeWatt
-Energy demand forecasting and anomaly detection system with EPİAŞ + PJM datasets, weather covariates (Open-Meteo, NASA POWER), N-HiTS/PatchTST deep learning models, uncertainty quantification via conformal prediction, anomaly detection with Isolation Forest, and EV load-shifting optimization.
-
 # ForeWatt — Hourly Electricity Demand Forecasting, Uncertainty, and Anomaly Diagnostics
 
 > **ForeWatt** is a fully reproducible, open-source platform for **1–24h** electricity demand forecasting with **calibrated prediction intervals**, **actionable anomaly diagnostics**, and an optional **EV load-shifting optimizer**.
