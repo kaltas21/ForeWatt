@@ -1,253 +1,349 @@
 # ForeWatt — Hourly Electricity Demand Forecasting, Uncertainty, and Anomaly Diagnostics
 
 > **ForeWatt** is a fully reproducible, open-source platform for **1–24h** electricity demand forecasting with **calibrated prediction intervals**, **actionable anomaly diagnostics**, and an optional **EV load-shifting optimizer**.
-> Stack: **FastAPI**, **MLflow**, **QuestDB**, **Streamlit**, **Docker Compose**.
+> Stack: **FastAPI**, **MLflow**, **InfluxDB**, **Streamlit**, **Docker Compose**.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#license)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#requirements)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](#requirements)
 [![Reproducible](https://img.shields.io/badge/reproducible-mlflow%20%7C%20docker-informational)](#mlops--reproducibility)
 
 ---
 
 ## Table of Contents
-
-* [Why ForeWatt?](#why-forewatt)
-* [System Overview](#system-overview)
-* [Repo Structure](#repo-structure)
-* [Quickstart (Docker)](#quickstart-docker)
-* [Local Dev (no Docker)](#local-dev-no-docker)
-* [Data & Features](#data--features)
-* [Models & Training](#models--training)
-* [Uncertainty Calibration](#uncertainty-calibration)
-* [Anomaly Detection](#anomaly-detection)
-* [EV Load-Shifting Optimizer (Stretch)](#ev-load-shifting-optimizer-stretch)
-* [API](#api)
-* [Dashboard](#dashboard)
-* [Evaluation & Targets](#evaluation--targets)
-* [MLOps & Reproducibility](#mlops--reproducibility)
-* [Roadmap](#roadmap)
-* [Contributing](#contributing)
-* [Cite / Acknowledgments](#cite--acknowledgments)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Data Pipeline](#data-pipeline)
+- [Models & Forecasting](#models--forecasting)
+- [Development](#development)
+- [License](#license)
 
 ---
 
-## Why ForeWatt?
+## Features
 
-* **Operational**: day-ahead forecasts with **90% split-conformal intervals**; single-horizon latency **≤ 300 ms** on CPU.
-* **Auditable & open**: public data (EPİAŞ, PJM, Open-Meteo), zero license cost, full run traceability via **MLflow**.
-* **Actionable**: anomaly alerts with **level-shift/weekly-drift** diagnostics and feature attributions.
-* **Decision support**: optional LP optimizer turns forecasts into **cost-reducing EV charging schedules**.
+### Core Capabilities
+- **Multi-horizon forecasting**: 1–24 hour ahead predictions at hourly resolution
+- **Calibrated uncertainty**: Split conformal prediction intervals with 90% coverage
+- **Anomaly detection**: IsolationForest with level-shift, drift, and feature attribution diagnostics
+- **Medallion data architecture**: Bronze → Silver → Gold layers with data quality gates
+- **Population-weighted weather**: Open-Meteo integration for Turkey's top 10 cities (49% population coverage)
+- **EPİAŞ integration**: Turkish electricity market data via eptr2 library
+- **MLOps best practices**: MLflow experiment tracking, model registry, champion/challenger workflow
+
+### Forecasting Models
+- **Baselines**: Prophet, CatBoost, XGBoost
+- **Deep Learning**: N-HiTS (Neural Hierarchical Interpolation for Time Series)
+- **Ensemble**: Weighted median aggregation with failover
+- **Optional**: PatchTST, Temporal Fusion Transformer, foundation models (TimesFM, Moirai)
+
+### Optimization (Stretch Goal)
+- **EV load shifting**: Linear programming with PuLP + CBC solver
+- **Cost minimization**: EPİAŞ MCP wholesale price signals
+- **Constraint satisfaction**: Power limits, energy-by-deadline requirements
 
 ---
 
-## System Overview
+## Architecture
 
 ```
-EPİAŞ / PJM / Open-Meteo  --(APScheduler)-->  Bronze (parquet)
-                                           ->  Silver (validated, tz: Europe/Istanbul)
-                                           ->  Gold (features: lags/rolls/Fourier/weather)
-
-Gold  ->  Models (N-HiTS, CatBoost, Prophet) -> Ensemble -> Conformal Calibration
-     ->  Anomaly (IsolationForest + diagnostics)
-     ->  Optimizer (LP, cost under tariffs)
-
-FastAPI  <->  QuestDB (TS store)  <->  Streamlit Dashboard
-MLflow: experiments, artifacts, registry (champion/challenger)
+┌─────────────────────────────────────────────────────────────────┐
+│                       DATA INGESTION                             │
+│  EPİAŞ (eptr2) + Open-Meteo → APScheduler → Bronze (Parquet)   │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    DATA QUALITY & NORMALIZATION                  │
+│  Schema/Range/Monotonicity Checks → Silver (Normalized)         │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                     FEATURE ENGINEERING                          │
+│  Lags, Rolls, Fourier, Calendar, Weather → Gold (ML-Ready)      │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    MODEL TRAINING & ENSEMBLE                     │
+│  N-HiTS + Prophet + CatBoost → MLflow Registry                  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                   UNCERTAINTY QUANTIFICATION                     │
+│  Split Conformal Prediction (28-day rolling window)             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      SERVING & MONITORING                        │
+│  FastAPI (/forecast, /intervals, /anomalies) + Streamlit UI     │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Repo Structure
+## Project Structure
 
 ```
-forewatt/
-  ├─ apps/
-  │   ├─ api/                  # FastAPI service (forecast/intervals/anomalies/optimize/health/metadata)
-  │   └─ dashboard/            # Streamlit app
-  ├─ dataflow/
-  │   ├─ ingest/               # APScheduler jobs, EPİAŞ/PJM/Open-Meteo pullers
-  │   ├─ bronze_silver/        # normalization, validation, tz handling
-  │   └─ gold_features/        # feature engineering (lags/rolls/Fourier/weather)
-  ├─ models/
-  │   ├─ baselines/            # Prophet, CatBoost, XGBoost, SARIMA, DLinear
-  │   ├─ nhits/                # N-HiTS core forecaster
-  │   ├─ ensemble/             # weighted-median aggregator
-  │   └─ calibrate/            # conformal wrappers (MAPIE/Darts)
-  ├─ anomalies/
-  │   └─ isolation_forest/     # training + diagnostics (level-shift, weekly-drift)
-  ├─ optimizer/
-  │   └─ ev_lp/                # PuLP/CBC linear program + I/O
-  ├─ mlops/
-  │   ├─ tracking/             # MLflow utils, run tags, registry helpers
-  │   └─ ops/                  # health checks, seeds, smoke tests
-  ├─ configs/
-  │   ├─ creds.example.env     # copy to .env and fill (no secrets in Git)
-  │   ├─ data.yaml             # endpoints, regions, calendars
-  │   └─ model.yaml            # hyperparams, CV, calibration window
-  ├─ docker/
-  │   ├─ Dockerfile.api
-  │   ├─ Dockerfile.dashboard
-  │   └─ docker-compose.yml
-  ├─ scripts/                  # seed replay, backfill, benchmarks
-  ├─ tests/                    # pytest (data, models, api, dashboard)
-  ├─ docs/                     # documentation
-  ├─ requirements.txt
-  ├─ Makefile
-  └─ README.md
+ForeWatt/
+├── src/                           # Core source code (Python 3.11+)
+│   ├── __init__.py
+│   ├── data/                      # Data ingestion & processing
+│   │   ├── __init__.py
+│   │   └── weather_fetcher.py     # Open-Meteo population-weighted weather
+│   ├── features/                  # Feature engineering (TODO)
+│   ├── models/                    # Forecasting models (TODO)
+│   ├── uncertainty/               # Conformal prediction (TODO)
+│   ├── anomaly/                   # IsolationForest + diagnostics (TODO)
+│   ├── optimization/              # EV load shifting (TODO)
+│   └── evaluation/                # Metrics & validation (TODO)
+│
+├── data/                          # Medallion architecture
+│   ├── bronze/                    # Raw API data (EPİAŞ, PJM, weather)
+│   │   ├── epias/
+│   │   ├── pjm/
+│   │   └── demand_weather/
+│   ├── silver/                    # Normalized, schema-validated
+│   │   ├── epias/
+│   │   ├── pjm/
+│   │   └── demand_weather/
+│   ├── gold/                      # Feature-engineered, ML-ready
+│   │   └── demand_features/
+│   ├── unused/                    # Archived data
+│   │   └── RES_GES_Data.csv      # Renewable energy plants (future use)
+│   ├── influx/                    # InfluxDB volume mount
+│   └── mlflow/                    # MLflow volume mount
+│
+├── api/                           # FastAPI REST service
+│   ├── Dockerfile
+│   ├── main.py                    # API endpoints
+│   └── requirements.txt
+│
+├── dashboard/                     # Streamlit UI
+│   ├── Dockerfile
+│   ├── app.py                     # Dashboard
+│   └── requirements.txt
+│
+├── notebooks/                     # Jupyter notebooks (TODO)
+│   ├── 01_eda.ipynb
+│   ├── 02_feature_engineering.ipynb
+│   ├── 03_baseline_models.ipynb
+│   └── 04_model_comparison.ipynb
+│
+├── tests/                         # Unit & integration tests (TODO)
+│
+├── configs/                       # Model configurations (TODO)
+│   ├── nhits.yaml
+│   ├── catboost.yaml
+│   └── ensemble.yaml
+│
+├── docs/                          # Documentation
+│   └── Forewatt_COMP491_Proposal.txt
+│
+├── .env.example                   # Environment variable template
+├── .gitignore                     # Git ignore rules
+├── docker-compose.yml             # Multi-service orchestration
+├── requirements.txt               # Root Python dependencies
+├── LICENSE                        # MIT License
+└── README.md                      # This file
 ```
----
 
-## Quickstart (Docker)
+### Medallion Architecture
 
-1.⁠ ⁠*Clone & configure*
+**Bronze Layer** (Raw)
+- EPİAŞ hourly load/price (via eptr2)
+- PJM benchmarking data
+- Open-Meteo weather for 10 Turkish cities
+- Stored as timestamped Parquet files
 
-⁠ bash
-git clone https://github.com/<org-or-user>/forewatt.git
-cd forewatt
-cp configs/creds.example.env .env   # fill any required tokens/keys
- ⁠
+**Silver Layer** (Normalized)
+- Schema validation (dtypes, column presence)
+- Range checks (physically plausible bounds)
+- Monotonicity checks (timestamp ordering)
+- Duplicate removal
+- Timezone standardization (Europe/Istanbul)
+- Conservative gap handling:
+  - Load: ≤2h forward fill, else drop
+  - Weather: ≤6h linear interpolation, else drop
 
-2.⁠ ⁠*Bring the stack up*
-
-⁠ bash
-docker compose -f docker/docker-compose.yml up --build
- ⁠
-
-3.⁠ ⁠*Services*
-
-•⁠  ⁠API (OpenAPI): ⁠ http://localhost:8000/docs ⁠
-•⁠  ⁠Dashboard: ⁠ http://localhost:8501 ⁠
-•⁠  ⁠MLflow UI (optional): ⁠ http://localhost:5000 ⁠
-
-	⁠*Freshness guard:* if upstream data are > 2 hours stale, ⁠ /forecast ⁠ returns *503* with a human-readable message.
-
----
-
-## Local Dev (no Docker)
-
-⁠ bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-# 1) Ingest → Bronze
-python -m dataflow.ingest.run
-
-# 2) Bronze → Silver
-python -m dataflow.bronze_silver.to_silver
-
-# 3) Silver → Gold (features)
-python -m dataflow.gold_features.build
-
-# 4) Train & log baselines
-python -m models.baselines.train --config configs/model.yaml
-
-# 5) Start API + Dashboard
-uvicorn apps.api.main:app --reload --port 8000
-streamlit run apps/dashboard/Home.py --server.port 8501
- ⁠
+**Gold Layer** (Feature-Engineered)
+- Lag features: 1, 2, 3, 6, 12, 24, 168 hours
+- Rolling statistics: 3, 6, 12, 24, 168-hour windows
+- Fourier terms: 24h, 168h periodicities
+- Calendar features: hour, day, week, month, holidays, Ramadan
+- Weather features: HDD/CDD, heat index, wind chill, temperature momentum
+- Cyclical encodings: sin/cos for hour and day-of-week
+- Versioned transformers: deterministic, serialized with models
 
 ---
 
-## Data & Features
+## Getting Started
 
-•⁠  ⁠*Sources: EPİAŞ hourly load (TR national + DSO subsets), PJM hourly load (benchmark), **Open-Meteo* weather.
-•⁠  ⁠*Timezone: **Europe/Istanbul (UTC+3)* end-to-end.
-•⁠  ⁠*Medallion*: bronze (raw) → silver (validated schema/types/tz) → gold (features).
-•⁠  ⁠*Features: lags (1,2,3,6,12,24,168h), rolling stats (3–168h), Fourier (24h, 168h), calendar (hour/day/month, **Ramadan*), weather + 1h lags.
-•⁠  ⁠*Missing-data policy*: small gaps forward-fill (load ≤ 2h) / interpolate (weather ≤ 6h); longer gaps excluded from training.
-•⁠  ⁠*Config*: ⁠ configs/data.yaml ⁠.
+### Prerequisites
+- **Docker & Docker Compose** (recommended for production deployment)
+- **Python 3.11+** (for local development)
+- **EPİAŞ account**: Register at [EPİAŞ Transparency Platform](https://www.epias.com.tr/en/transparency-platform/)
 
----
+### Quick Start (Docker)
 
-## Models & Training
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/ForeWatt.git
+   cd ForeWatt
+   ```
 
-•⁠  ⁠*Core: **N-HiTS* (multi-resolution), *CatBoost, **Prophet; optional **XGBoost/SARIMA/DLinear*.
-•⁠  ⁠*Ensemble: weighted **median*; static weights ∝ inverse validation sMAPE (penalize under-coverage).
-•⁠  ⁠*Validation*: expanding-window temporal CV; held-out test.
-•⁠  ⁠*Tuning*: Optuna (30–50 trials caps).
-•⁠  ⁠*Targets: day-ahead **sMAPE 4–6%* (EPİAŞ subsets), *MASE < 1.0*.
-•⁠  ⁠*Repro: all runs tracked in **MLflow* with artifacts, params, and plots.
-•⁠  ⁠*Config*: ⁠ configs/model.yaml ⁠.
+2. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your EPİAŞ credentials
+   nano .env
+   ```
 
----
+3. **Launch services**
+   ```bash
+   docker-compose up -d
+   ```
 
-## Uncertainty Calibration
+4. **Access services**
+   - API: http://localhost:8000/docs (OpenAPI/Swagger)
+   - Dashboard: http://localhost:8501
+   - MLflow: http://localhost:5000
+   - InfluxDB: http://localhost:8086
 
-•⁠  ⁠*Method: **Split Conformal Prediction* per horizon (1…24), rolling 28-day residual window.
-•⁠  ⁠*Outputs*: ⁠ q05, q50, q95 ⁠ (90% nominal); coverage & width monitored.
-•⁠  ⁠*Libs*: MAPIE / Darts wrappers.
+### Local Development
 
----
+1. **Create virtual environment**
+   ```bash
+   python3.11 -m venv .venv
+   source .venv/bin/activate  # macOS/Linux
+   # .venv\Scripts\activate    # Windows
+   ```
 
-## Anomaly Detection
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-•⁠  ⁠*Primary: **IsolationForest* on residuals + lags/rolls; hysteresis (≥ 2h) to reduce chatter.
-•⁠  ⁠*Diagnostics*: level-shift test, weekly-drift check, basic feature attributions.
-•⁠  ⁠*Targets*: ≥ 0.80 precision at ≤ 5% false positive rate on validation weeks.
+3. **Configure environment**
+   ```bash
+   cp .env.example .env
+   # Add your EPİAŞ credentials
+   ```
 
----
-
-## EV Load-Shifting Optimizer (Stretch)
-
-•⁠  ⁠*Formulation: LP in **PuLP* (CBC solver) with hourly vars; minimize MCP-based cost.
-•⁠  ⁠*Constraints*: power limits, energy-by-deadline, optional degradation penalty.
-•⁠  ⁠*Output*: schedule, cost delta, feasibility slack; integrated in dashboard.
-
----
-
-## API
-
-Typed *FastAPI* endpoints (see ⁠ /docs ⁠):
-
-| Endpoint          | Purpose                                   |
-| ----------------- | ----------------------------------------- |
-| ⁠ GET /health ⁠     | Freshness, last ingest, latency, uptime   |
-| ⁠ GET /metadata ⁠   | Model + feature pipeline hashes           |
-| ⁠ POST /forecast ⁠  | 1–24h forecasts                           |
-| ⁠ POST /intervals ⁠ | Conformal intervals per horizon           |
-| ⁠ GET /anomalies ⁠  | Recent anomaly events + diagnostics refs  |
-| ⁠ POST /optimize ⁠  | EV schedule given price/limits (optional) |
-
-*Example*
-
-⁠ json
-POST /forecast
-{
-  "region": "TR-National",
-  "horizons": [1, 2, 3, 24]
-}
- ⁠
+4. **Run weather data pipeline**
+   ```bash
+   python -m src.data.weather_fetcher
+   ```
 
 ---
 
-## Dashboard
+## Data Pipeline
 
-•⁠  ⁠*Forecasts: last 14 days + next 24h with shaded **90%* intervals.
-•⁠  ⁠*Anomalies*: markers with drill-down diagnostics.
-•⁠  ⁠*Status ribbon*: coverage, width, sharpness, freshness, model version.
-•⁠  ⁠*Optimizer panel: baseline vs optimized schedule and **cost delta*.
+### Weather Data (Open-Meteo)
 
-Run:
+The weather pipeline (`src/data/weather_fetcher.py`) fetches hourly data for Turkey's top 10 cities by population, covering 49.25% of the national population.
 
-⁠ bash
-streamlit run apps/dashboard/Home.py
- ⁠
+**Cities & Coverage**:
+- Istanbul (18.3%), Ankara (6.9%), Izmir (5.2%), Bursa (3.8%), Antalya (3.2%)
+- Konya (2.7%), Adana (2.7%), Şanlıurfa (2.6%), Gaziantep (2.6%), Kocaeli (2.5%)
+
+**Features**:
+- Temperature (2m), apparent temperature, humidity, wind speed, precipitation
+- Cloud cover, surface pressure, rain
+- Population-weighted national aggregation
+- Heat index, wind chill, heating/cooling degree days (HDD/CDD)
+- 60+ engineered demand features
+
+**Usage**:
+```python
+from src.data.weather_fetcher import DemandWeatherFetcher
+
+fetcher = DemandWeatherFetcher(cache_dir='.cache')
+features = fetcher.run_pipeline(
+    start_date='2020-01-01',
+    end_date='2024-12-31',
+    output_dir='./data'
+)
+```
+
+### EPİAŞ Data (TODO)
+- Hourly electricity consumption (national + 21 DSO regions)
+- Day-ahead market clearing prices (MCP)
+- Balancing market data
+- Via eptr2 library with credentials from .env
 
 ---
 
-## Evaluation & Targets
+## Models & Forecasting
 
-•⁠  ⁠*Point*: sMAPE, MASE, MAE, RMSE (per horizon).
-•⁠  ⁠*Probabilistic: Pinball, **CRPS, Winkler; **90% coverage* ± 5pp.
-•⁠  ⁠*Latency: p95 single-horizon *≤ 300 ms** (CPU).
-•⁠  ⁠*Staleness: serve only if *≤ 120 minutes** since last ingest.
-•⁠  ⁠*Generalization*: EPİAŞ primary + PJM benchmarking.
+### Training Protocol
+- **Temporal cross-validation**: 4-fold expanding window
+- **Test set**: 12 months held-out (strictly future data)
+- **Hyperparameter optimization**: Bayesian search (Optuna), 30-50 trials
+- **MLflow logging**: Parameters, metrics, artifacts, model versions
 
-Reproduce headline numbers:
+### Evaluation Metrics
+- **Point forecasts**: sMAPE, MASE, MAE, RMSE
+- **Probabilistic**: Pinball loss, CRPS, Winkler score
+- **Uncertainty**: Coverage rate, interval width, sharpness
+- **Anomaly detection**: Precision, recall, F1 at ≤5% FPR
 
-⁠ bash
-make backtest      # temporal CV on configured datasets
-make benchmark     # aggregates sMAPE/MASE/coverage → reports/
- ⁠
+### Performance Targets
+- **Day-ahead (24h)**: 4-6% sMAPE, MASE < 1.0
+- **Short-term (1-6h)**: 2-3% sMAPE, MASE < 0.5
+- **Conformal intervals**: 90% coverage (±5% tolerance)
+- **API latency**: p95 < 300ms (single horizon, CPU)
 
 ---
+
+## Development
+
+### Roadmap (Gantt Chart in Proposal)
+
+**Phase 1: Foundation** (Weeks 1-2) ✅
+- ✅ GitHub, Docker, MLflow setup
+- ✅ EPİAŞ/Open-Meteo API access
+- ✅ Project structure & medallion architecture
+
+**Phase 2: Data Pipeline** (Weeks 1-6) 🚧
+- ✅ Weather data fetcher (Open-Meteo)
+- 🚧 EPİAŞ ingestion (eptr2)
+- 🚧 Data quality checks
+- 🚧 Feature engineering
+
+**Phase 3: Baseline Models** (Weeks 3-6)
+- Prophet, CatBoost, XGBoost
+- Temporal cross-validation
+- MLflow experiment tracking
+
+**Phase 4: Advanced Models** (Weeks 5-9)
+- N-HiTS (NeuralForecast)
+- Ensemble aggregation
+- Conformal calibration
+
+**Phase 5: Anomaly & Dashboard** (Weeks 8-10)
+- IsolationForest + diagnostics
+- Streamlit UI rebuild
+- API endpoints
+
+**Phase 6: Optimization & Polish** (Weeks 9-12)
+- EV load shifting (stretch goal)
+- Final documentation
+- Poster & report
+
+### Contributing
+This is an academic project (Koç University COMP 491). External contributions are welcome after January 2026.
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## Acknowledgments
+
+- **Advisor**: Prof. Dr. Gözde Gül Şahin
+- **Team**: Zeynep Öykü Aslan, Kaan Altaş, Zeliha Paycı
+- **Institution**: Koç University, Department of Computer Engineering
+- **Course**: COMP 491 - Computer Engineering Design (Fall 2025)
