@@ -9,6 +9,9 @@ services:
       - "${API_PORT}:8000"
     depends_on:
       - influxdb
+      - mlflow
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     networks:
       - forewatt_net
 
@@ -20,6 +23,9 @@ services:
       - "${DASHBOARD_PORT}:8501"
     depends_on:
       - api
+      - mlflow
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     networks:
       - forewatt_net
 
@@ -29,14 +35,19 @@ services:
     env_file: .env
     command: >
       mlflow server
-      --backend-store-uri sqlite:///mlflow.db
-      --default-artifact-root /mlflow
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
       --host 0.0.0.0
       --port 5000
     volumes:
       - ./mlflow:/mlflow
     ports:
       - "${MLFLOW_PORT}:5000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - forewatt_net
 
