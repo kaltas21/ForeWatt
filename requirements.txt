@@ -1,0 +1,119 @@
+# ForeWatt - Comprehensive Requirements
+# Python 3.11+
+# Energy Demand Forecasting and Anomaly Detection Platform
+
+# ═══════════════════════════════════════════════════════════
+# DATA FETCHING & APIs
+# ═══════════════════════════════════════════════════════════
+openmeteo-requests>=1.2.0       # Open-Meteo weather API client
+requests>=2.31.0                # HTTP library
+requests-cache>=1.1.0           # Request caching for weather data
+retry-requests>=2.0.0           # Retry logic for API calls
+eptr2>=0.1.0                    # EPİAŞ Transparency Platform client
+
+# ═══════════════════════════════════════════════════════════
+# DATA PROCESSING & STORAGE
+# ═══════════════════════════════════════════════════════════
+pandas>=2.1.0                   # Data manipulation
+numpy>=1.24.0                   # Numerical computing
+pyarrow>=14.0.0                 # Parquet support for medallion architecture
+influxdb-client>=1.38.0         # Time series database client
+openpyxl>=3.1.0                 # Excel file support (for data export)
+
+# ═══════════════════════════════════════════════════════════
+# TIME SERIES FORECASTING
+# ═══════════════════════════════════════════════════════════
+darts>=0.27.0                   # Core forecasting library (N-HiTS, ensemble)
+prophet>=1.1.5                  # Facebook Prophet baseline
+neuralforecast>=1.6.0           # N-HiTS, PatchTST, TFT implementations
+statsforecast>=1.7.0            # Statistical baselines (ARIMA, ETS)
+pytorch-lightning>=2.1.0        # Deep learning framework
+torch>=2.1.0                    # PyTorch backend
+sktime>=0.25.0                  # Time series utilities
+
+# ═══════════════════════════════════════════════════════════
+# MACHINE LEARNING
+# ═══════════════════════════════════════════════════════════
+scikit-learn>=1.3.0             # Classical ML, preprocessing, pipelines
+catboost>=1.2.0                 # Gradient boosting baseline
+xgboost>=2.0.0                  # Gradient boosting alternative
+lightgbm>=4.0.0                 # Fast gradient boosting
+
+# ═══════════════════════════════════════════════════════════
+# UNCERTAINTY QUANTIFICATION
+# ═══════════════════════════════════════════════════════════
+mapie>=0.8.0                    # Conformal prediction (split conformal)
+scipy>=1.11.0                   # Statistical functions
+
+# ═══════════════════════════════════════════════════════════
+# ANOMALY DETECTION
+# ═══════════════════════════════════════════════════════════
+# Uses scikit-learn IsolationForest (included above)
+shap>=0.43.0                    # Feature attribution for diagnostics
+
+# ═══════════════════════════════════════════════════════════
+# OPTIMIZATION
+# ═══════════════════════════════════════════════════════════
+pulp>=2.7.0                     # Linear programming (EV load shifting)
+
+# ═══════════════════════════════════════════════════════════
+# MLOps & EXPERIMENT TRACKING
+# ═══════════════════════════════════════════════════════════
+mlflow>=2.8.0                   # Experiment tracking & model registry
+optuna>=3.4.0                   # Hyperparameter optimization (Bayesian search)
+
+# ═══════════════════════════════════════════════════════════
+# WEB SERVICES (API & DASHBOARD)
+# ═══════════════════════════════════════════════════════════
+fastapi>=0.104.0                # REST API framework
+uvicorn[standard]>=0.24.0       # ASGI server
+streamlit>=1.28.0               # Dashboard UI
+pydantic>=2.5.0                 # Data validation
+
+# ═══════════════════════════════════════════════════════════
+# SCHEDULING & AUTOMATION
+# ═══════════════════════════════════════════════════════════
+apscheduler>=3.10.0             # Periodic job scheduling
+
+# ═══════════════════════════════════════════════════════════
+# CONFIGURATION & UTILITIES
+# ═══════════════════════════════════════════════════════════
+python-dotenv>=1.0.0            # Environment variable management
+pyyaml>=6.0.0                   # YAML config files
+python-dateutil>=2.8.2          # Date utilities
+pytz>=2023.3                    # Timezone handling (Europe/Istanbul)
+
+# ═══════════════════════════════════════════════════════════
+# VISUALIZATION
+# ═══════════════════════════════════════════════════════════
+matplotlib>=3.8.0               # Core plotting
+seaborn>=0.13.0                 # Statistical visualization
+plotly>=5.18.0                  # Interactive plots for dashboard
+
+# ═══════════════════════════════════════════════════════════
+# DEVELOPMENT & TESTING
+# ═══════════════════════════════════════════════════════════
+pytest>=7.4.0                   # Testing framework
+pytest-cov>=4.1.0               # Coverage reporting
+black>=23.0.0                   # Code formatting
+flake8>=6.1.0                   # Linting
+isort>=5.12.0                   # Import sorting
+ipykernel>=6.26.0               # Jupyter kernel
+notebook>=7.0.0                 # Jupyter notebook
+
+# ═══════════════════════════════════════════════════════════
+# NOTES
+# ═══════════════════════════════════════════════════════════
+# Installation:
+#   pip install -r requirements.txt
+#
+# For GPU support (optional, significantly faster training):
+#   pip install torch --index-url https://download.pytorch.org/whl/cu118
+#
+# Docker deployment:
+#   Service-specific requirements are in api/requirements.txt
+#   and dashboard/requirements.txt for minimal container images.
+#
+# EPİAŞ Access:
+#   Register at https://www.epias.com.tr/en/transparency-platform/
+#   Add credentials to .env file (see .env.example)
