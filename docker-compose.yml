@@ -3,7 +3,7 @@ version: "3.9"
 services:
   api:
     build: ./api
-    container_name: forewatt_api
+    container_name: forewatt_api_${USER_NAME}
     env_file: .env
     ports:
       - "${API_PORT}:8000"
@@ -17,7 +17,7 @@ services:
 
   dashboard:
     build: ./dashboard
-    container_name: forewatt_dashboard
+    container_name: forewatt_dashboard_${USER_NAME}
     env_file: .env
     ports:
       - "${DASHBOARD_PORT}:8501"
@@ -31,7 +31,7 @@ services:
 
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.16.0
-    container_name: forewatt_mlflow
+    container_name: forewatt_mlflow_${USER_NAME}
     env_file: .env
     command: >
       mlflow server
@@ -53,7 +53,7 @@ services:
 
   influxdb:
     image: influxdb:2.7
-    container_name: forewatt_influxdb
+    container_name: forewatt_influxdb_${USER_NAME}
     env_file: .env
     ports:
       - "${INFLUXDB_PORT}:8086"
