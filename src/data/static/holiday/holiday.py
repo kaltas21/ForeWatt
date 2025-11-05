@@ -101,4 +101,4 @@ json_path = "./src/data/static/holiday/turkey_calendar_2021_2025_daily.json"
 df.to_csv(csv_path, index=False, encoding="utf-8")
 df.to_json(json_path, orient="records", force_ascii=False, indent=2)
 
-csv_path, json_path
+
