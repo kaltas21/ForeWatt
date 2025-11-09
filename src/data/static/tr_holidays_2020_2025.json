@@ -1,0 +1,55 @@
+{
+  "metadata": { "country": "TR", "tz": "Europe/Istanbul", "years": [2020,2021,2022,2023,2024,2025] },
+  "holidays": [
+    { "name": "Yılbaşı", "start_date": "2020-01-01", "end_date": "2020-01-01", "kind": "official" },
+    { "name": "Ulusal Egemenlik ve Çocuk Bayramı", "start_date": "2020-04-23", "end_date": "2020-04-23", "kind": "official" },
+    { "name": "Emek ve Dayanışma Günü", "start_date": "2020-05-01", "end_date": "2020-05-01", "kind": "official" },
+    { "name": "Atatürk’ü Anma, Gençlik ve Spor Bayramı", "start_date": "2020-05-19", "end_date": "2020-05-19", "kind": "official" },
+    { "name": "Demokrasi ve Milli Birlik Günü", "start_date": "2020-07-15", "end_date": "2020-07-15", "kind": "official" },
+    { "name": "Zafer Bayramı", "start_date": "2020-08-30", "end_date": "2020-08-30", "kind": "official" },
+    { "name": "Cumhuriyet Bayramı", "start_date": "2020-10-29", "end_date": "2020-10-29", "kind": "official" },
+
+    { "name": "Yılbaşı", "start_date": "2021-01-01", "end_date": "2021-01-01", "kind": "official" },
+    { "name": "Ulusal Egemenlik ve Çocuk Bayramı", "start_date": "2021-04-23", "end_date": "2021-04-23", "kind": "official" },
+    { "name": "Emek ve Dayanışma Günü", "start_date": "2021-05-01", "end_date": "2021-05-01", "kind": "official" },
+    { "name": "Atatürk’ü Anma, Gençlik ve Spor Bayramı", "start_date": "2021-05-19", "end_date": "2021-05-19", "kind": "official" },
+    { "name": "Demokrasi ve Milli Birlik Günü", "start_date": "2021-07-15", "end_date": "2021-07-15", "kind": "official" },
+    { "name": "Zafer Bayramı", "start_date": "2021-08-30", "end_date": "2021-08-30", "kind": "official" },
+    { "name": "Cumhuriyet Bayramı", "start_date": "2021-10-29", "end_date": "2021-10-29", "kind": "official" },
+
+    { "name": "Yılbaşı", "start_date": "2022-01-01", "end_date": "2022-01-01", "kind": "official" },
+    { "name": "Ulusal Egemenlik ve Çocuk Bayramı", "start_date": "2022-04-23", "end_date": "2022-04-23", "kind": "official" },
+    { "name": "Emek ve Dayanışma Günü", "start_date": "2022-05-01", "end_date": "2022-05-01", "kind": "official" },
+    { "name": "Atatürk’ü Anma, Gençlik ve Spor Bayramı", "start_date": "2022-05-19", "end_date": "2022-05-19", "kind": "official" },
+    { "name": "Demokrasi ve Milli Birlik Günü", "start_date": "2022-07-15", "end_date": "2022-07-15", "kind": "official" },
+    { "name": "Zafer Bayramı", "start_date": "2022-08-30", "end_date": "2022-08-30", "kind": "official" },
+    { "name": "Cumhuriyet Bayramı", "start_date": "2022-10-29", "end_date": "2022-10-29", "kind": "official" },
+
+    { "name": "Yılbaşı", "start_date": "2023-01-01", "end_date": "2023-01-01", "kind": "official" },
+    { "name": "Ulusal Egemenlik ve Çocuk Bayramı", "start_date": "2023-04-23", "end_date": "2023-04-23", "kind": "official" },
+    { "name": "Emek ve Dayanışma Günü", "start_date": "2023-05-01", "end_date": "2023-05-01", "kind": "official" },
+    { "name": "Atatürk’ü Anma, Gençlik ve Spor Bayramı", "start_date": "2023-05-19", "end_date": "2023-05-19", "kind": "official" },
+    { "name": "Demokrasi ve Milli Birlik Günü", "start_date": "2023-07-15", "end_date": "2023-07-15", "kind": "official" },
+    { "name": "Zafer Bayramı", "start_date": "2023-08-30", "end_date": "2023-08-30", "kind": "official" },
+    { "name": "Cumhuriyet Bayramı", "start_date": "2023-10-29", "end_date": "2023-10-29", "kind": "official" },
+
+    { "name": "Yılbaşı", "start_date": "2024-01-01", "end_date": "2024-01-01", "kind": "official" },
+    { "name": "Ulusal Egemenlik ve Çocuk Bayramı", "start_date": "2024-04-23", "end_date": "2024-04-23", "kind": "official" },
+    { "name": "Emek ve Dayanışma Günü", "start_date": "2024-05-01", "end_date": "2024-05-01", "kind": "official" },
+    { "name": "Atatürk’ü Anma, Gençlik ve Spor Bayramı", "start_date": "2024-05-19", "end_date": "2024-05-19", "kind": "official" },
+    { "name": "Demokrasi ve Milli Birlik Günü", "start_date": "2024-07-15", "end_date": "2024-07-15", "kind": "official" },
+    { "name": "Zafer Bayramı", "start_date": "2024-08-30", "end_date": "2024-08-30", "kind": "official" },
+    { "name": "Cumhuriyet Bayramı", "start_date": "2024-10-29", "end_date": "2024-10-29", "kind": "official" },
+
+    { "name": "Yılbaşı", "start_date": "2025-01-01", "end_date": "2025-01-01", "kind": "official" },
+    { "name": "Ramazan Bayramı", "start_date": "2025-03-30", "end_date": "2025-04-01", "kind": "religious" },
+    { "name": "Ulusal Egemenlik ve Çocuk Bayramı", "start_date": "2025-04-23", "end_date": "2025-04-23", "kind": "official" },
+    { "name": "Emek ve Dayanışma Günü", "start_date": "2025-05-01", "end_date": "2025-05-01", "kind": "official" },
+    { "name": "Atatürk’ü Anma, Gençlik ve Spor Bayramı", "start_date": "2025-05-19", "end_date": "2025-05-19", "kind": "official" },
+    { "name": "Kurban Bayramı", "start_date": "2025-06-06", "end_date": "2025-06-09", "kind": "religious" },
+    { "name": "Demokrasi ve Milli Birlik Günü", "start_date": "2025-07-15", "end_date": "2025-07-15", "kind": "official" },
+    { "name": "Zafer Bayramı", "start_date": "2025-08-30", "end_date": "2025-08-30", "kind": "official" },
+    { "name": "Cumhuriyet Bayramı (yarım gün)", "start_date": "2025-10-28", "end_date": "2025-10-28", "kind": "official", "half_day": "pm" },
+    { "name": "Cumhuriyet Bayramı", "start_date": "2025-10-29", "end_date": "2025-10-29", "kind": "official" }
+  ]
+}
