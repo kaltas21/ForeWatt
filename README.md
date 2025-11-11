@@ -12,11 +12,16 @@
 ## Table of Contents
 - [Features](#features)
 - [Architecture](#architecture)
+- [Data Sources & Coverage](#data-sources--coverage)
+- [Complete Data Pipeline](#complete-data-pipeline)
+- [Key Design Decisions](#key-design-decisions)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Data Pipeline](#data-pipeline)
 - [Models & Forecasting](#models--forecasting)
+- [Validation & Testing](#validation--testing)
 - [Development](#development)
+- [Data Summary](#data-summary)
 - [License](#license)
 
 ---
@@ -81,6 +86,272 @@
 
 ---
 
+## Data Sources & Coverage
+
+### 1. EPİAŞ (Turkish Electricity Market)
+**Source**: EPİAŞ Transparency Platform via `eptr2` library
+**Status**: ✅ Full 2020-2024 data fetched (~43,824 hourly records)
+**Datasets** (12):
+- **Consumption**: Actual load (target variable), day-ahead forecast
+- **Prices**: PTF (day-ahead), SMF (balancing), IDM (intraday), WAP (weighted average)
+- **Generation**: Real-time generation by source, available capacity (EAK), generation plans (KGÜP)
+- **Forecasts**: Wind forecasts, hydro reservoir data
+
+### 2. Weather Data (Open-Meteo)
+**Status**: ✅ Full 2020-2024 data fetched
+**Coverage**: 10 Turkish cities (49.25% population)
+**Cities**: Istanbul, Ankara, Izmir, Bursa, Antalya, Konya, Adana, Sanliurfa, Gaziantep, Kocaeli
+**Variables** (8): Temperature, humidity, precipitation, rain, cloud cover, wind speed, pressure, apparent temperature
+**Processing**: Population-weighted national aggregates, 60+ engineered features
+
+### 3. Macroeconomic Indicators (EVDS)
+**Source**: Turkish Central Bank API
+**Status**: ✅ Bronze data available
+**Indicators**: TÜFE (CPI), ÜFE (PPI), M2 (money supply), TL_FAIZ (interest rates)
+**Purpose**: Deflation pipeline for TL normalization
+
+### 4. External Features (FX & Gold)
+**Source**: EVDS API
+**Status**: ✅ Scripts complete
+**Variables**: USD/TRY, EUR/TRY, XAU/TRY, FX basket (0.5×USD + 0.5×EUR)
+**Features**: Daily rates, 7/30-day momentum, 30-day volatility
+
+---
+
+## Complete Data Pipeline
+
+### Pipeline Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ BRONZE LAYER (Raw Ingestion)                                │
+│ • EPİAŞ: 12 datasets (hourly, 2020-2024)                    │
+│ • Weather: 10 cities × 8 variables (hourly)                 │
+│ • Macro: TÜFE/ÜFE/M2/TL_FAIZ (monthly)                      │
+│ • FX/Gold: USD/EUR/XAU vs TRY (daily)                       │
+│ Format: Parquet (primary) + CSV (secondary)                 │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│ SILVER LAYER (Normalized & Validated)                       │
+│ • Quality gates: Schema, range, monotonicity, duplicates    │
+│ • Timezone standardization (Europe/Istanbul)                │
+│ • Conservative gap handling (forward fill/interpolation)    │
+│ • Population-weighted weather aggregates                    │
+│ • Deflator indices (DID_index, base=100 at 2022-01)        │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│ GOLD LAYER (ML-Ready Features)                              │
+│ • Deflated prices (real TL/MWh, inflation-adjusted)         │
+│ • Weather demand features (60+ engineered)                   │
+│ • External features (FX/Gold with momentum/volatility)      │
+│ • Calendar features (holidays, temporal, cyclical)          │
+│ • Lag features (1h, 2h, 3h, 24h, 168h)                      │
+│ • Rolling stats (24h, 7d means & std)                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Pipeline Execution Order
+
+#### Phase 1: Data Ingestion (Bronze & Silver Layers)
+```bash
+# Step 1: Fetch raw data (Bronze layer)
+python src/data/epias_fetcher.py          # EPİAŞ electricity data (12 datasets)
+python src/data/weather_fetcher.py        # Weather data (10 cities)
+python src/data/evds_fetcher.py           # Macroeconomic indicators
+
+# Step 2: Build deflation pipeline
+python src/data/deflator_builder.py       # Create deflator indices (Factor Analysis + DFM)
+python src/data/deflate_prices.py         # Deflate electricity prices
+
+# Step 3: Build external features (optional)
+python src/data/external_features_fetcher.py  # FX/Gold features with momentum/volatility
+
+# Step 4: Build calendar features (optional)
+python src/data/calendar_builder.py       # Turkish holiday calendars
+python src/analysis/make_gold_calendar_features.py  # Calendar features
+
+# Step 5: Validate
+python src/data/validate_deflation_pipeline.py  # 7 automated tests
+```
+
+#### Phase 2: Feature Engineering (Gold Layer)
+```bash
+# Complete pipeline (recommended - runs all steps)
+python src/features/run_feature_pipeline.py
+
+# Or run individual modules:
+python src/features/lag_features.py       # Lag features (1h-168h for consumption, temp, price)
+python src/features/rolling_features.py   # Rolling stats (24h, 168h windows)
+python src/features/merge_features.py     # Merge all gold layers into master dataset
+```
+
+#### Phase 3: Model Training (TODO)
+```bash
+# python src/models/train.py
+```
+
+#### Phase 4: Serve Predictions (TODO)
+```bash
+# docker-compose up -d
+```
+
+## Feature Engineering
+
+### Modular Feature Pipeline
+
+ForeWatt uses a **hybrid approach** to feature engineering:
+- **Modular scripts** for key feature types (lag, rolling)
+- **Unified merge script** to combine all gold layers
+- **Versioned output** with date + feature hash
+
+### Feature Types
+
+#### 1. Lag Features (`lag_features.py`)
+**Target variable (consumption)**:
+- Lags: 1h, 2h, 3h, 6h, 12h, 24h, 48h, 168h
+
+**Temperature (key weather driver)**:
+- Lags: 1h, 2h, 3h, 24h, 168h
+
+**Electricity price (economic signal)**:
+- Lags: 1h, 24h, 168h
+
+**Total**: 16 lag features
+
+#### 2. Rolling Features (`rolling_features.py`)
+**For consumption, temperature, price_ptf**:
+- Windows: 24h, 168h (1 day, 1 week)
+- Statistics: mean, std, min, max
+- **Total**: 24 rolling features
+
+**Derived volatility features**:
+- `consumption_range_24h`: max - min (daily volatility)
+- `consumption_cv_24h`: std / mean (coefficient of variation)
+- `temp_range_24h`: diurnal temperature range
+- **Total**: 3 derived features
+
+**Total rolling features**: 27
+
+#### 3. Weather Demand Features (existing)
+Already engineered in `weather_fetcher.py`:
+- Heating/Cooling Degree Days (HDD/CDD)
+- Heat index & wind chill
+- Extreme temperature flags
+- Temperature momentum & shocks
+- **Total**: 60+ features
+
+#### 4. Master Dataset (`merge_features.py`)
+Combines all gold layers:
+- Target: `consumption` (Silver EPİAŞ)
+- Weather: 60+ demand features (Gold)
+- Prices: Deflated PTF (Gold)
+- External: FX/Gold (Gold - optional)
+- Calendar: Holidays + temporal (Gold - optional)
+- Lags: 16 lag features (Gold)
+- Rolling: 27 rolling features (Gold)
+
+**Output**: `data/gold/master/master_v1_{date}_{hash}.parquet`
+**Metadata**: `master_v1_{date}_{hash}_metadata.json`
+
+### Running Feature Engineering
+
+#### Quick Start
+```bash
+# Setup environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Run complete pipeline
+python src/features/run_feature_pipeline.py
+```
+
+#### Custom Options
+```bash
+# Custom date range
+python src/features/run_feature_pipeline.py --start 2020-01-01 --end 2023-12-31
+
+# Custom version
+python src/features/run_feature_pipeline.py --version v2
+```
+
+#### Individual Modules
+```bash
+# Run specific feature modules
+python src/features/lag_features.py
+python src/features/rolling_features.py
+python src/features/merge_features.py
+```
+
+### Output Files
+
+**Lag features**:
+- `data/gold/lag_features/lag_features_2020-01-01_2024-12-31.parquet`
+- `data/gold/lag_features/lag_features_2020-01-01_2024-12-31.csv`
+
+**Rolling features**:
+- `data/gold/rolling_features/rolling_features_2020-01-01_2024-12-31.parquet`
+- `data/gold/rolling_features/rolling_features_2020-01-01_2024-12-31.csv`
+
+**Master dataset**:
+- `data/gold/master/master_v1_2025-11-11_{hash}.parquet`
+- `data/gold/master/master_v1_2025-11-11_{hash}.csv`
+- `data/gold/master/master_v1_2025-11-11_{hash}_metadata.json`
+
+---
+
+### Key Scripts
+
+| Script | Purpose | Status |
+|--------|---------|--------|
+| **Data Ingestion** |
+| `epias_fetcher.py` | Fetch 12 EPİAŞ electricity datasets | ✅ Complete |
+| `weather_fetcher.py` | Fetch & engineer 60+ weather features | ✅ Complete |
+| `evds_fetcher.py` | Fetch Turkish macro indicators | ✅ Complete |
+| `deflator_builder.py` | Build inflation deflator indices (DFM + Factor Analysis) | ✅ Complete |
+| `deflate_prices.py` | Deflate electricity prices to real values | ✅ Complete |
+| `external_features_fetcher.py` | Fetch FX/Gold features | ✅ Complete |
+| `calendar_builder.py` | Build Turkish holiday calendars | ✅ Complete |
+| `validate_deflation_pipeline.py` | Validate TL normalization (7 tests) | ✅ Complete |
+| **Feature Engineering** |
+| `lag_features.py` | Generate lag features (16 features) | ✅ Complete |
+| `rolling_features.py` | Generate rolling window features (27 features) | ✅ Complete |
+| `merge_features.py` | Merge all gold layers into master dataset | ✅ Complete |
+| `run_feature_pipeline.py` | Orchestrate complete feature pipeline | ✅ Complete |
+
+---
+
+## Key Design Decisions
+
+### Why Deflation is Separate from External Features?
+- **Deflator (DID)**: Removes domestic inflation (TÜFE, ÜFE, M2, TL_FAIZ) from electricity prices
+- **External Features (FX, Gold)**: Preserved as predictive signals
+- **Reason**: FX/import shocks ARE predictive (e.g., gas price spike → electricity price spike). Removing them destroys valuable information.
+
+### Why DFM over Simple CPI?
+- TÜFE alone includes import price effects (overfits to commodity shocks)
+- Dynamic Factor Model (DFM) extracts "pure" domestic inflation, filters FX/commodity noise
+- Kalman smoothing reduces noise
+
+### Why Linear Interpolation (Monthly → Hourly)?
+- Avoids step changes at month boundaries
+- Reflects gradual inflation accumulation
+- Monthly → Daily (linear) → Hourly (forward fill)
+
+### Why Population-Weighted Weather?
+- Turkey's population is highly concentrated (top 10 cities = 49.25%)
+- National aggregate reflects where people (and electricity demand) actually are
+- Regional spread (temp_std) captures geographic diversity
+
+### Why Dual Format Storage (Parquet + CSV)?
+- **Parquet**: Fast, compressed, columnar (primary for ML pipelines)
+- **CSV**: Human-readable, Excel-compatible (secondary for inspection)
+- Best of both worlds: performance + accessibility
+
+---
+
 ## Project Structure
 
 ```
@@ -89,8 +360,19 @@ ForeWatt/
 │   ├── __init__.py
 │   ├── data/                      # Data ingestion & processing
 │   │   ├── __init__.py
-│   │   └── weather_fetcher.py     # Open-Meteo population-weighted weather
-│   ├── features/                  # Feature engineering (TODO)
+│   │   ├── epias_fetcher.py       # EPİAŞ electricity data
+│   │   ├── weather_fetcher.py     # Open-Meteo population-weighted weather
+│   │   ├── evds_fetcher.py        # Turkish Central Bank macro data
+│   │   ├── deflator_builder.py    # Inflation deflator (DFM + Factor Analysis)
+│   │   ├── deflate_prices.py      # Price deflation
+│   │   └── external_features_fetcher.py  # FX/Gold features
+│   ├── features/                  # Feature engineering (modular)
+│   │   ├── __init__.py
+│   │   ├── lag_features.py        # Lag features (16 features)
+│   │   ├── rolling_features.py    # Rolling window features (27 features)
+│   │   ├── merge_features.py      # Master dataset merger
+│   │   └── run_feature_pipeline.py  # Pipeline orchestrator
+│   ├── analysis/                  # Exploratory analysis & validation
 │   ├── models/                    # Forecasting models (TODO)
 │   ├── uncertainty/               # Conformal prediction (TODO)
 │   ├── anomaly/                   # IsolationForest + diagnostics (TODO)
@@ -98,16 +380,24 @@ ForeWatt/
 │   └── evaluation/                # Metrics & validation (TODO)
 │
 ├── data/                          # Medallion architecture
-│   ├── bronze/                    # Raw API data (EPİAŞ, PJM, weather)
-│   │   ├── epias/
-│   │   ├── pjm/
-│   │   └── demand_weather/
-│   ├── silver/                    # Normalized, schema-validated
-│   │   ├── epias/
-│   │   ├── pjm/
-│   │   └── demand_weather/
+│   ├── bronze/                    # Raw API data (timestamped Parquet + CSV)
+│   │   ├── epias/                 # 12 EPİAŞ datasets (2020-2024)
+│   │   ├── demand_weather/        # 10 city weather (hourly)
+│   │   ├── evds/                  # Macro indicators (monthly)
+│   │   └── external/              # FX/Gold rates (daily)
+│   ├── silver/                    # Normalized, validated
+│   │   ├── epias/                 # Deduplicated, timezone-standardized
+│   │   ├── demand_weather/        # Population-weighted national aggregates
+│   │   ├── evds/                  # Deflator indices (DID_index)
+│   │   └── calendar/              # Holiday tables
 │   ├── gold/                      # Feature-engineered, ML-ready
-│   │   └── demand_features/
+│   │   ├── demand_features/       # 60+ weather demand features
+│   │   ├── deflated_prices/       # Real TL/MWh (inflation-adjusted)
+│   │   ├── external_features/     # FX/Gold with momentum/volatility (optional)
+│   │   ├── calendar_features/     # Holiday & temporal features (optional)
+│   │   ├── lag_features/          # Lag features (16 features)
+│   │   ├── rolling_features/      # Rolling window features (27 features)
+│   │   └── master/                # Unified ML-ready dataset (v1_{date}_{hash})
 │   ├── unused/                    # Archived data
 │   │   └── RES_GES_Data.csv      # Renewable energy plants (future use)
 │   ├── influx/                    # InfluxDB volume mount
@@ -194,8 +484,35 @@ ForeWatt/
 2. **Configure environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env with your EPİAŞ credentials
+   # Edit .env with your API credentials
    nano .env
+   ```
+
+   **Required variables**:
+   ```env
+   # EPİAŞ (Turkish Electricity Market)
+   EPTR_USERNAME=your_email@example.com
+   EPTR_PASSWORD=your_password
+
+   # EVDS (Turkish Central Bank - for macro data & FX)
+   EVDS_API_KEY=your_evds_api_key
+
+   # InfluxDB
+   INFLUXDB_TOKEN=your_token
+   INFLUXDB_ORG=forewatt
+   INFLUXDB_BUCKET=epias
+
+   # MLflow
+   MLFLOW_TRACKING_URI=http://localhost:5050
+
+   # Service Ports
+   API_PORT=8000
+   DASHBOARD_PORT=8501
+   MLFLOW_PORT=5050
+   INFLUXDB_PORT=8086
+
+   # Timezone
+   TIMEZONE=Europe/Istanbul
    ```
 
 3. **Launch services**
@@ -295,6 +612,44 @@ features = fetcher.run_pipeline(
 
 ---
 
+## Validation & Testing
+
+### Deflation Pipeline Validation
+**Script**: `src/data/validate_deflation_pipeline.py`
+
+**7 Automated Tests**:
+1. **Prerequisites**: Dependencies, API keys, directory structure
+2. **Synthetic Data**: Generate test inflation/price data
+3. **EVDS Fetcher**: Validate macro data ingestion
+4. **Deflator Builder**: Test Factor Analysis + DFM
+5. **Interpolation**: Monthly → Daily → Hourly
+6. **Price Deflation**: Apply deflation formula
+7. **Output Quality**: Stationarity (ADF test), variance reduction (20-40%)
+
+**Usage**:
+```bash
+# Dry-run mode (no API calls, synthetic data)
+python src/data/validate_deflation_pipeline.py --dry-run
+
+# Full validation (requires EVDS API key)
+python src/data/validate_deflation_pipeline.py
+```
+
+### Data Quality Checks (Silver Layer)
+- **Schema validation**: dtypes, column presence, required fields
+- **Range checks**: Physically plausible bounds (e.g., load > 0, temp in [-50, 60])
+- **Monotonicity checks**: Timestamp ordering, no duplicates
+- **Gap handling**: Conservative forward fill (≤2h load, ≤6h weather)
+- **Outlier detection**: >5 std from mean flagged for review
+
+### Calendar Tests
+**Scripts**: `tests/test_calendar*.py`
+- Unit tests for calendar features
+- End-to-end tests for holiday handling
+- Half-day PM validation (e.g., Oct 28, 2025)
+
+---
+
 ## Development
 
 ### Roadmap (Gantt Chart in Proposal)
@@ -304,11 +659,14 @@ features = fetcher.run_pipeline(
 - ✅ EPİAŞ/Open-Meteo API access
 - ✅ Project structure & medallion architecture
 
-**Phase 2: Data Pipeline** (Weeks 1-6) 🚧
+**Phase 2: Data Pipeline** (Weeks 1-6) ✅
 - ✅ Weather data fetcher (Open-Meteo)
-- 🚧 EPİAŞ ingestion (eptr2)
-- 🚧 Data quality checks
-- 🚧 Feature engineering
+- ✅ EPİAŞ ingestion (eptr2) - 12 datasets, 2020-2024
+- ✅ Data quality checks (schema, range, monotonicity)
+- ✅ Feature engineering (60+ weather demand features)
+- ✅ Deflation pipeline (TL normalization via DFM)
+- ✅ External features (FX/Gold from EVDS)
+- ✅ Calendar features (Turkish holidays)
 
 **Phase 3: Baseline Models** (Weeks 3-6)
 - Prophet, CatBoost, XGBoost
@@ -341,9 +699,94 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
+## Data Summary
+
+**Coverage**: 2020-01-01 to 2024-12-31 (5 years)
+**Total Records**: ~43,824 hourly observations
+
+**Features**:
+- **Target**: consumption (Silver EPİAŞ)
+- **EPİAŞ**: 12 datasets (consumption, prices, generation, forecasts)
+- **Weather**: 60+ engineered demand features (HDD, CDD, heat index, momentum)
+- **Macro**: Deflation indices (Factor Analysis + DFM)
+- **External**: FX/Gold with momentum/volatility (optional)
+- **Calendar**: Turkish holidays + temporal features (optional)
+- **Lag features**: 16 features (consumption, temperature, price)
+- **Rolling features**: 27 features (24h/168h windows + derived volatility)
+- **Total features**: 100+ in master dataset
+
+**Storage**:
+- Dual format: Parquet (primary) + CSV (secondary)
+- Bronze: Raw API data
+- Silver: Normalized, validated
+- Gold: ML-ready features + master dataset
+- Versioning: `master_v{version}_{date}_{hash}.parquet`
+
+---
+
 ## Acknowledgments
 
 - **Advisor**: Prof. Dr. Gözde Gül Şahin
 - **Team**: Zeynep Öykü Aslan, Kaan Altaş, Zeliha Paycı
 - **Institution**: Koç University, Department of Computer Engineering
 - **Course**: COMP 491 - Computer Engineering Design (Fall 2025)
+
+---
+
+**Last Updated**: 2025-11-11
+**Pipeline Status**: Phase 2 Complete (Data ingestion & feature engineering ✅)
+**Next Phase**: Model development (baseline models, N-HiTS, ensemble)
+
+---
+
+## Quick Start Guide
+
+### 1. Environment Setup
+```bash
+# Clone repository
+git clone https://github.com/yourusername/ForeWatt.git
+cd ForeWatt
+
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure API keys
+cp .env.example .env
+nano .env  # Add EPTR_USERNAME, EPTR_PASSWORD, EVDS_API_KEY
+```
+
+### 2. Run Data Pipeline
+```bash
+# Fetch data (Bronze & Silver layers)
+python src/data/epias_fetcher.py
+python src/data/weather_fetcher.py
+python src/data/evds_fetcher.py
+
+# Build deflation pipeline
+python src/data/deflator_builder.py
+python src/data/deflate_prices.py
+
+# Validate
+python src/data/validate_deflation_pipeline.py
+```
+
+### 3. Run Feature Engineering
+```bash
+# Complete pipeline (creates master dataset)
+python src/features/run_feature_pipeline.py
+
+# Output: data/gold/master/master_v1_{date}_{hash}.parquet
+```
+
+### 4. Next Steps (TODO)
+```bash
+# Train models
+# python src/models/train.py
+
+# Start services
+# docker-compose up -d
+```
