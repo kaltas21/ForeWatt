@@ -1,0 +1,51 @@
+date_only,name,kind,half_day,is_holiday_day
+2020-01-01,Yılbaşı,official,,1
+2020-04-23,Ulusal Egemenlik ve Çocuk Bayramı,official,,1
+2020-05-01,Emek ve Dayanışma Günü,official,,1
+2020-05-19,"Atatürk’ü Anma, Gençlik ve Spor Bayramı",official,,1
+2020-07-15,Demokrasi ve Milli Birlik Günü,official,,1
+2020-08-30,Zafer Bayramı,official,,1
+2020-10-29,Cumhuriyet Bayramı,official,,1
+2021-01-01,Yılbaşı,official,,1
+2021-04-23,Ulusal Egemenlik ve Çocuk Bayramı,official,,1
+2021-05-01,Emek ve Dayanışma Günü,official,,1
+2021-05-19,"Atatürk’ü Anma, Gençlik ve Spor Bayramı",official,,1
+2021-07-15,Demokrasi ve Milli Birlik Günü,official,,1
+2021-08-30,Zafer Bayramı,official,,1
+2021-10-29,Cumhuriyet Bayramı,official,,1
+2022-01-01,Yılbaşı,official,,1
+2022-04-23,Ulusal Egemenlik ve Çocuk Bayramı,official,,1
+2022-05-01,Emek ve Dayanışma Günü,official,,1
+2022-05-19,"Atatürk’ü Anma, Gençlik ve Spor Bayramı",official,,1
+2022-07-15,Demokrasi ve Milli Birlik Günü,official,,1
+2022-08-30,Zafer Bayramı,official,,1
+2022-10-29,Cumhuriyet Bayramı,official,,1
+2023-01-01,Yılbaşı,official,,1
+2023-04-23,Ulusal Egemenlik ve Çocuk Bayramı,official,,1
+2023-05-01,Emek ve Dayanışma Günü,official,,1
+2023-05-19,"Atatürk’ü Anma, Gençlik ve Spor Bayramı",official,,1
+2023-07-15,Demokrasi ve Milli Birlik Günü,official,,1
+2023-08-30,Zafer Bayramı,official,,1
+2023-10-29,Cumhuriyet Bayramı,official,,1
+2024-01-01,Yılbaşı,official,,1
+2024-04-23,Ulusal Egemenlik ve Çocuk Bayramı,official,,1
+2024-05-01,Emek ve Dayanışma Günü,official,,1
+2024-05-19,"Atatürk’ü Anma, Gençlik ve Spor Bayramı",official,,1
+2024-07-15,Demokrasi ve Milli Birlik Günü,official,,1
+2024-08-30,Zafer Bayramı,official,,1
+2024-10-29,Cumhuriyet Bayramı,official,,1
+2025-01-01,Yılbaşı,official,,1
+2025-03-30,Ramazan Bayramı,religious,,1
+2025-03-31,Ramazan Bayramı,religious,,1
+2025-04-01,Ramazan Bayramı,religious,,1
+2025-04-23,Ulusal Egemenlik ve Çocuk Bayramı,official,,1
+2025-05-01,Emek ve Dayanışma Günü,official,,1
+2025-05-19,"Atatürk’ü Anma, Gençlik ve Spor Bayramı",official,,1
+2025-06-06,Kurban Bayramı,religious,,1
+2025-06-07,Kurban Bayramı,religious,,1
+2025-06-08,Kurban Bayramı,religious,,1
+2025-06-09,Kurban Bayramı,religious,,1
+2025-07-15,Demokrasi ve Milli Birlik Günü,official,,1
+2025-08-30,Zafer Bayramı,official,,1
+2025-10-28,Cumhuriyet Bayramı (yarım gün),official,pm,1
+2025-10-29,Cumhuriyet Bayramı,official,,1
