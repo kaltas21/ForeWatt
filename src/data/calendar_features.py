@@ -38,7 +38,7 @@ def add_calendar_features_hourly(
           is_holiday_day, is_holiday_hour, holiday_name
     """
 
-    # --- 1) Normalize index to tz-aware Europe/Istanbul & make Pylance happy ---
+    # --- 1) Normalize index to tz-aware Europe/Istanbul ---
     X = X.copy()
     di: pd.DatetimeIndex = _to_datetime_index(X.index)
     X.index = di

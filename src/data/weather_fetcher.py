@@ -655,35 +655,35 @@ if __name__ == "__main__":
     """
     Example usage of the Demand Weather Pipeline
     """
-    
+
     # Initialize fetcher
     fetcher = DemandWeatherFetcher(cache_dir='.cache')
-    
-    # Example 1: Fetch recent 2 weeks for testing
+
+    # Example 1: Fetch recent 1 week for testing
     print("\n" + "="*60)
-    print("EXAMPLE 1: Fetching Recent Data (2 weeks)")
+    print("EXAMPLE 1: Fetching Recent Data (1 week)")
     print("="*60)
-    
+
     recent_features = fetcher.run_pipeline(
-        start_date='2024-10-01',
-        end_date='2024-10-14',
+        start_date='2024-10-25',
+        end_date='2024-11-01',
         output_dir='./data'
     )
-    
+
     print("\nSample of engineered features:")
     print(recent_features.tail(24))  # Last 24 hours
-    
+
     print("\nFeature summary:")
     print(recent_features.describe())
-    
+
     # Example 2: Fetch historical training data (2020-2024)
     print("\n" + "="*60)
     print("EXAMPLE 2: Fetching Historical Training Data")
     print("="*60)
-    
+
     historical_features = fetcher.run_pipeline(
         start_date='2020-01-01',
-        end_date='2024-09-30',
+        end_date='2024-12-31',
         output_dir='./data'
     )
     
