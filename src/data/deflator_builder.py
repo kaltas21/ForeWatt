@@ -1,4 +1,19 @@
 # src/data/deflator_builder.py
+"""
+Deflator Index Builder for Turkish Lira Normalization
+======================================================
+Builds real value deflators using EVDS macroeconomic indicators.
+
+Methods:
+- Baseline: Factor Analysis on TÜFE, ÜFE, M2, TL_FAIZ
+- DFM: Dynamic Factor Model with Kalman smoothing
+
+Output:
+- DID_index: Deflator index (base=100 at BASE_MONTH)
+- Use to convert nominal TL prices to real values
+
+Aligned with EPİAŞ pipeline: 2020-01-01 to 2024-12-31
+"""
 import os
 import pandas as pd
 import numpy as np
@@ -6,17 +21,64 @@ from sklearn.decomposition import FactorAnalysis
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm  # OLS için
 from dateutil.relativedelta import relativedelta
+from pathlib import Path
 
-BRONZE_PATH = "data/bronze/macro/macro_evds_raw.csv"
+# File paths (supports both CSV and Parquet)
+BRONZE_PATH_CSV = "data/bronze/macro/macro_evds_raw.csv"
+BRONZE_PATH_PARQUET = "data/bronze/macro/macro_evds_2020-01-01_2024-12-31.parquet"
 SILVER_DIR = "data/silver/macro"
-BASE_MONTH = "2022-01"  # DID için baz (sonra değiştirilebilir)
+BASE_MONTH = "2022-01"  # DID base month (middle of dataset, YYYY-MM format)
 
 def _safe_pct_change(s, periods=1):
     return s.pct_change(periods=periods)
 
+def _load_bronze_data():
+    """
+    Load bronze EVDS data (prefers Parquet, falls back to CSV).
+
+    Returns:
+        DataFrame with DATE column in 'YYYY-MM' format
+    """
+    # Try Parquet first (faster, aligned with EPİAŞ pipeline)
+    if Path(BRONZE_PATH_PARQUET).exists():
+        print(f"📦 Loading bronze data from Parquet: {BRONZE_PATH_PARQUET}")
+        return pd.read_parquet(BRONZE_PATH_PARQUET)
+
+    # Fallback to CSV
+    if Path(BRONZE_PATH_CSV).exists():
+        print(f"📦 Loading bronze data from CSV: {BRONZE_PATH_CSV}")
+        return pd.read_csv(BRONZE_PATH_CSV)
+
+    # Try synthetic data (for testing)
+    bronze_dir = Path("data/bronze/macro")
+    if bronze_dir.exists():
+        synthetic_files = list(bronze_dir.glob("macro_evds_*_SYNTHETIC.parquet"))
+        if synthetic_files:
+            synthetic_file = synthetic_files[0]
+            print(f"📦 Loading SYNTHETIC bronze data: {synthetic_file}")
+            return pd.read_parquet(synthetic_file)
+
+    raise FileNotFoundError(
+        f"Bronze EVDS data not found. Run evds_fetcher.py first.\n"
+        f"Expected: {BRONZE_PATH_PARQUET} or {BRONZE_PATH_CSV}"
+    )
+
 def build_did_baseline():
+    """
+    Build baseline DID deflator using Factor Analysis.
+
+    Steps:
+    1. Load EVDS data (TÜFE, ÜFE, M2, TL_FAIZ)
+    2. Compute growth rates (MoM, YoY)
+    3. Extract single inflation factor via Factor Analysis
+    4. Calibrate to TÜFE_mom using OLS
+    5. Build cumulative deflator index (base=100 at BASE_MONTH)
+
+    Output:
+        Saves to: data/silver/macro/deflator_did_baseline.csv
+    """
     # 1) Veriyi oku
-    df = pd.read_csv(BRONZE_PATH)
+    df = _load_bronze_data()
 
     # 2) Gerekli kolonlar
     base_cols = [c for c in ["TUFE", "UFE", "M2", "TL_FAIZ"] if c in df.columns]
@@ -88,15 +150,32 @@ def build_did_baseline():
     base_val = out.loc[base_mask, "DID_monthly"].iloc[0] if base_mask.any() else out["DID_monthly"].iloc[0]
     out["DID_index"] = 100.0 * out["DID_monthly"] / base_val
 
-    # 12) Kaydet
+    # 12) Kaydet (dual format: CSV + Parquet)
     os.makedirs(SILVER_DIR, exist_ok=True)
-    out.to_csv(os.path.join(SILVER_DIR, "deflator_did_baseline.csv"), index=False)
-    print("✅ Baseline DID kaydedildi → data/silver/macro/deflator_did_baseline.csv")
+
+    # CSV (human-readable)
+    csv_path = os.path.join(SILVER_DIR, "deflator_did_baseline.csv")
+    out.to_csv(csv_path, index=False)
+    print(f"✅ Baseline DID CSV saved → {csv_path}")
+
+    # Parquet (efficient, aligned with EPİAŞ pipeline)
+    parquet_path = os.path.join(SILVER_DIR, "deflator_did_baseline.parquet")
+    out.to_parquet(parquet_path, engine='pyarrow', compression='snappy')
+    print(f"✅ Baseline DID Parquet saved → {parquet_path}")
 
 
 def build_did_dfm():
+    """
+    Build DFM/Kalman-smoothed DID deflator using Dynamic Factor Model.
+
+    More sophisticated than baseline: uses Kalman filter to smooth factor estimates.
+
+    Output:
+        Saves to: data/silver/macro/deflator_did_dfm.csv
+    """
     import statsmodels.api as sm
-    df = pd.read_csv(BRONZE_PATH).sort_values("DATE")
+    df = _load_bronze_data()
+    df = df.sort_values("DATE")
 
     out = pd.DataFrame({"DATE": df["DATE"]})
     if "TUFE" in df: out["TUFE_mom"] = df["TUFE"].pct_change()
@@ -151,9 +230,18 @@ def build_did_dfm():
     base_val = did.loc[base_mask].iloc[0] if base_mask.any() else did.iloc[0]
     out2["DID_index"] = 100.0 * did / base_val
 
+    # Kaydet (dual format: CSV + Parquet)
     os.makedirs(SILVER_DIR, exist_ok=True)
-    out2.to_csv(os.path.join(SILVER_DIR, "deflator_did_dfm.csv"), index=False)
-    print("✅ DFM/Kalman DID kaydedildi → data/silver/macro/deflator_did_dfm.csv")
+
+    # CSV (human-readable)
+    csv_path = os.path.join(SILVER_DIR, "deflator_did_dfm.csv")
+    out2.to_csv(csv_path, index=False)
+    print(f"✅ DFM/Kalman DID CSV saved → {csv_path}")
+
+    # Parquet (efficient, aligned with EPİAŞ pipeline)
+    parquet_path = os.path.join(SILVER_DIR, "deflator_did_dfm.parquet")
+    out2.to_parquet(parquet_path, engine='pyarrow', compression='snappy')
+    print(f"✅ DFM/Kalman DID Parquet saved → {parquet_path}")
 
 
 if __name__ == "__main__":
