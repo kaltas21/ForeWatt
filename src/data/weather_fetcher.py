@@ -544,25 +544,125 @@ class DemandWeatherFetcher:
         
         return pd.Series(wind_chill, index=temp_c.index)
     
-    def save_to_parquet(
-        self, 
-        df: pd.DataFrame, 
+    def save_dual_format(
+        self,
+        df: pd.DataFrame,
         filepath: str,
         layer: str = 'silver'
     ):
         """
-        Save DataFrame to parquet file (medallion architecture).
-        
+        Save DataFrame in dual format: Parquet (primary) + CSV (secondary).
+
         Args:
             df: DataFrame to save
-            filepath: Output file path
+            filepath: Output file path (without extension)
             layer: Data layer ('bronze', 'silver', or 'gold')
         """
         filepath = Path(filepath)
         filepath.parent.mkdir(parents=True, exist_ok=True)
-        
-        df.to_parquet(filepath, engine='pyarrow', compression='snappy')
-        logger.info(f"✓ Saved {layer} layer data to {filepath} ({len(df)} rows)")
+
+        # Remove extension if provided
+        if filepath.suffix:
+            filepath = filepath.with_suffix('')
+
+        # Save as Parquet (primary - fast, compact)
+        parquet_path = filepath.with_suffix('.parquet')
+        df.to_parquet(parquet_path, engine='pyarrow', compression='snappy')
+        logger.info(f"✓ Saved {layer} Parquet: {parquet_path.name} ({len(df)} rows)")
+
+        # Save as CSV (secondary - human-readable)
+        csv_path = filepath.with_suffix('.csv')
+        df.to_csv(csv_path, index=True)
+        logger.info(f"✓ Saved {layer} CSV: {csv_path.name} ({len(df)} rows)")
+
+    def data_exists(
+        self,
+        start_date: str,
+        end_date: str,
+        output_dir: str = './data',
+        layer: str = 'gold'
+    ) -> bool:
+        """
+        Check if weather data already exists for the given date range.
+
+        Args:
+            start_date: Start date 'YYYY-MM-DD'
+            end_date: End date 'YYYY-MM-DD'
+            output_dir: Output directory
+            layer: Which layer to check ('bronze', 'silver', 'gold')
+
+        Returns:
+            True if data exists (Parquet or CSV), False otherwise
+        """
+        output_path = Path(output_dir)
+
+        if layer == 'bronze':
+            # Check if all city files exist
+            for city_name in self.DEMAND_CITIES.keys():
+                base_path = output_path / 'bronze' / 'demand_weather' / f"{city_name.lower()}_{start_date}_{end_date}"
+                parquet_exists = base_path.with_suffix('.parquet').exists()
+                csv_exists = base_path.with_suffix('.csv').exists()
+
+                if not (parquet_exists or csv_exists):
+                    return False
+            return True
+
+        elif layer == 'silver':
+            base_path = output_path / 'silver' / 'demand_weather' / f'national_{start_date}_{end_date}'
+
+        elif layer == 'gold':
+            base_path = output_path / 'gold' / 'demand_features' / f'demand_features_{start_date}_{end_date}'
+
+        else:
+            return False
+
+        parquet_exists = base_path.with_suffix('.parquet').exists()
+        csv_exists = base_path.with_suffix('.csv').exists()
+
+        return parquet_exists or csv_exists
+
+    def load_existing_data(
+        self,
+        start_date: str,
+        end_date: str,
+        output_dir: str = './data',
+        layer: str = 'gold'
+    ) -> pd.DataFrame:
+        """
+        Load existing weather data from disk.
+
+        Args:
+            start_date: Start date 'YYYY-MM-DD'
+            end_date: End date 'YYYY-MM-DD'
+            output_dir: Output directory
+            layer: Which layer to load ('silver' or 'gold')
+
+        Returns:
+            DataFrame with weather data
+        """
+        output_path = Path(output_dir)
+
+        if layer == 'silver':
+            base_path = output_path / 'silver' / 'demand_weather' / f'national_{start_date}_{end_date}'
+        elif layer == 'gold':
+            base_path = output_path / 'gold' / 'demand_features' / f'demand_features_{start_date}_{end_date}'
+        else:
+            raise ValueError(f"Unsupported layer: {layer}")
+
+        # Try Parquet first (faster)
+        parquet_path = base_path.with_suffix('.parquet')
+        if parquet_path.exists():
+            logger.info(f"Loading existing {layer} data from: {parquet_path.name}")
+            return pd.read_parquet(parquet_path)
+
+        # Fallback to CSV
+        csv_path = base_path.with_suffix('.csv')
+        if csv_path.exists():
+            logger.info(f"Loading existing {layer} data from: {csv_path.name}")
+            df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
+            return df
+
+        raise FileNotFoundError(f"No data found for {start_date} to {end_date} in {layer} layer")
     
     def run_pipeline(
         self,
@@ -570,7 +670,8 @@ class DemandWeatherFetcher:
         end_date: str,
         output_dir: str = './data',
         delay_between_requests: float = 7.0,
-        retry_failed: bool = True
+        retry_failed: bool = True,
+        force_refetch: bool = False
     ) -> pd.DataFrame:
         """
         Run the complete demand weather pipeline: fetch → aggregate → engineer features.
@@ -581,6 +682,7 @@ class DemandWeatherFetcher:
             output_dir: Output directory for parquet files
             delay_between_requests: Seconds to wait between API calls (default 7s)
             retry_failed: If True, retry failed cities once after 65s delay
+            force_refetch: If True, fetch data even if it already exists
 
         Returns:
             DataFrame with engineered demand features
@@ -591,6 +693,23 @@ class DemandWeatherFetcher:
         logger.info("DEMAND WEATHER PIPELINE - Starting")
         logger.info(f"Period: {start_date} to {end_date}")
         logger.info("="*60)
+
+        # Check if data already exists
+        if not force_refetch and self.data_exists(start_date, end_date, output_dir, layer='gold'):
+            logger.info("✓ Weather data already exists for this period. Loading from disk...")
+            logger.info("  (Use force_refetch=True to re-fetch)")
+            demand_features = self.load_existing_data(start_date, end_date, output_dir, layer='gold')
+
+            logger.info("="*60)
+            logger.info("DEMAND WEATHER PIPELINE - Loaded from Cache")
+            logger.info(f"Records: {len(demand_features):,} hours")
+            logger.info(f"Features: {len(demand_features.columns)} columns")
+            logger.info("="*60)
+
+            return demand_features
+
+        if force_refetch:
+            logger.info("⚠ force_refetch=True: Re-fetching data...")
 
         # Step 1: Fetch raw city data (BRONZE layer)
         city_data = self.fetch_all_cities(start_date, end_date, delay_between_requests=delay_between_requests)
@@ -616,35 +735,104 @@ class DemandWeatherFetcher:
                 city_data.update(retry_data)
                 logger.info(f"After retry: {len(city_data)}/{len(all_cities)} cities fetched successfully")
 
-        # Save bronze layer
+        # Save bronze layer (dual format: Parquet + CSV)
         bronze_dir = output_path / 'bronze' / 'demand_weather'
         for city_name, df in city_data.items():
-            self.save_to_parquet(
+            self.save_dual_format(
                 df,
-                bronze_dir / f"{city_name.lower()}_{start_date}_{end_date}.parquet",
+                bronze_dir / f"{city_name.lower()}_{start_date}_{end_date}",
                 layer='bronze'
             )
-        
+
         # Step 2: Aggregate to national level (SILVER layer)
         national_weather = self.create_national_features(city_data)
-        
-        # Save silver layer
-        silver_path = output_path / 'silver' / 'demand_weather' / f'national_{start_date}_{end_date}.parquet'
-        self.save_to_parquet(national_weather, silver_path, layer='silver')
-        
+
+        # Save silver layer (dual format: Parquet + CSV)
+        silver_path = output_path / 'silver' / 'demand_weather' / f'national_{start_date}_{end_date}'
+        self.save_dual_format(national_weather, silver_path, layer='silver')
+
         # Step 3: Engineer demand features (GOLD layer)
         demand_features = self.create_demand_features(national_weather)
-        
-        # Save gold layer
-        gold_path = output_path / 'gold' / 'demand_features' / f'demand_features_{start_date}_{end_date}.parquet'
-        self.save_to_parquet(demand_features, gold_path, layer='gold')
+
+        # Save gold layer (dual format: Parquet + CSV)
+        gold_path = output_path / 'gold' / 'demand_features' / f'demand_features_{start_date}_{end_date}'
+        self.save_dual_format(demand_features, gold_path, layer='gold')
         
         logger.info("="*60)
         logger.info("DEMAND WEATHER PIPELINE - Completed Successfully")
-        logger.info(f"Output: {gold_path}")
+        logger.info(f"Output: {gold_path}.parquet / {gold_path}.csv")
+        logger.info(f"Records: {len(demand_features):,} hours")
+        logger.info(f"Features: {len(demand_features.columns)} columns")
         logger.info("="*60)
         
         return demand_features
+
+
+# ═══════════════════════════════════════════════════════════
+# CONVENIENCE FUNCTIONS
+# ═══════════════════════════════════════════════════════════
+
+def load_weather_features(
+    start_date: str = "2020-01-01",
+    end_date: str = "2024-12-31",
+    output_dir: str = './data',
+    layer: str = 'gold'
+) -> pd.DataFrame:
+    """
+    Load weather features from disk (convenience function).
+
+    Args:
+        start_date: Start date 'YYYY-MM-DD'
+        end_date: End date 'YYYY-MM-DD'
+        output_dir: Output directory
+        layer: 'silver' (national aggregates) or 'gold' (engineered features)
+
+    Returns:
+        DataFrame with weather features
+
+    Example:
+        >>> from src.data.weather_fetcher import load_weather_features
+        >>> df = load_weather_features('2020-01-01', '2024-12-31', layer='gold')
+        >>> print(df[['temp_national', 'HDD', 'CDD']].head())
+    """
+    fetcher = DemandWeatherFetcher()
+    return fetcher.load_existing_data(start_date, end_date, output_dir, layer)
+
+
+def fetch_weather_features(
+    start_date: str = "2020-01-01",
+    end_date: str = "2024-12-31",
+    output_dir: str = './data',
+    force_refetch: bool = False,
+    delay_between_requests: float = 7.0
+) -> pd.DataFrame:
+    """
+    Fetch or load weather features (convenience function).
+
+    Args:
+        start_date: Start date 'YYYY-MM-DD'
+        end_date: End date 'YYYY-MM-DD'
+        output_dir: Output directory
+        force_refetch: Force re-fetch even if data exists
+        delay_between_requests: API rate limit delay
+
+    Returns:
+        DataFrame with engineered demand features
+
+    Example:
+        >>> from src.data.weather_fetcher import fetch_weather_features
+        >>> df = fetch_weather_features('2020-01-01', '2024-12-31')
+        >>> # First run: Fetches from API (~15 min)
+        >>> # Second run: Loads from disk instantly!
+    """
+    fetcher = DemandWeatherFetcher()
+    return fetcher.run_pipeline(
+        start_date=start_date,
+        end_date=end_date,
+        output_dir=output_dir,
+        force_refetch=force_refetch,
+        delay_between_requests=delay_between_requests
+    )
 
 
 # ═══════════════════════════════════════════════════════════
@@ -667,8 +855,17 @@ if __name__ == "__main__":
     recent_features = fetcher.run_pipeline(
         start_date='2024-10-25',
         end_date='2024-11-01',
-        output_dir='./data'
+        output_dir='./data',
+        force_refetch=False  # Will load from disk if already exists
     )
+
+    # If you need to re-fetch (e.g., data was incomplete):
+    # recent_features = fetcher.run_pipeline(
+    #     start_date='2024-10-25',
+    #     end_date='2024-11-01',
+    #     output_dir='./data',
+    #     force_refetch=True  # Force re-fetch even if data exists
+    # )
 
     print("\nSample of engineered features:")
     print(recent_features.tail(24))  # Last 24 hours
@@ -680,11 +877,14 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("EXAMPLE 2: Fetching Historical Training Data")
     print("="*60)
+    print("Note: This will take ~15-20 minutes on first run (10 cities × 5 years)")
+    print("      Subsequent runs will load from disk instantly!")
 
     historical_features = fetcher.run_pipeline(
         start_date='2020-01-01',
         end_date='2024-12-31',
-        output_dir='./data'
+        output_dir='./data',
+        force_refetch=False  # Load from disk if exists (fast!)
     )
     
     print(f"\n✓ Historical data: {len(historical_features)} hourly records")

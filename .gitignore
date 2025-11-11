@@ -45,10 +45,10 @@ secrets/
 # Data Directories (Medallion Architecture)
 # ══════════════════════════════════════════════════════════
 # Ignore actual data files but keep directory structure
-data/bronze/**/*
-data/silver/**/*
-data/gold/**/*
-data/unused/**/*
+# data/bronze/**/*
+# data/silver/**/*
+# data/gold/**/*
+# data/unused/**/*
 
 # Keep directory structure with .gitkeep
 !data/bronze/.gitkeep
