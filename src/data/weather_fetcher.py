@@ -143,95 +143,121 @@ class DemandWeatherFetcher:
         self.client = openmeteo_requests.Client(session=retry_session)
         
         logger.info(f"Initialized DemandWeatherFetcher with {len(self.DEMAND_CITIES)} cities (49.25% population coverage)")
-    
+
+    def _split_date_range(self, start_date: str, end_date: str, max_days: int = 365) -> List[Tuple[str, str]]:
+        """Split date range into chunks to respect API limits."""
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+        end = datetime.strptime(end_date, '%Y-%m-%d')
+
+        chunks = []
+        current = start
+
+        while current <= end:
+            chunk_end = min(current + timedelta(days=max_days - 1), end)
+            chunks.append((
+                current.strftime('%Y-%m-%d'),
+                chunk_end.strftime('%Y-%m-%d')
+            ))
+            current = chunk_end + timedelta(days=1)
+
+        return chunks
+
     def fetch_city_weather(
-        self, 
+        self,
         city_name: str,
-        start_date: str, 
+        start_date: str,
         end_date: str,
-        use_forecast_api: bool = False
+        use_forecast_api: bool = False,
+        retry_attempts: int = 3,
+        retry_delay: float = 5.0
     ) -> pd.DataFrame:
-        """
-        Fetch weather data for a single city.
-        
-        Args:
-            city_name: Name of the city (must be in DEMAND_CITIES)
-            start_date: Start date in 'YYYY-MM-DD' format
-            end_date: End date in 'YYYY-MM-DD' format
-            use_forecast_api: If True, use forecast API with past_days (for recent data)
-            
-        Returns:
-            DataFrame with hourly weather data
-        """
+        """Fetch weather data for a single city with retry logic and chunking."""
         if city_name not in self.DEMAND_CITIES:
             raise ValueError(f"City {city_name} not found in DEMAND_CITIES")
-        
+
         city_info = self.DEMAND_CITIES[city_name]
-        
-        # Select appropriate API endpoint
-        if use_forecast_api:
-            url = "https://api.open-meteo.com/v1/forecast"
-            # Calculate past_days from start_date
-            past_days = (datetime.now().date() - datetime.strptime(start_date, '%Y-%m-%d').date()).days
-            params = {
-                "latitude": city_info['lat'],
-                "longitude": city_info['lon'],
-                "hourly": self.HOURLY_VARIABLES,
-                "timezone": "Europe/Istanbul",
-                "past_days": min(past_days, 92),  # Max 92 days for forecast API
-            }
-        else:
-            url = "https://archive-api.open-meteo.com/v1/archive"
-            params = {
-                "latitude": city_info['lat'],
-                "longitude": city_info['lon'],
-                "start_date": start_date,
-                "end_date": end_date,
-                "hourly": self.HOURLY_VARIABLES,
-                "timezone": "Europe/Istanbul",
-            }
-        
+        date_chunks = self._split_date_range(start_date, end_date, max_days=365)
+
         logger.info(f"Fetching weather for {city_name} ({start_date} to {end_date})...")
-        
-        try:
-            responses = self.client.weather_api(url, params=params)
-            response = responses[0]
-            
-            # Process hourly data
-            hourly = response.Hourly()
-            
-            # Create time index
-            time_range = pd.date_range(
-                start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-                end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-                freq=pd.Timedelta(seconds=hourly.Interval()),
-                inclusive="left"
-            )
-            
-            # Convert to Europe/Istanbul timezone
-            time_range = time_range.tz_convert('Europe/Istanbul')
-            
-            # Extract all variables
-            data = {"datetime": time_range}
-            for i, var in enumerate(self.HOURLY_VARIABLES):
-                values = hourly.Variables(i).ValuesAsNumpy()
-                data[var] = values
-            
-            df = pd.DataFrame(data)
-            df.set_index('datetime', inplace=True)
-            
-            # Add city metadata
-            df['city'] = city_name
-            df['region'] = city_info['region']
-            df['pop_weight'] = city_info['pop_weight']
-            
-            logger.info(f"✓ Fetched {len(df)} hourly records for {city_name}")
-            
-            return df
-            
-        except Exception as e:
-            logger.error(f"✗ Failed to fetch data for {city_name}: {str(e)}")
-            raise
+        if len(date_chunks) > 1:
+            logger.info(f"  Splitting into {len(date_chunks)} yearly chunks")
+
+        all_data = []
+
+        for chunk_idx, (chunk_start, chunk_end) in enumerate(date_chunks, 1):
+            if len(date_chunks) > 1 and chunk_idx % 5 == 1:
+                progress = (chunk_idx / len(date_chunks)) * 100
+                logger.info(f"  Progress: {progress:.0f}% (chunk {chunk_idx}/{len(date_chunks)})")
+
+            for attempt in range(1, retry_attempts + 1):
+                try:
+                    if use_forecast_api:
+                        url = "https://api.open-meteo.com/v1/forecast"
+                        past_days = (datetime.now().date() - datetime.strptime(chunk_start, '%Y-%m-%d').date()).days
+                        params = {
+                            "latitude": city_info['lat'],
+                            "longitude": city_info['lon'],
+                            "hourly": self.HOURLY_VARIABLES,
+                            "timezone": "Europe/Istanbul",
+                            "past_days": min(past_days, 92),
+                        }
+                    else:
+                        url = "https://archive-api.open-meteo.com/v1/archive"
+                        params = {
+                            "latitude": city_info['lat'],
+                            "longitude": city_info['lon'],
+                            "start_date": chunk_start,
+                            "end_date": chunk_end,
+                            "hourly": self.HOURLY_VARIABLES,
+                            "timezone": "Europe/Istanbul",
+                        }
+
+                    responses = self.client.weather_api(url, params=params)
+                    response = responses[0]
+                    hourly = response.Hourly()
+
+                    time_range = pd.date_range(
+                        start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
+                        end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
+                        freq=pd.Timedelta(seconds=hourly.Interval()),
+                        inclusive="left"
+                    )
+                    time_range = time_range.tz_convert('Europe/Istanbul')
+
+                    data = {"datetime": time_range}
+                    for i, var in enumerate(self.HOURLY_VARIABLES):
+                        values = hourly.Variables(i).ValuesAsNumpy()
+                        data[var] = values
+
+                    df = pd.DataFrame(data)
+                    df.set_index('datetime', inplace=True)
+                    df['city'] = city_name
+                    df['region'] = city_info['region']
+                    df['pop_weight'] = city_info['pop_weight']
+
+                    all_data.append(df)
+                    break
+
+                except Exception as e:
+                    error_msg = str(e)[:200]
+                    if attempt == retry_attempts:
+                        logger.error(f"  Failed after {retry_attempts} attempts: {error_msg}")
+                        raise
+
+                    if attempt < retry_attempts:
+                        wait_time = retry_delay * (2 ** (attempt - 1))
+                        time.sleep(wait_time)
+
+            if chunk_idx < len(date_chunks):
+                time.sleep(2)
+
+        if not all_data:
+            logger.warning(f"No data collected for {city_name}")
+            return pd.DataFrame()
+
+        combined_df = pd.concat(all_data, ignore_index=False)
+        logger.info(f"  ✓ Total fetched: {len(combined_df)} records for {city_name}")
+        return combined_df
     
     def fetch_all_cities(
         self,
@@ -240,57 +266,42 @@ class DemandWeatherFetcher:
         cities: Optional[List[str]] = None,
         delay_between_requests: float = 7.0
     ) -> Dict[str, pd.DataFrame]:
-        """
-        Fetch weather data for all (or specified) cities.
-
-        Args:
-            start_date: Start date in 'YYYY-MM-DD' format
-            end_date: End date in 'YYYY-MM-DD' format
-            cities: Optional list of city names. If None, fetches all cities.
-            delay_between_requests: Seconds to wait between API calls (default 7s for free tier rate limits)
-
-        Returns:
-            Dictionary mapping city names to their weather DataFrames
-        """
+        """Fetch weather data for all (or specified) cities."""
         if cities is None:
             cities = list(self.DEMAND_CITIES.keys())
 
         city_data = {}
         failed_cities = []
 
-        # Check if we need forecast API (within last 5 days)
         days_ago = (datetime.now().date() - datetime.strptime(end_date, '%Y-%m-%d').date()).days
         use_forecast_api = days_ago < 5
 
         if use_forecast_api:
-            logger.warning(f"End date is within 5-day delay. Using forecast API with past_days.")
+            logger.warning(f"End date is within 5-day delay. Using forecast API.")
 
-        # Inform user about rate limiting strategy
-        logger.info(f"Fetching {len(cities)} cities with {delay_between_requests}s delay between requests to respect API rate limits")
+        logger.info(f"Fetching {len(cities)} cities with {delay_between_requests}s delay between requests")
 
         for idx, city in enumerate(cities, 1):
             try:
                 df = self.fetch_city_weather(city, start_date, end_date, use_forecast_api)
                 city_data[city] = df
 
-                # Add delay between requests (except after last city)
                 if idx < len(cities):
-                    logger.debug(f"Waiting {delay_between_requests}s before next request...")
                     time.sleep(delay_between_requests)
 
             except Exception as e:
-                logger.error(f"Skipping {city} due to error: {str(e)}")
+                error_msg = str(e)[:200]
+                logger.error(f"Skipping {city}: {error_msg}")
                 failed_cities.append(city)
 
-                # If rate limit error, wait longer before retry
                 if "rate limit" in str(e).lower() or "minutely" in str(e).lower():
-                    logger.warning(f"Rate limit detected. Waiting 65 seconds before continuing...")
-                    time.sleep(65)  # Wait just over 1 minute
+                    logger.warning(f"Rate limit detected. Waiting 65s...")
+                    time.sleep(65)
 
         if failed_cities:
-            logger.warning(f"Failed to fetch data for: {', '.join(failed_cities)}")
+            logger.warning(f"Failed cities: {', '.join(failed_cities)}")
 
-        logger.info(f"Successfully fetched data for {len(city_data)}/{len(cities)} cities")
+        logger.info(f"✓ Fetched {len(city_data)}/{len(cities)} cities successfully")
         return city_data
     
     def create_national_features(self, city_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
