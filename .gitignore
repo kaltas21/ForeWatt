@@ -67,7 +67,14 @@ mlruns/
 mlflow/
 mlflow.db
 mlflow-artifacts/
+mlartifacts/
+mlflow_server.log
 *.db-journal
+
+# ══════════════════════════════════════════════════════════
+# Model Training Artifacts
+# ══════════════════════════════════════════════════════════
+catboost_info/
 
 # ══════════════════════════════════════════════════════════
 # Jupyter Notebooks
