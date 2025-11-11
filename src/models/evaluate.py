@@ -16,7 +16,7 @@ Date: November 2025
 
 import numpy as np
 import pandas as pd
-from typing import Dict
+from typing import Dict, Optional
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +34,7 @@ def mean_absolute_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     Returns:
         MAE value
     """
-    return np.mean(np.abs(y_true - y_pred))
+    return float(np.mean(np.abs(y_true - y_pred)))
 
 
 def root_mean_squared_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -48,7 +48,7 @@ def root_mean_squared_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     Returns:
         RMSE value
     """
-    return np.sqrt(np.mean((y_true - y_pred) ** 2))
+    return float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
 
 
 def mean_absolute_percentage_error(y_true: np.ndarray, y_pred: np.ndarray, epsilon: float = 1e-10) -> float:
@@ -65,7 +65,7 @@ def mean_absolute_percentage_error(y_true: np.ndarray, y_pred: np.ndarray, epsil
     """
     # Avoid division by zero
     y_true = np.where(np.abs(y_true) < epsilon, epsilon, y_true)
-    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+    return float(np.mean(np.abs((y_true - y_pred) / y_true)) * 100)
 
 
 def mean_absolute_scaled_error(
@@ -103,9 +103,9 @@ def mean_absolute_scaled_error(
 
     # Avoid division by zero
     if mae_naive == 0:
-        return np.inf if mae_forecast > 0 else 0.0
+        return float('inf') if mae_forecast > 0 else 0.0
 
-    return mae_forecast / mae_naive
+    return float(mae_forecast / mae_naive)
 
 
 def symmetric_mean_absolute_percentage_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -125,13 +125,13 @@ def symmetric_mean_absolute_percentage_error(y_true: np.ndarray, y_pred: np.ndar
     denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
     # Avoid division by zero
     denominator = np.where(denominator == 0, 1e-10, denominator)
-    return np.mean(numerator / denominator) * 100
+    return float(np.mean(numerator / denominator) * 100)
 
 
 def evaluate_forecast(
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    y_train: np.ndarray = None,
+    y_train: Optional[np.ndarray] = None,
     seasonality: int = 24,
     model_name: str = "Model"
 ) -> Dict[str, float]:
@@ -216,7 +216,7 @@ def forecast_bias(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     Returns:
         Mean bias
     """
-    return np.mean(y_pred - y_true)
+    return float(np.mean(y_pred - y_true))
 
 
 if __name__ == '__main__':
