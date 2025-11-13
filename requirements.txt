@@ -10,6 +10,7 @@ requests>=2.31.0                # HTTP library
 requests-cache>=1.1.0           # Request caching for weather data
 retry-requests>=2.0.0           # Retry logic for API calls
 eptr2>=0.1.0                    # EPİAŞ Transparency Platform client
+evds>=0.2.0                     # Turkish Central Bank (TCMB/EVDS) API client
 
 # ═══════════════════════════════════════════════════════════
 # DATA PROCESSING & STORAGE
@@ -27,6 +28,7 @@ darts>=0.27.0                   # Core forecasting library (N-HiTS, ensemble)
 prophet>=1.1.5                  # Facebook Prophet baseline
 neuralforecast>=1.6.0           # N-HiTS, PatchTST, TFT implementations
 statsforecast>=1.7.0            # Statistical baselines (ARIMA, ETS)
+statsmodels>=0.14.0             # SARIMAX, OLS, statistical models
 pytorch-lightning>=2.1.0        # Deep learning framework
 torch>=2.1.0                    # PyTorch backend
 sktime>=0.25.0                  # Time series utilities
