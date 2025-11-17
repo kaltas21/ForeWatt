@@ -37,6 +37,8 @@ try:
 except ImportError:
     logging.warning("NeuralForecast not installed. Install with: pip install neuralforecast")
 
+from src.models.deep_learning.hardware_config import get_hardware_config
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,8 @@ class NHiTSTrainer:
         target: str = 'consumption',
         horizon: int = 24,
         input_size: int = 168,
-        random_seed: int = 42
+        random_seed: int = 42,
+        device: Optional[str] = None
     ):
         """
         Initialize N-HiTS trainer.
@@ -61,6 +64,7 @@ class NHiTSTrainer:
             horizon: Forecast horizon (number of steps ahead)
             input_size: Lookback window size
             random_seed: Random seed for reproducibility
+            device: Device to use ('cuda', 'mps', 'cpu', or None for auto-detect)
         """
         self.target = target
         self.horizon = horizon
@@ -68,6 +72,15 @@ class NHiTSTrainer:
         self.random_seed = random_seed
         self.model = None
         self.best_params = None
+
+        # Hardware configuration
+        self.hw_config = get_hardware_config(force_device=device)
+        self.device = self.hw_config.device
+        self.device_type = self.hw_config.device_type
+
+        logger.info(f"N-HiTS Trainer initialized with device: {self.device_type.upper()}")
+        if self.hw_config.memory_gb:
+            logger.info(f"Available memory: {self.hw_config.memory_gb:.2f} GB")
 
     def get_search_space(self) -> Dict[str, Any]:
         """
@@ -158,6 +171,17 @@ class NHiTSTrainer:
         Returns:
             Configured N-HiTS model
         """
+        # Determine accelerator for PyTorch Lightning
+        if self.device_type == 'cuda':
+            accelerator = 'gpu'
+            devices = 1  # Use first GPU
+        elif self.device_type == 'mps':
+            accelerator = 'mps'  # Apple Silicon
+            devices = 1
+        else:
+            accelerator = 'cpu'
+            devices = 'auto'
+
         model = NHITS(
             h=self.horizon,
             input_size=self.input_size,
@@ -177,8 +201,13 @@ class NHiTSTrainer:
             random_seed=self.random_seed,
             loss=MAE(),
             valid_loss=SMAPE(),
-            scaler_type='robust'
+            scaler_type='robust',
+            # Hardware configuration
+            accelerator=accelerator,
+            devices=devices
         )
+
+        logger.info(f"N-HiTS model created with accelerator={accelerator}, devices={devices}")
 
         return model
 
