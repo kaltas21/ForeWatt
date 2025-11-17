@@ -38,6 +38,8 @@ try:
 except ImportError:
     logging.warning("NeuralForecast not installed. Install with: pip install neuralforecast")
 
+from src.models.deep_learning.hardware_config import get_hardware_config
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -52,7 +54,8 @@ class PatchTSTTrainer:
         target: str = 'consumption',
         horizon: int = 24,
         input_size: int = 168,
-        random_seed: int = 42
+        random_seed: int = 42,
+        device: Optional[str] = None
     ):
         """
         Initialize PatchTST trainer.
@@ -62,6 +65,7 @@ class PatchTSTTrainer:
             horizon: Forecast horizon
             input_size: Lookback window size
             random_seed: Random seed
+            device: Device to use ('cuda', 'mps', 'cpu', or None for auto-detect)
         """
         self.target = target
         self.horizon = horizon
@@ -69,6 +73,12 @@ class PatchTSTTrainer:
         self.random_seed = random_seed
         self.model = None
         self.best_params = None
+
+        # Hardware configuration
+        self.hw_config = get_hardware_config(force_device=device)
+        self.device = self.hw_config.device
+        self.device_type = self.hw_config.device_type
+        logger.info(f"Using device: {self.device_type.upper()}")
 
     def get_search_space(self) -> Dict[str, Any]:
         """
@@ -153,6 +163,17 @@ class PatchTSTTrainer:
         Returns:
             Configured PatchTST model
         """
+        # Configure hardware acceleration
+        if self.device_type == 'cuda':
+            accelerator = 'gpu'
+            devices = 1
+        elif self.device_type == 'mps':
+            accelerator = 'mps'
+            devices = 1
+        else:
+            accelerator = 'cpu'
+            devices = 'auto'
+
         model = PatchTST(
             h=self.horizon,
             input_size=self.input_size,
@@ -174,9 +195,12 @@ class PatchTSTTrainer:
             scaler_type='robust',
             revin=True,  # Reversible instance normalization
             affine=True,
-            subtract_last=False
+            subtract_last=False,
+            accelerator=accelerator,
+            devices=devices
         )
 
+        logger.info(f"PatchTST model configured for {self.device_type.upper()} acceleration")
         return model
 
     def prepare_neuralforecast_data(
