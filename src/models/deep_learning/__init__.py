@@ -21,10 +21,10 @@ Date: November 2025
 
 from .feature_preparer import DeepLearningFeaturePreparer
 from .cv_strategy import ExpandingWindowCV
-from .conformal import SplitConformalPredictor
+# from .conformal import SplitConformalPredictor  # Disabled: mapie import issue
 
 __all__ = [
     'DeepLearningFeaturePreparer',
     'ExpandingWindowCV',
-    'SplitConformalPredictor'
+    # 'SplitConformalPredictor'  # Disabled: mapie import issue
 ]
