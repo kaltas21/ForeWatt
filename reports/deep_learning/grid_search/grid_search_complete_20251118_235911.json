@@ -1,0 +1,198 @@
+{
+  "consumption": {
+    "nhits": {
+      "nhits_light": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_balanced": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_deep": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_wide": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_narrow_deep": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_price_optimized": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_demand_optimized": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_ultra_light": {
+        "error": "list index out of range"
+      },
+      "nhits_ultra_deep": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_regularized": {
+        "error": "Block type trend not found!"
+      }
+    },
+    "tft": {
+      "tft_light": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_balanced": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_deep": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_wide": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_narrow_deep": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_price_optimized": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_demand_optimized": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_ultra_light": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_ultra_deep": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "tft_regularized": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      }
+    },
+    "patchtst": {
+      "patchtst_light": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_balanced": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_deep": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_wide": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_narrow_deep": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_price_optimized": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_demand_optimized": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_ultra_light": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_ultra_deep": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      },
+      "patchtst_regularized": {
+        "error": "Found missing values in ['consumption_lag_1h', 'consumption_lag_2h', 'consumption_lag_3h', 'consumption_lag_6h', 'consumption_lag_12h', 'consumption_lag_24h', 'consumption_lag_48h', 'consumption_lag_168h', 'consumption_rolling_std_24h', 'consumption_rolling_std_168h', 'temperature_lag_1h', 'temp_change_24h', 'price_ptf_lag_24h', 'price_ptf_lag_168h']."
+      }
+    }
+  },
+  "price_real": {
+    "nhits": {
+      "nhits_light": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_balanced": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_deep": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_wide": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_narrow_deep": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_price_optimized": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_demand_optimized": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_ultra_light": {
+        "error": "list index out of range"
+      },
+      "nhits_ultra_deep": {
+        "error": "Block type trend not found!"
+      },
+      "nhits_regularized": {
+        "error": "Block type trend not found!"
+      }
+    },
+    "tft": {
+      "tft_light": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_balanced": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_deep": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_wide": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_narrow_deep": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_price_optimized": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_demand_optimized": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_ultra_light": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_ultra_deep": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "tft_regularized": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      }
+    },
+    "patchtst": {
+      "patchtst_light": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_balanced": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_deep": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_wide": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_narrow_deep": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_price_optimized": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_demand_optimized": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_ultra_light": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_ultra_deep": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      },
+      "patchtst_regularized": {
+        "error": "Found missing values in ['temperature_lag_1h', 'temp_change_24h', 'consumption_lag_24h', 'consumption_lag_168h']."
+      }
+    }
+  }
+}

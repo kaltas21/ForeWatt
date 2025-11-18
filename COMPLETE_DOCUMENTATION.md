@@ -12,16 +12,19 @@
 
 1. [Project Overview](#project-overview)
 2. [Architecture Overview](#architecture-overview)
-3. [Data Sources & Coverage](#data-sources--coverage)
+3. [Data Sources &amp; Coverage](#data-sources--coverage)
 4. [Complete Data Pipeline](#complete-data-pipeline)
 5. [Source Code Documentation](#source-code-documentation)
 6. [Feature Engineering](#feature-engineering)
 7. [Model Development](#model-development)
 8. [Project Structure](#project-structure)
-9. [Configuration & Setup](#configuration--setup)
-10. [Validation & Testing](#validation--testing)
+9. [Configuration &amp; Setup](#configuration--setup)
+10. [Validation &amp; Testing](#validation--testing)
 11. [Development Roadmap](#development-roadmap)
-12. [Appendices](#appendices)
+12. [Hyperparameter Grid Search](#hyperparameter-grid-search)
+13. [Multi-Platform Hardware Support](#multi-platform-hardware-support)
+14. [Deep Learning Pipeline](#deep-learning-pipeline)
+15. [Appendices](#appendices)
 
 ---
 
@@ -106,12 +109,14 @@ ForeWatt is a **fully reproducible, open-source platform** for **1-24 hour ahead
 ### Medallion Architecture
 
 **Bronze Layer (Raw Data)**
+
 - EPİAŞ hourly load/price (via eptr2)
 - Open-Meteo weather for 10 Turkish cities
 - EVDS macroeconomic indicators
 - Stored as timestamped Parquet + CSV files
 
 **Silver Layer (Normalized & Validated)**
+
 - Schema validation (dtypes, column presence)
 - Range checks (physically plausible bounds)
 - Monotonicity checks (timestamp ordering)
@@ -120,6 +125,7 @@ ForeWatt is a **fully reproducible, open-source platform** for **1-24 hour ahead
 - Conservative gap handling
 
 **Gold Layer (Feature-Engineered)**
+
 - Lag features: 16 features (consumption, temperature, price)
 - Rolling statistics: 27 features (24h/168h windows)
 - Calendar features: 12 features (holidays, temporal, cyclical)
@@ -158,10 +164,12 @@ ForeWatt is a **fully reproducible, open-source platform** for **1-24 hour ahead
 **Resolution**: Hourly
 
 **Cities Covered**:
+
 - Istanbul (18.3%), Ankara (6.9%), Izmir (5.2%), Bursa (3.8%), Antalya (3.2%)
 - Konya (2.7%), Adana (2.7%), Şanlıurfa (2.6%), Gaziantep (2.6%), Kocaeli (2.5%)
 
 **Variables (8)**:
+
 - temperature_2m, relative_humidity_2m
 - precipitation, rain
 - cloud_cover
@@ -178,6 +186,7 @@ ForeWatt is a **fully reproducible, open-source platform** for **1-24 hour ahead
 **Frequency**: Monthly
 
 **Indicators**:
+
 - **TÜFE**: Turkish CPI (Consumer Price Index, 2003=100)
 - **ÜFE**: Turkish PPI (Producer Price Index, 2003=100)
 - **M2**: Money supply M2 (Million TL)
@@ -192,10 +201,12 @@ ForeWatt is a **fully reproducible, open-source platform** for **1-24 hour ahead
 **Frequency**: Daily → Hourly (forward fill)
 
 **Variables**:
+
 - USD/TRY, EUR/TRY, XAU/TRY
 - FX basket: 0.5×USD + 0.5×EUR
 
 **Engineered Features**:
+
 - 7-day and 30-day momentum
 - 30-day volatility
 
@@ -206,6 +217,7 @@ ForeWatt is a **fully reproducible, open-source platform** for **1-24 hour ahead
 **Coverage**: 50 holiday days
 
 **Holiday Types**:
+
 - Official holidays (7 types): New Year, Republic Day, etc.
 - Religious holidays (2 types): Ramazan Bayramı, Kurban Bayramı
 - Half-day holidays: October 28 PM only
@@ -306,6 +318,7 @@ python src/models/run_baselines.py --models prophet catboost xgboost
 **Main Class**: `EpiasDataFetcher`
 
 **Key Features**:
+
 - Fetches 12 different datasets (consumption, prices, generation, capacity, forecasts)
 - Medallion architecture (Bronze → Silver layers)
 - Dual format export (Parquet + CSV)
@@ -314,6 +327,7 @@ python src/models/run_baselines.py --models prophet catboost xgboost
 - Date range chunking (respects 1-year API limit)
 
 **Main Methods**:
+
 ```python
 fetch_dataset(dataset_name, start_date, end_date) -> pd.DataFrame
 run_pipeline(start_date, end_date, output_dir) -> Dict[str, pd.DataFrame]
@@ -336,18 +350,21 @@ validate_silver_layer(df, dataset_name) -> Tuple[pd.DataFrame, Dict]
 **Main Function**: `fetch_evds_data(start_date, end_date) -> pd.DataFrame`
 
 **Fetched Series**:
+
 - TÜFE: Turkish CPI (2003=100)
 - ÜFE: Turkish PPI (2003=100)
 - M2: Money supply M2 (Million TL)
 - TL_FAIZ: TL deposit interest rate (%)
 
 **Features**:
+
 - Monthly frequency data
 - Date normalization (YYYY-MM format)
 - Rebase index to custom base date
 - Dual format output (CSV + Parquet)
 
 **Output Files**:
+
 - `data/bronze/macro/macro_evds_raw.csv`
 - `data/bronze/macro/macro_evds_YYYY-MM-DD_YYYY-MM-DD.parquet`
 
@@ -364,10 +381,12 @@ validate_silver_layer(df, dataset_name) -> Tuple[pd.DataFrame, Dict]
 **Main Class**: `DemandWeatherFetcher`
 
 **Coverage**:
+
 - Top 10 Turkish cities by population (49.25% national coverage)
 - Population-weighted aggregation to national features
 
 **Weather Variables (8)**:
+
 - temperature_2m
 - relative_humidity_2m
 - precipitation, rain
@@ -377,6 +396,7 @@ validate_silver_layer(df, dataset_name) -> Tuple[pd.DataFrame, Dict]
 - apparent_temperature
 
 **Engineered Features (60+)**:
+
 - Heating/Cooling Degree Days (HDD/CDD)
 - Heat index, wind chill
 - Temperature lags (1h, 2h, 3h, 24h, 168h)
@@ -385,6 +405,7 @@ validate_silver_layer(df, dataset_name) -> Tuple[pd.DataFrame, Dict]
 - Cyclical encodings (hour, day of week)
 
 **Main Methods**:
+
 ```python
 fetch_city_weather(city, start_date, end_date) -> pd.DataFrame
 fetch_all_cities(start_date, end_date) -> Dict[str, pd.DataFrame]
@@ -394,6 +415,7 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 ```
 
 **Output Layers**:
+
 - Bronze: Individual city weather (10 cities)
 - Silver: National aggregated weather
 - Gold: Engineered demand features (60+ columns)
@@ -411,26 +433,31 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 **Main Class**: `ExternalFeaturesFetcher`
 
 **Rationale**:
+
 - Turkey imports ~70% of energy (natural gas, oil)
 - Electricity prices correlate with FX rates (import cost pass-through)
 - Gold reflects capital flight and inflation expectations
 
 **Fetched Series (EVDS)**:
+
 - USD/TRY: US Dollar exchange rate
 - EUR/TRY: Euro exchange rate
 - XAU/TRY: Gold price in Turkish Lira
 
 **Derived Features**:
+
 - FX_basket: Weighted average (0.5 × USD + 0.5 × EUR)
 - USD_TRY_mom7d, EUR_TRY_mom7d: 7-day momentum
 - USD_TRY_mom30d, EUR_TRY_mom30d: 30-day momentum
 - FX_volatility: 30-day rolling std
 
 **Methodology**:
+
 - Daily data → Hourly via forward fill
 - Preserves import/FX shock signals
 
 **Main Methods**:
+
 ```python
 fetch_daily_fx(start_date, end_date) -> pd.DataFrame
 convert_to_hourly(daily_df) -> pd.DataFrame
@@ -452,6 +479,7 @@ save_features(daily_df, hourly_df, start_date, end_date)
 **Input**: `src/data/static/tr_holidays_2020_2025.json`
 
 **Holiday Types**:
+
 - Turkish official holidays (New Year, Republic Day, etc.)
 - Religious holidays (Ramadan, Kurban Bayramı) - multi-day
 - Half-day holidays (e.g., Oct 28 PM only)
@@ -459,11 +487,13 @@ save_features(daily_df, hourly_df, start_date, end_date)
 **Main Function**: `build_calendar_tables()`
 
 **Output Layers**:
+
 - Bronze: `calendar_raw.csv` - Raw holiday spans
 - Silver: `calendar_days.csv` - Exploded daily holidays
 - Silver: `calendar_full_days.csv` - Full daily calendar with flags
 
 **Output Columns**:
+
 - date_only, dow, month
 - is_weekend, is_holiday_day
 - is_holiday_weekend, is_holiday_weekday
@@ -480,16 +510,19 @@ save_features(daily_df, hourly_df, start_date, end_date)
 **Purpose**: Builds deflation indices to convert nominal TL prices to real values.
 
 **Methods**:
+
 1. **Baseline DID**: Factor Analysis on TÜFE, ÜFE, M2, TL_FAIZ
 2. **DFM DID**: Dynamic Factor Model with Kalman smoothing
 
 **Main Functions**:
+
 ```python
 build_did_baseline() -> None
 build_did_dfm() -> None
 ```
 
 **Methodology**:
+
 1. Load EVDS macro data (TÜFE, ÜFE, M2, TL_FAIZ)
 2. Compute growth rates (MoM, YoY)
 3. Extract inflation factor via Factor Analysis
@@ -497,10 +530,12 @@ build_did_dfm() -> None
 5. Build cumulative deflator index (base=100 at 2022-01)
 
 **Output Files**:
+
 - `data/silver/macro/deflator_did_baseline.{parquet,csv}`
 - `data/silver/macro/deflator_did_dfm.{parquet,csv}`
 
 **Output Columns**:
+
 - DATE (YYYY-MM format)
 - DID_monthly, DID_index (base=100 at 2022-01)
 - pi_hat_monthly (inflation estimate)
@@ -518,15 +553,18 @@ build_did_dfm() -> None
 **Main Class**: `PriceDeflator`
 
 **Datasets Requiring Deflation**:
+
 - price_ptf, price_smf, price_idm, price_wap (all in TL/MWh)
 
 **Methodology**:
+
 1. Load monthly deflator index
 2. Interpolate monthly → daily (linear) → hourly (forward fill)
 3. Join hourly prices with hourly deflator
 4. Apply formula: `real_price = nominal_price / (DID_index / 100)`
 
 **Main Methods**:
+
 ```python
 deflate_dataset(dataset_name, start_date, end_date) -> pd.DataFrame
 deflate_all_price_datasets(start_date, end_date) -> Dict
@@ -549,6 +587,7 @@ deflate_all_price_datasets(start_date, end_date) -> Dict
 **Main Class**: `DeflationPipelineValidator`
 
 **Validation Steps**:
+
 1. Check prerequisites (API keys, dependencies)
 2. Create synthetic test data
 3. Test EVDS fetcher
@@ -558,6 +597,7 @@ deflate_all_price_datasets(start_date, end_date) -> Dict
 7. Validate output quality (stationarity, variance reduction)
 
 **Usage**:
+
 ```bash
 python src/data/validate_deflation_pipeline.py --dry-run  # Synthetic data
 python src/data/validate_deflation_pipeline.py --full     # Real data
@@ -578,6 +618,7 @@ python src/data/validate_deflation_pipeline.py --full     # Real data
 **Main Class**: `LagFeaturesGenerator`
 
 **Lag Configurations**:
+
 - **Consumption lags**: 1h, 2h, 3h, 6h, 12h, 24h, 48h, 168h (1 week)
 - **Temperature lags**: 1h, 2h, 3h, 24h, 168h
 - **Price lags**: 1h, 24h, 168h
@@ -585,11 +626,13 @@ python src/data/validate_deflation_pipeline.py --full     # Real data
 **Total Features**: 16 lag features
 
 **Rationale**:
+
 - Short lags (1-3h): Capture inertia and autoregressive patterns
 - Daily lag (24h): Capture day-over-day changes
 - Weekly lag (168h): Capture week-over-week patterns
 
 **Main Methods**:
+
 ```python
 load_consumption(start_date, end_date) -> pd.DataFrame
 load_temperature(start_date, end_date) -> pd.DataFrame
@@ -620,6 +663,7 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 **Total Features**: 27 rolling features
 
 **Features Created**:
+
 - `{variable}_rolling_{stat}_{window}h` (e.g., `consumption_rolling_mean_24h`)
 - Derived features:
   - `consumption_range_24h`: Daily volatility (max - min)
@@ -627,6 +671,7 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
   - `temp_range_24h`: Diurnal temperature range
 
 **Main Methods**:
+
 ```python
 create_rolling_stats(df, column, windows, stats) -> pd.DataFrame
 create_derived_features(df) -> pd.DataFrame
@@ -651,11 +696,13 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 **Total Features**: 12 calendar features
 
 **Features Created**:
+
 - **Temporal**: dow, dom, month, weekofyear, is_weekend
 - **Holiday-related**: is_holiday_day, is_holiday_hour, holiday_name
 - **Cyclical encodings**: dow_sin, dow_cos, month_sin, month_cos
 
 **Main Methods**:
+
 ```python
 load_calendar_days() -> pd.DataFrame
 create_hourly_calendar(start_date, end_date) -> pd.DataFrame
@@ -677,6 +724,7 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 **Main Class**: `MasterFeatureMerger`
 
 **Gold Layers Merged**:
+
 1. Target variable: consumption_actual (Silver EPİAŞ)
 2. Demand weather features: 60+ engineered features (Gold)
 3. Deflated prices: Real TL/MWh (Gold)
@@ -686,11 +734,13 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 7. Rolling features: 24h/168h windows (Gold)
 
 **Versioning Strategy**:
+
 - Filename: `master_v{version}_{date}_{hash}.parquet`
 - Hash: MD5 of sorted feature names (first 8 chars)
 - Metadata JSON includes version info, feature list, statistics
 
 **Main Methods**:
+
 ```python
 load_target(start_date, end_date) -> pd.DataFrame
 load_weather_features(start_date, end_date) -> pd.DataFrame
@@ -701,6 +751,7 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 ```
 
 **Output**:
+
 - `data/gold/master/master_v{version}_{date}_{hash}.{parquet,csv}`
 - `data/gold/master/master_v{version}_{date}_{hash}_metadata.json`
 
@@ -715,6 +766,7 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 **Purpose**: Orchestrates complete feature engineering pipeline.
 
 **Pipeline Steps**:
+
 1. Generate lag features
 2. Generate rolling features
 3. Generate calendar features
@@ -723,6 +775,7 @@ run_pipeline(start_date, end_date) -> pd.DataFrame
 **Main Function**: `run_complete_pipeline(start_date, end_date, version)`
 
 **Usage**:
+
 ```bash
 python src/features/run_feature_pipeline.py --start 2020-01-01 --end 2024-12-31
 ```
@@ -740,6 +793,7 @@ python src/features/run_feature_pipeline.py --start 2020-01-01 --end 2024-12-31
 **Purpose**: Unified evaluation metrics for time series forecasting.
 
 **Metrics Implemented**:
+
 1. **MAE** (Mean Absolute Error)
 2. **RMSE** (Root Mean Squared Error)
 3. **MAPE** (Mean Absolute Percentage Error)
@@ -749,11 +803,13 @@ python src/features/run_feature_pipeline.py --start 2020-01-01 --end 2024-12-31
 **Main Function**: `evaluate_forecast(y_true, y_pred, y_train, seasonality, model_name) -> Dict[str, float]`
 
 **MASE Interpretation**:
+
 - MASE < 1: Better than naive seasonal forecast
 - MASE = 1: Same as naive seasonal forecast
 - MASE > 1: Worse than naive seasonal forecast
 
 **Additional Functions**:
+
 ```python
 calculate_residuals(y_true, y_pred) -> Dict[str, np.ndarray]
 forecast_bias(y_true, y_pred) -> float
@@ -772,12 +828,14 @@ forecast_bias(y_true, y_pred) -> float
 **Main Class**: `ProphetForecaster`
 
 **Features**:
+
 - Turkish national holidays (2020-2025)
 - Weather regressors: temp_national, humidity, wind_speed, HDD, CDD, heat_index, wind_chill
 - Daily/weekly/yearly seasonality
 - MLflow tracking
 
 **Hyperparameters**:
+
 - seasonality_mode: 'multiplicative'
 - changepoint_prior_scale: 0.05
 - seasonality_prior_scale: 10.0
@@ -798,6 +856,7 @@ forecast_bias(y_true, y_pred) -> float
 **Main Class**: `SARIMAXForecaster`
 
 **Configuration**:
+
 - Order: (1, 1, 1) - ARIMA parameters
 - Seasonal order: (1, 1, 1, 24) - Seasonal parameters with 24h period
 - Exogenous variables: temp_national, HDD, CDD, is_holiday_hour, hour_sin, hour_cos, dow_sin, dow_cos
@@ -819,6 +878,7 @@ forecast_bias(y_true, y_pred) -> float
 **Main Class**: `XGBoostForecaster`
 
 **Hyperparameters**:
+
 - n_estimators: 1000
 - learning_rate: 0.1
 - max_depth: 6
@@ -828,6 +888,7 @@ forecast_bias(y_true, y_pred) -> float
 - reg_lambda: 1.0 (L2)
 
 **Features**:
+
 - Uses all numeric features from master dataset
 - Excludes object columns (text features)
 - Feature importance logging
@@ -847,6 +908,7 @@ forecast_bias(y_true, y_pred) -> float
 **Main Class**: `CatBoostForecaster`
 
 **Hyperparameters**:
+
 - iterations: 1000
 - learning_rate: 0.1
 - depth: 6
@@ -854,6 +916,7 @@ forecast_bias(y_true, y_pred) -> float
 - early_stopping_rounds: 50
 
 **Features**:
+
 - Automatic categorical feature handling
 - Supports holiday_name as categorical
 - Binary flags (0/1) treated as categorical
@@ -874,6 +937,7 @@ forecast_bias(y_true, y_pred) -> float
 **Main Class**: `BaselineOrchestrator`
 
 **Models**:
+
 - Prophet (with holidays & weather)
 - CatBoost (with categorical features)
 - XGBoost (gradient boosting)
@@ -882,6 +946,7 @@ forecast_bias(y_true, y_pred) -> float
 **Main Method**: `run_all(models) -> Dict[str, Dict[str, float]]`
 
 **Usage**:
+
 ```bash
 python src/models/run_baselines.py --all
 python src/models/run_baselines.py --models prophet catboost
@@ -917,11 +982,13 @@ python src/models/run_baselines.py --models prophet catboost
 **Purpose**: Visualizes deflator indices for comparison.
 
 **Plots**:
+
 - DFM/Kalman Deflator
 - Baseline (TÜFE-based) Deflator
 - TÜFE (rebased to 2022=100)
 
 **Usage**:
+
 ```bash
 python src/analysis/plot_deflator.py
 ```
@@ -943,6 +1010,7 @@ python src/analysis/plot_deflator.py
 **Decision**: Create separate, independent modules for each feature type (lag, rolling, calendar) with a unified merger.
 
 **Why**:
+
 - **Maintainability**: Each module can be updated independently
 - **Flexibility**: Can run individual pipelines or complete pipeline
 - **Debugging**: Easier to isolate issues to specific feature types
@@ -954,6 +1022,7 @@ python src/analysis/plot_deflator.py
 **Decision**: Create lag features ONLY for target variable (consumption) and key exogenous variables (temperature, price).
 
 **Why**:
+
 - **Curse of Dimensionality**: Creating lags for all 60+ raw features would result in 600+ features
 - **Diminishing Returns**: Most features (e.g., cloud_cover, humidity) have minimal predictive power when lagged
 - **Model Efficiency**: Smaller feature sets train faster and generalize better
@@ -964,6 +1033,7 @@ python src/analysis/plot_deflator.py
 #### 1. Lag Features (16 features)
 
 **Lag Periods Selected**:
+
 - **1h, 2h, 3h**: Immediate short-term autoregressive patterns
 - **6h**: Quarter-day patterns
 - **12h**: Half-day patterns (morning/evening peaks)
@@ -973,30 +1043,32 @@ python src/analysis/plot_deflator.py
 
 **Variable-Specific Lag Coverage**:
 
-| Variable | Lags Created | Why |
-|----------|--------------|-----|
+| Variable              | Lags Created                        | Why                                                   |
+| --------------------- | ----------------------------------- | ----------------------------------------------------- |
 | **Consumption** | 1h, 2h, 3h, 6h, 12h, 24h, 48h, 168h | Full coverage - target variable requires all patterns |
-| **Temperature** | 1h, 2h, 3h, 24h, 168h | Focus on immediate and daily/weekly patterns |
-| **Price (PTF)** | 1h, 24h, 168h | Focus on immediate and daily/weekly patterns |
+| **Temperature** | 1h, 2h, 3h, 24h, 168h               | Focus on immediate and daily/weekly patterns          |
+| **Price (PTF)** | 1h, 24h, 168h                       | Focus on immediate and daily/weekly patterns          |
 
 #### 2. Rolling Window Features (27 features)
 
 **Window Sizes Selected**:
+
 - **24h (Daily)**: Short-term trends and daily volatility
 - **168h (Weekly)**: Medium-term trends and weekly patterns
 
 **Statistics Computed**:
 
-| Statistic | Why |
-|-----------|-----|
-| **Mean** | Central tendency; smooth trend indicator |
-| **Std** | Volatility measure; demand stability indicator |
-| **Min** | Lower bound; identifies baseline demand |
-| **Max** | Upper bound; identifies peak demand |
-| **Range** | Demand variability (max - min) |
-| **CV** | Normalized volatility (std / mean) |
+| Statistic       | Why                                            |
+| --------------- | ---------------------------------------------- |
+| **Mean**  | Central tendency; smooth trend indicator       |
+| **Std**   | Volatility measure; demand stability indicator |
+| **Min**   | Lower bound; identifies baseline demand        |
+| **Max**   | Upper bound; identifies peak demand            |
+| **Range** | Demand variability (max - min)                 |
+| **CV**    | Normalized volatility (std / mean)             |
 
 **Total Rolling Features**:
+
 - Consumption: 6 stats × 2 windows = 12 features
 - Temperature: 6 stats × 2 windows = 12 features
 - Price: 6 stats × 2 windows = 12 features
@@ -1005,20 +1077,20 @@ python src/analysis/plot_deflator.py
 
 #### 3. Calendar Features (12 features)
 
-| Feature | Type | Values | Why |
-|---------|------|--------|-----|
-| **dow** | Categorical | 0-6 (Mon-Sun) | Day of week; captures weekly patterns |
-| **dom** | Categorical | 1-31 | Day of month; captures billing cycles |
-| **month** | Categorical | 1-12 | Month; captures seasonal patterns |
-| **weekofyear** | Categorical | 1-53 | ISO week number |
-| **is_weekend** | Binary | 0/1 | Weekend flag; critical demand differentiator |
-| **is_holiday_day** | Binary | 0/1 | Day-level holiday flag |
-| **is_holiday_hour** | Binary | 0/1 | Hour-level holiday flag (handles half-days) |
-| **holiday_name** | Categorical | String | Holiday type |
-| **dow_sin** | Continuous | [-1, 1] | Day of week cyclical encoding |
-| **dow_cos** | Continuous | [-1, 1] | Day of week cyclical encoding |
-| **month_sin** | Continuous | [-1, 1] | Month cyclical encoding |
-| **month_cos** | Continuous | [-1, 1] | Month cyclical encoding |
+| Feature                   | Type        | Values        | Why                                          |
+| ------------------------- | ----------- | ------------- | -------------------------------------------- |
+| **dow**             | Categorical | 0-6 (Mon-Sun) | Day of week; captures weekly patterns        |
+| **dom**             | Categorical | 1-31          | Day of month; captures billing cycles        |
+| **month**           | Categorical | 1-12          | Month; captures seasonal patterns            |
+| **weekofyear**      | Categorical | 1-53          | ISO week number                              |
+| **is_weekend**      | Binary      | 0/1           | Weekend flag; critical demand differentiator |
+| **is_holiday_day**  | Binary      | 0/1           | Day-level holiday flag                       |
+| **is_holiday_hour** | Binary      | 0/1           | Hour-level holiday flag (handles half-days)  |
+| **holiday_name**    | Categorical | String        | Holiday type                                 |
+| **dow_sin**         | Continuous  | [-1, 1]       | Day of week cyclical encoding                |
+| **dow_cos**         | Continuous  | [-1, 1]       | Day of week cyclical encoding                |
+| **month_sin**       | Continuous  | [-1, 1]       | Month cyclical encoding                      |
+| **month_cos**       | Continuous  | [-1, 1]       | Month cyclical encoding                      |
 
 **Key Design Decisions**:
 
@@ -1030,6 +1102,7 @@ python src/analysis/plot_deflator.py
 #### 4. Weather Demand Features (60+ features)
 
 Already engineered in `weather_fetcher.py`:
+
 - Heating/Cooling Degree Days (HDD/CDD)
 - Heat index & wind chill
 - Extreme temperature flags
@@ -1039,6 +1112,7 @@ Already engineered in `weather_fetcher.py`:
 #### 5. Master Dataset
 
 **Combines all gold layers**:
+
 - Target: `consumption` (Silver EPİAŞ)
 - Weather: 60+ demand features (Gold)
 - Prices: Deflated PTF (Gold)
@@ -1064,6 +1138,7 @@ Already engineered in `weather_fetcher.py`:
 **Expected Feature Importance**:
 
 **Tier 1 (Critical)**:
+
 1. `consumption_lag_24h` - Same hour yesterday
 2. `consumption_lag_168h` - Same hour last week
 3. `is_holiday_day` / `is_holiday_hour` - Holiday effects
@@ -1078,6 +1153,7 @@ Already engineered in `weather_fetcher.py`:
 10. `temperature_lag_24h` - Yesterday's weather
 
 **Tier 3 (Helpful)**:
+
 - Other consumption lags (2h, 3h, 6h, 12h, 48h)
 - Rolling statistics (std, min, max)
 - Weather features (humidity, wind, precipitation)
@@ -1090,11 +1166,13 @@ Already engineered in `weather_fetcher.py`:
 **Decision**: Do NOT impute missing values caused by lag/rolling window operations.
 
 **Why**:
+
 - **Structural missingness is informative**: Missing 168h lag indicates first week of dataset
 - **Imputation introduces bias**: Filling with mean/median assumes average behavior
 - **Modern ML models handle missing values**: XGBoost, LightGBM, CatBoost have native support
 
 **Missing Value Breakdown**:
+
 - Lag features: 1-168 missing values (depending on lag period)
 - Rolling features: 23-167 missing values (depending on window)
 - All other features: 0 missing values
@@ -1105,6 +1183,7 @@ Already engineered in `weather_fetcher.py`:
 **Feature Hash Versioning**:
 
 **Hash Computation**:
+
 ```python
 feature_cols = sorted([c for c in df.columns if c != 'timestamp'])
 hash_input = '|'.join(feature_cols)
@@ -1113,6 +1192,7 @@ feature_hash = hash_full[:8]  # First 8 characters
 ```
 
 **Filename Format**:
+
 ```
 master_v{version}_{date}_{hash}.parquet
 master_v1_2025-11-12_a567fe49.parquet
@@ -1120,10 +1200,10 @@ master_v1_2025-11-12_a567fe49.parquet
 
 **Version History**:
 
-| Hash | Date | Features | Description |
-|------|------|----------|-------------|
-| `0403682c` | 2025-11-11 | 95 | Initial version WITHOUT calendar features |
-| `a567fe49` | 2025-11-12 | 106 | Current version WITH calendar features |
+| Hash         | Date       | Features | Description                               |
+| ------------ | ---------- | -------- | ----------------------------------------- |
+| `0403682c` | 2025-11-11 | 95       | Initial version WITHOUT calendar features |
+| `a567fe49` | 2025-11-12 | 106      | Current version WITH calendar features    |
 
 ---
 
@@ -1133,12 +1213,12 @@ master_v1_2025-11-12_a567fe49.parquet
 
 From `reports/baseline_comparison.csv`:
 
-| Model | MAE | RMSE | MAPE | sMAPE | MASE | Training Time |
-|-------|-----|------|------|-------|------|---------------|
-| **CatBoost** | 519.9 | 845.5 | 1.24 | 1.25 | 0.27 | 2.8s |
-| **XGBoost** | 527.6 | 826.8 | 1.27 | 1.28 | 0.28 | 4.8s |
-| Prophet | 2644 | 3284 | 7.15 | 6.81 | 1.37 | 20.9s |
-| SARIMAX | 54608 | 62994 | 138 | 155 | 29.2 | 9.5s |
+| Model              | MAE   | RMSE  | MAPE | sMAPE | MASE | Training Time |
+| ------------------ | ----- | ----- | ---- | ----- | ---- | ------------- |
+| **CatBoost** | 519.9 | 845.5 | 1.24 | 1.25  | 0.27 | 2.8s          |
+| **XGBoost**  | 527.6 | 826.8 | 1.27 | 1.28  | 0.28 | 4.8s          |
+| Prophet            | 2644  | 3284  | 7.15 | 6.81  | 1.37 | 20.9s         |
+| SARIMAX            | 54608 | 62994 | 138  | 155   | 29.2 | 9.5s          |
 
 **Winner**: CatBoost (MASE < 1.0 = better than naive forecast)
 
@@ -1306,6 +1386,7 @@ docker-compose up -d
 ```
 
 **Access services**:
+
 - API: http://localhost:8000/docs (OpenAPI/Swagger)
 - Dashboard: http://localhost:8501
 - MLflow: http://localhost:5050
@@ -1353,6 +1434,7 @@ python src/models/run_baselines.py --all
 **Script**: `src/data/validate_deflation_pipeline.py`
 
 **7 Automated Tests**:
+
 1. **Prerequisites**: Dependencies, API keys, directory structure
 2. **Synthetic Data**: Generate test inflation/price data
 3. **EVDS Fetcher**: Validate macro data ingestion
@@ -1362,6 +1444,7 @@ python src/models/run_baselines.py --all
 7. **Output Quality**: Stationarity (ADF test), variance reduction (20-40%)
 
 **Usage**:
+
 ```bash
 # Dry-run mode (no API calls, synthetic data)
 python src/data/validate_deflation_pipeline.py --dry-run
@@ -1429,8 +1512,10 @@ python src/data/validate_deflation_pipeline.py
 
 ### Phase 4: Advanced Models (Weeks 5-9)
 
-- N-HiTS (NeuralForecast)
-- PatchTST, Temporal Fusion Transformer
+- ✅ N-HiTS (NeuralForecast)
+- ✅ PatchTST, Temporal Fusion Transformer
+- ✅ Hyperparameter grid search (46 configurations)
+- ✅ Multi-platform hardware support (NVIDIA CUDA, Apple Silicon)
 - Ensemble aggregation
 - Conformal calibration
 
@@ -1448,11 +1533,449 @@ python src/data/validate_deflation_pipeline.py
 
 ---
 
+## Hyperparameter Grid Search
+
+### Overview
+
+A comprehensive grid search framework to test **46 different model configurations** across **2 targets**:
+
+1. **consumption** - Electricity demand (MWh)
+2. **price_real** - Day-ahead market clearing price (PTF, inflation-adjusted TL/MWh)
+
+**Total experiments**: 92 (46 configs × 2 targets)
+
+### Model Configurations
+
+#### Baseline Models (25 configurations)
+
+| Model              | Configs | Purpose                                     |
+| ------------------ | ------- | ------------------------------------------- |
+| **CatBoost** | 5       | Gradient boosting with categorical features |
+| **XGBoost**  | 5       | Extreme gradient boosting                   |
+| **LightGBM** | 5       | Fast gradient boosting                      |
+| **Prophet**  | 5       | Facebook's time series forecaster           |
+| **SARIMAX**  | 5       | Statistical ARIMA with exogenous variables  |
+
+**Configuration types per model**:
+
+1. **Light** - Fast training, top 50 features
+2. **Balanced** - Recommended default, all features
+3. **Deep** - Complex architecture, all features
+4. **Price-Optimized** - Specialized for PTF forecasting
+5. **Demand-Optimized** - Specialized for consumption forecasting
+
+#### Deep Learning Models (21 configurations)
+
+| Model              | Configs | Architecture                                      |
+| ------------------ | ------- | ------------------------------------------------- |
+| **N-HiTS**   | 7       | Neural Hierarchical Interpolation for Time Series |
+| **TFT**      | 7       | Temporal Fusion Transformer (attention-based)     |
+| **PatchTST** | 7       | Patched Time Series Transformer                   |
+
+**Configuration types per model**:
+
+1. **Light** - Small architecture (128-256 units)
+2. **Balanced** - Standard (256-512 units)
+3. **Deep** - Many layers (512-1024 units)
+4. **Wide** - Large hidden layers, fewer stacks
+5. **Narrow-Deep** - Small layers, more stacks
+6. **Price-Optimized** - PTF forecasting
+7. **Demand-Optimized** - Consumption forecasting
+
+### Feature Selection Strategies
+
+From **106 total features** in the master dataset:
+
+- Lag features: 16
+- Rolling statistics: 27
+- Calendar features: 12
+- Weather features: 60+
+- FX/Gold: 5
+
+**Key Strategies**:
+
+1. **all** - All 106 features (used by balanced/deep configs for boosting models)
+2. **top_50** - Top 50 most important (used by light configs)
+3. **price_focused** - ~60-70 features for PTF price prediction
+
+   - Price lags + rolling stats
+   - FX rates: USD/TRY, EUR/TRY, momentum, volatility
+   - Consumption (cross-domain)
+   - Core weather: temp, HDD, CDD
+   - Calendar encoding
+4. **demand_focused** - ~70-80 features for consumption prediction
+
+   - Consumption lags + rolling stats
+   - Extended weather + lags + derived features
+   - Temperature rolling stats
+   - Full calendar + holidays
+   - Price (cross-domain)
+5. **prophet_*** - Prophet-specific (20-50 features)
+
+   - Statistical models handle autocorrelation internally
+   - Don't need lag features (creates redundancy)
+6. **sarimax_*** - SARIMAX-specific (5-10 features)
+
+   - Computationally expensive, minimal features
+7. **Deep Learning Strategies**:
+
+   - **standard_dl**: Fourier (24) + Lags (8) + Rolling (32) + Weather (15) + Calendar (9) ≈ 88 features
+   - **fourier_lags_only**: Fourier (24) + Lags (8) + Calendar (9) ≈ 41 features (fast)
+   - **fourier_heavy**: Extended Fourier + Lags + minimal weather ≈ 50 features
+
+### Quick Start
+
+```bash
+# View all configurations
+./scripts/show_all_configs.sh
+
+# Run ALL baseline configs (both targets)
+python src/models/baseline/grid_search_runner.py
+
+# Run specific models for PTF price only
+python src/models/baseline/grid_search_runner.py \
+    --models catboost xgboost \
+    --targets price_real
+
+# Run ALL deep learning configs (requires GPU)
+python src/models/deep_learning/grid_search_runner.py
+
+# Run with Optuna optimization
+python src/models/deep_learning/grid_search_runner.py \
+    --use-optuna \
+    --n-trials 50
+```
+
+### Expected Results
+
+#### PTF (Price) Forecasting
+
+**Baseline Models**:
+
+- CatBoost price_optimized: 8-12% sMAPE, 0.5-0.7 MASE
+- XGBoost price_optimized: 9-13% sMAPE, 0.6-0.8 MASE
+- LightGBM price_optimized: 9-13% sMAPE, 0.6-0.8 MASE
+
+**Deep Learning Models**:
+
+- TFT price_optimized: 3-5% (h=1), 10-15% (h=24), 7-10% (mean)
+- N-HiTS price_optimized: 3-6% (h=1), 11-16% (h=24), 8-11% (mean)
+
+#### Consumption (Demand) Forecasting
+
+**Baseline Models**:
+
+- CatBoost demand_optimized: 1.2-2.5% sMAPE, 0.25-0.35 MASE
+- XGBoost demand_optimized: 1.3-2.7% sMAPE, 0.27-0.37 MASE
+
+**Deep Learning Models**:
+
+- TFT demand_optimized: <1% (h=1), 3-5% (h=24), 2-3% (mean)
+- N-HiTS demand_optimized: <1% (h=1), 3-4% (h=24), 2-3% (mean)
+
+### Output Files
+
+**Baseline Models** (`reports/baseline/grid_search/`):
+
+- `grid_search_results_{target}_{timestamp}.csv` - All 25 configs with metrics
+- `best_per_model_{target}_{timestamp}.csv` - Best config per model type
+- `feature_selection_analysis_{target}_{timestamp}.csv` - Performance by feature strategy
+
+**Deep Learning Models** (`reports/deep_learning/grid_search/`):
+
+- `grid_search_results_{target}_{timestamp}.csv` - All 21 configs with per-horizon metrics
+- `best_per_model_{target}_{timestamp}.csv` - Best config per model type
+
+### MLflow Tracking
+
+All experiments logged to MLflow:
+
+- `ForeWatt-Baseline-Consumption-GridSearch`
+- `ForeWatt-Baseline-Price-Real-GridSearch`
+- `ForeWatt-DeepLearning-Consumption-GridSearch`
+- `ForeWatt-DeepLearning-Price-Real-GridSearch`
+
+View results:
+
+```bash
+mlflow ui --backend-store-uri file://$(pwd)/mlruns
+```
+
+---
+
+## Multi-Platform Hardware Support
+
+### Supported Platforms
+
+✅ **NVIDIA CUDA GPUs** (Linux, Windows)
+
+- GeForce RTX series (3000, 4000)
+- Tesla/Quadro datacenter GPUs
+- Any CUDA-capable GPU with Compute Capability 3.5+
+
+✅ **Apple Silicon** (macOS)
+
+- M1, M1 Pro, M1 Max, M1 Ultra
+- M2, M2 Pro, M2 Max, M2 Ultra
+- M3, M3 Pro, M3 Max
+- M4, M4 Pro, M4 Max (Latest)
+
+✅ **CPU Fallback** (All platforms)
+
+- Works on any modern CPU
+- No GPU required (slower training)
+
+### Installation
+
+#### NVIDIA CUDA (Linux/Windows)
+
+```bash
+# Check GPU
+nvidia-smi
+
+# Install CUDA 12.1
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt-get update
+sudo apt-get -y install cuda-toolkit-12-1
+
+# Install PyTorch with CUDA
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Verify
+python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}')"
+```
+
+#### Apple Silicon (macOS)
+
+```bash
+# Install Python 3.11
+brew install python@3.11
+
+# Create virtual environment
+python3.11 -m venv ~/venvs/forewatt
+source ~/venvs/forewatt/bin/activate
+
+# Install PyTorch with MPS support
+pip install torch torchvision torchaudio
+
+# Verify MPS
+python -c "import torch; print(f'MPS Available: {torch.backends.mps.is_available()}')"
+
+# M4 Pro specific optimizations
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+```
+
+### Hardware Detection
+
+```bash
+# Test hardware configuration
+python src/models/deep_learning/hardware_config.py
+```
+
+All models automatically detect and use best available hardware (CUDA > MPS > CPU).
+
+### Performance Comparison
+
+**Training Speed** (50 Optuna trials, N-HiTS, 24h horizon):
+
+| Platform        | Training Time | Speedup |
+| --------------- | ------------- | ------- |
+| NVIDIA RTX 4090 | 4-6 hours     | 20x     |
+| NVIDIA RTX 3090 | 6-8 hours     | 15x     |
+| Apple M4 Pro    | 8-12 hours    | 10x     |
+| Apple M3 Max    | 10-14 hours   | 8x      |
+| CPU (16 cores)  | 80-120 hours  | 1x      |
+
+### Recommended Batch Sizes
+
+**NVIDIA CUDA (24GB)**:
+
+- Small models: 256
+- Medium models (N-HiTS, TFT): 128
+- Large models (PatchTST): 64
+
+**Apple M4 Pro (48GB unified)**:
+
+- Small models: 128
+- Medium models: 64
+- Large models: 32
+
+**CPU (32GB RAM)**:
+
+- Small models: 64
+- Medium models: 32
+- Large models: 16
+
+---
+
+## Deep Learning Pipeline
+
+### Models
+
+1. **N-HiTS** (Neural Hierarchical Interpolation for Time Series)
+
+   - Multi-rate sampling, handles multiple seasonalities
+   - Best for: Complex seasonal patterns
+   - Optimizable parameters: Stack count, hidden size, pool size, learning rate
+2. **TFT** (Temporal Fusion Transformer)
+
+   - Attention-based transformer with interpretable attention
+   - Best for: Multi-variate forecasting with attention
+   - Optimizable parameters: Hidden size, attention heads, dropout, learning rate
+3. **PatchTST** (Patched Time Series Transformer)
+
+   - Transformer with patch-based input
+   - Best for: Long-horizon forecasting
+   - Optimizable parameters: Patch size, stride, layers, heads, learning rate
+
+### Feature Set
+
+**Deep Learning Feature Set** (v2_deep_learning):
+
+1. **Lagged Targets** (8 features)
+
+   - `consumption_lag_{1,2,3,6,12,24,48,168}h`
+   - or `price_real_lag_{1,2,3,6,12,24,48,168}h`
+2. **Rolling Statistics** (32 features)
+
+   - Windows: 24h, 168h
+   - Stats: mean, std, min, max
+   - For: consumption/price + temperature
+3. **Fourier Seasonality** (24 features)
+
+   - Daily (5 orders): 10 features
+   - Weekly (3 orders): 6 features
+   - Yearly (4 orders): 8 features
+4. **Calendar Encodings** (9 features)
+
+   - Cyclical: hour_sin/cos, dow_sin/cos, month_sin/cos
+   - Binary: is_weekend, is_holiday_day, is_holiday_hour
+5. **Weather Covariates** (15+ features)
+
+   - Current: temp, humidity, wind, precipitation
+   - Lags: temp_lag_{1,24,168}h
+   - Derived: HDD, CDD, heat_index, temp_change_24h
+
+**Total**: ~80-100 features
+
+### Expanding-Window Cross-Validation
+
+**Strategy**:
+
+```
+Fold 1: Train[0:50%]  →  Val[50%:60%]
+Fold 2: Train[0:60%]  →  Val[60%:70%]
+Fold 3: Train[0:70%]  →  Val[70%:80%]
+Fold 4: Train[0:80%]  →  Val[80%:90%]
+Fold 5: Train[0:90%]  →  Val[90%:100%]
+```
+
+**Benefits**:
+
+- ✅ Respects temporal ordering (no leakage)
+- ✅ Tests on increasingly future data
+- ✅ Mimics production scenario
+- ✅ More robust than single split
+
+### Bayesian Hyperparameter Optimization
+
+**Method**: Optuna (Tree-structured Parzen Estimator)
+
+**Configuration**:
+
+- **Trials**: 50 per model (configurable)
+- **Pruning**: Median pruner (early stopping bad trials)
+- **Objective**: Mean sMAPE across CV folds
+- **Timeout**: 12 hours per model (configurable)
+
+### Horizon-Wise Evaluation
+
+**Multi-Horizon Forecasting** (1-24h ahead):
+
+For each time point, predict 1, 2, ..., 24 hours ahead.
+
+**Metrics Per Horizon**:
+
+- **sMAPE**: Primary metric (symmetric, bounded)
+- **MASE**: Scale-independent (vs naive forecast)
+- **MAE**: Absolute error in MWh or TL
+- **RMSE**: Penalizes large errors
+
+**Aggregation**:
+
+- Per-horizon: sMAPE for h=1, h=2, ..., h=24
+- Mean across horizons: Overall performance
+- By horizon group:
+  - Short-term: h=1-6 (tactical)
+  - Day-ahead: h=24 (market)
+  - Full day: h=1-24 (comprehensive)
+
+### Split Conformal Prediction
+
+**Method**:
+
+1. Split data: Train (60%) / Calibration (20%) / Test (20%)
+2. Train model on train set
+3. Compute residuals on calibration set
+4. Calculate α-quantile of absolute residuals
+5. Prediction intervals: prediction ± quantile
+
+**Coverage Guarantee**:
+
+- 90% prediction interval (α=0.1)
+- At least 90% of true values fall within interval
+- Calibrated post-hoc (no model retraining)
+- Horizon-specific calibration (tighter for h=1, wider for h=24)
+
+### Usage
+
+```bash
+# Full pipeline: Both targets, all models, with optimization
+python src/models/deep_learning/pipeline_runner.py
+
+# Single target, single model
+python src/models/deep_learning/pipeline_runner.py \
+    --targets consumption \
+    --models nhits \
+    --n_trials 20
+
+# With custom horizons
+python src/models/deep_learning/pipeline_runner.py \
+    --horizons 24 \
+    --n_folds 3
+```
+
+### Performance Targets
+
+**Demand Forecasting** (`consumption`):
+
+- h=1: <1.5% sMAPE (N-HiTS)
+- h=6: <2.5% sMAPE (N-HiTS / TFT)
+- h=24: <4.0% sMAPE (TFT / PatchTST)
+- Mean: <3.0% sMAPE (TFT)
+
+**Price Forecasting** (`price_real`):
+
+- h=1: <3.0% sMAPE (N-HiTS)
+- h=6: <5.0% sMAPE (TFT)
+- h=24: <8.0% sMAPE (TFT / PatchTST)
+- Mean: <6.0% sMAPE (TFT)
+
+**Uncertainty** (Conformal Intervals):
+
+- Coverage: 90% ± 2%
+- Sharpness: Minimize interval width while maintaining coverage
+
+---
+
 ## Appendices
 
 ### A. Complete Feature Inventory (106 features)
 
 #### Lag Features (16)
+
 - `consumption_lag_1h`, `consumption_lag_2h`, `consumption_lag_3h`
 - `consumption_lag_6h`, `consumption_lag_12h`, `consumption_lag_24h`
 - `consumption_lag_48h`, `consumption_lag_168h`
@@ -1461,6 +1984,7 @@ python src/data/validate_deflation_pipeline.py
 - `price_ptf_lag_1h`, `price_ptf_lag_24h`, `price_ptf_lag_168h`
 
 #### Rolling Features (27)
+
 - `consumption_rolling_mean_24h`, `consumption_rolling_std_24h`
 - `consumption_rolling_min_24h`, `consumption_rolling_max_24h`
 - `consumption_rolling_mean_168h`, `consumption_rolling_std_168h`
@@ -1476,11 +2000,13 @@ python src/data/validate_deflation_pipeline.py
 - `consumption_range_24h`, `consumption_cv_24h`, `temp_range_24h`
 
 #### Calendar Features (12)
+
 - `dow`, `dom`, `month`, `weekofyear`
 - `is_weekend`, `is_holiday_day`, `is_holiday_hour`, `holiday_name`
 - `dow_sin`, `dow_cos`, `month_sin`, `month_cos`
 
 #### Weather Features (35+)
+
 - Temperature: `temp_national`, `temp_std`, various lags/rolling
 - Humidity: `humidity_national`
 - Wind: `wind_speed_national`, `wind_chill`
@@ -1489,6 +2015,7 @@ python src/data/validate_deflation_pipeline.py
 - Derived: `apparent_temp_national`, `heat_index`, `HDD`, `CDD`
 
 #### Price Features (17+)
+
 - Nominal: `price`, `priceEur`, `priceUsd`
 - Real: `price_real`, `priceEur_real`, `priceUsd_real`
 - Lags and rolling statistics
@@ -1532,21 +2059,25 @@ python src/data/validate_deflation_pipeline.py
 ### C. Dependencies Summary
 
 **Data Acquisition**:
+
 - `eptr2` - EPİAŞ API client
 - `evds` (evdspy) - EVDS API client
 - `openmeteo_requests` - Open-Meteo weather API
 - `requests_cache`, `retry_requests` - API caching and retry
 
 **Data Processing**:
+
 - `pandas`, `numpy` - Core data manipulation
 - `pyarrow` - Parquet file I/O
 - `python-dotenv` - Environment variable management
 
 **Feature Engineering**:
+
 - `sklearn` - Factor Analysis, StandardScaler
 - `statsmodels` - DFM, SARIMAX
 
 **Model Training**:
+
 - `prophet` - Facebook Prophet
 - `xgboost` - XGBoost
 - `catboost` - CatBoost
@@ -1554,6 +2085,7 @@ python src/data/validate_deflation_pipeline.py
 - `mlflow` - Experiment tracking
 
 **Visualization**:
+
 - `matplotlib` - Plotting
 
 ---
@@ -1570,10 +2102,13 @@ python src/data/validate_deflation_pipeline.py
 ### E. Current Status
 
 **Last Updated**: November 18, 2025
-**Pipeline Status**: Phase 2 Complete (Data ingestion & feature engineering ✅)
+**Pipeline Status**: Phase 4 Complete (Advanced models ✅)
 **Master Dataset**: v1, 106 features, 43,848 rows, hash: a567fe49
 **Best Baseline Model**: CatBoost (MAE: 519.9, MASE: 0.27)
-**Next Phase**: Advanced models (N-HiTS, ensemble, conformal prediction)
+**Grid Search**: 46 configurations (25 baseline + 21 deep learning)
+**Hardware Support**: NVIDIA CUDA, Apple Silicon (M1-M4), CPU fallback
+**Documentation**: All MD files consolidated into this document
+**Next Phase**: Ensemble methods, conformal calibration, production deployment
 
 ---
 

@@ -59,9 +59,13 @@ class BaselinePipeline:
 
         # Setup MLflow
         if mlflow_uri is None:
-            mlflow_dir = PROJECT_ROOT / 'mlruns'
-            mlflow_dir.mkdir(exist_ok=True)
-            mlflow_uri = f"file://{mlflow_dir}"
+            # Try to use environment variable first, then Docker MLflow, then local
+            import os
+            mlflow_uri = os.getenv('MLFLOW_TRACKING_URI')
+            if mlflow_uri is None:
+                # Default to Docker MLflow server if available
+                mlflow_uri = 'http://localhost:5050'
+                logger.info("Using Docker MLflow server at http://localhost:5050")
         self.mlflow_uri = mlflow_uri
 
         if experiment_name is None:
@@ -70,7 +74,67 @@ class BaselinePipeline:
         self.experiment_name = experiment_name
 
         mlflow.set_tracking_uri(self.mlflow_uri)
+
+        # Set local artifact directory when using remote MLflow server
+        if self.mlflow_uri.startswith('http'):
+            # Using remote server - artifacts need local storage
+            artifact_dir = PROJECT_ROOT / 'mlflow_artifacts'
+            artifact_dir.mkdir(exist_ok=True)
+            import os
+            os.environ['MLFLOW_ARTIFACT_ROOT'] = str(artifact_dir)
+            logger.info(f"Using local artifact storage: {artifact_dir}")
+
         mlflow.set_experiment(self.experiment_name)
+
+    def _estimate_training_time(
+        self,
+        model_type: str,
+        n_samples: int,
+        hyperparams: Optional[Dict] = None
+    ) -> Optional[str]:
+        """
+        Estimate training time for a model.
+
+        Args:
+            model_type: Model type
+            n_samples: Number of training samples
+            hyperparams: Model hyperparameters
+
+        Returns:
+            Estimated time as string (e.g., "~2-5 minutes") or None
+        """
+        # Base estimates for 30k samples
+        estimates = {
+            'catboost': (0.5, 2),    # 30s - 2 min (fast with GPU)
+            'xgboost': (0.5, 2),     # 30s - 2 min (fast with GPU)
+            'lightgbm': (0.3, 1.5),  # 20s - 90s (fastest)
+            'prophet': (2, 5)        # 2-5 min (medium)
+        }
+
+        if model_type not in estimates:
+            return None
+
+        base_min, base_max = estimates[model_type]
+
+        # Adjust for sample size (rough scaling)
+        scale_factor = (n_samples / 30000) ** 0.8  # Sublinear scaling
+
+        # Adjust for iterations/steps
+        if hyperparams:
+            if model_type in ['catboost', 'xgboost', 'lightgbm']:
+                iterations = hyperparams.get('iterations') or hyperparams.get('n_estimators', 1000)
+                scale_factor *= (iterations / 1000)
+
+        est_min = base_min * scale_factor
+        est_max = base_max * scale_factor
+
+        # Format output
+        if est_max < 1:
+            return f"~{int(est_min * 60)}-{int(est_max * 60)} seconds"
+        elif est_max < 60:
+            return f"~{est_min:.1f}-{est_max:.1f} minutes"
+        else:
+            return f"~{est_min/60:.1f}-{est_max/60:.1f} hours"
 
     def run_model(
         self,
@@ -97,9 +161,17 @@ class BaselinePipeline:
         logger.info(f"TRAINING {model_type.upper()} → {self.target}")
         logger.info(f"{'█'*80}")
 
+        # Estimate training time
+        n_samples = len(train_df)
+        estimated_time = self._estimate_training_time(model_type, n_samples, hyperparams)
+        if estimated_time:
+            logger.info(f"Estimated training time: {estimated_time}")
+
         start_time = time.time()
 
         try:
+            import tempfile  # Import here for artifact saving
+
             # Initialize trainer
             trainer = ModelTrainer(
                 model_type=model_type,
@@ -158,9 +230,15 @@ class BaselinePipeline:
                 feature_importance = trainer.get_feature_importance()
                 if feature_importance is not None:
                     # Save feature importance
-                    importance_path = f"/tmp/{model_type}_{self.target}_feature_importance.csv"
+                    temp_dir = tempfile.gettempdir()
+                    importance_path = f"{temp_dir}/{model_type}_{self.target}_feature_importance.csv"
                     feature_importance.to_csv(importance_path, index=False)
-                    mlflow.log_artifact(importance_path)
+
+                    try:
+                        mlflow.log_artifact(importance_path)
+                        logger.info(f"Feature importance logged to MLflow")
+                    except (OSError, Exception) as e:
+                        logger.info(f"Artifact saved locally (MLflow remote): {importance_path}")
 
                     # Log top features
                     top_10 = feature_importance.head(10)
@@ -175,9 +253,15 @@ class BaselinePipeline:
                     'y_true': y_true,
                     'y_pred': predictions
                 })
-                pred_path = f"/tmp/{model_type}_{self.target}_predictions.csv"
+                temp_dir = tempfile.gettempdir()
+                pred_path = f"{temp_dir}/{model_type}_{self.target}_predictions.csv"
                 pred_df.to_csv(pred_path, index=False)
-                mlflow.log_artifact(pred_path)
+
+                try:
+                    mlflow.log_artifact(pred_path)
+                    logger.info(f"Predictions logged to MLflow")
+                except (OSError, Exception) as e:
+                    logger.info(f"Predictions saved locally (MLflow remote): {pred_path}")
 
                 logger.info(f"\n✓ {model_type.upper()} completed in {elapsed_time:.2f}s")
                 logger.info(f"  MLflow run ID: {run.info.run_id}")

@@ -182,30 +182,40 @@ class NHiTSTrainer:
             accelerator = 'cpu'
             devices = 'auto'
 
-        model = NHITS(
-            h=self.horizon,
-            input_size=self.input_size,
-            stack_types=hyperparams['stack_types'],
-            n_blocks=hyperparams['n_blocks'] * len(hyperparams['stack_types']),
-            n_pool_kernel_size=hyperparams['n_pool_kernel_size'],
-            n_freq_downsample=hyperparams['n_freq_downsample'],
-            mlp_units=[[hyperparams['hidden_size']] * hyperparams['n_mlp_layers']] * len(hyperparams['stack_types']),
-            interpolation_mode='linear',
-            pooling_mode='MaxPool1d',
-            batch_size=hyperparams['batch_size'],
-            max_steps=hyperparams['max_steps'],
-            learning_rate=hyperparams['learning_rate'],
-            num_lr_decays=3,
-            early_stop_patience_steps=hyperparams['early_stop_patience_steps'],
-            val_check_steps=50,
-            random_seed=self.random_seed,
-            loss=MAE(),
-            valid_loss=SMAPE(),
-            scaler_type='robust',
-            # Hardware configuration
-            accelerator=accelerator,
-            devices=devices
-        )
+        # Extract only valid N-HiTS parameters
+        nhits_params = {
+            'h': self.horizon,
+            'input_size': self.input_size,
+            'stack_types': hyperparams['stack_types'],
+            'n_blocks': hyperparams['n_blocks'],  # Already a list matching stack_types
+            'n_pool_kernel_size': hyperparams['n_pool_kernel_size'],
+            'n_freq_downsample': hyperparams['n_freq_downsample'],
+            'mlp_units': [[hyperparams['hidden_size']] * hyperparams['n_mlp_layers']] * len(hyperparams['stack_types']),
+            'interpolation_mode': 'linear',
+            'pooling_mode': 'MaxPool1d',
+            'batch_size': hyperparams['batch_size'],
+            'max_steps': hyperparams['max_steps'],
+            'learning_rate': hyperparams['learning_rate'],
+            'num_lr_decays': 3,
+            'early_stop_patience_steps': hyperparams['early_stop_patience_steps'],
+            'val_check_steps': 50,
+            'random_seed': self.random_seed,
+            'loss': MAE(),
+            'valid_loss': SMAPE(),
+            'scaler_type': 'standard',  # 'robust' uses nanmedian which is not supported on MPS
+            'accelerator': accelerator,
+            'devices': devices
+        }
+
+        # Add optional weight_decay if present
+        if 'weight_decay' in hyperparams:
+            nhits_params['weight_decay'] = hyperparams['weight_decay']
+
+        # Add optional dropout if present
+        if 'dropout' in hyperparams:
+            nhits_params['dropout'] = hyperparams['dropout']
+
+        model = NHITS(**nhits_params)
 
         logger.info(f"N-HiTS model created with accelerator={accelerator}, devices={devices}")
 
@@ -241,6 +251,13 @@ class NHiTSTrainer:
         # Add exogenous features
         for col in X.columns:
             df[col] = X[col].values
+
+        # Drop rows with NaN values (from lag features)
+        initial_len = len(df)
+        df = df.dropna()
+        dropped = initial_len - len(df)
+        if dropped > 0:
+            logger.info(f"Dropped {dropped} rows with NaN values from lag features")
 
         return df
 
@@ -297,40 +314,42 @@ class NHiTSTrainer:
                 val_size=len(val_df),
                 use_init_models=False
             )
-
-            # Predict on validation
-            val_pred = nf.predict(df=full_df)
-            val_predictions = val_pred['NHITS'].values[-len(y_val):]
-
-            # Calculate validation metrics
-            from src.models.evaluate import (
-                mean_absolute_error,
-                symmetric_mean_absolute_percentage_error,
-                mean_absolute_scaled_error
-            )
-
-            metrics = {
-                'MAE': mean_absolute_error(y_val.values, val_predictions),
-                'sMAPE': symmetric_mean_absolute_percentage_error(y_val.values, val_predictions),
-                'MASE': mean_absolute_scaled_error(
-                    y_val.values,
-                    val_predictions,
-                    y_train.values,
-                    seasonality=24
-                )
-            }
-
-            logger.info(f"\nValidation metrics:")
-            logger.info(f"  MAE: {metrics['MAE']:.2f}")
-            logger.info(f"  sMAPE: {metrics['sMAPE']:.2f}%")
-            logger.info(f"  MASE: {metrics['MASE']:.4f}")
-
-            self.model = nf
-            return nf, metrics
-
-        except Exception as e:
-            logger.error(f"Training failed: {e}")
+        except RuntimeError as e:
+            logger.error(f"Training failed with RuntimeError: {e}")
             raise
+
+        # Predict on validation (returns forecast for next h steps)
+        val_pred = nf.predict(df=full_df)
+        val_predictions = val_pred['NHITS'].values
+
+        # Use only first h validation samples for metrics (single forecast evaluation)
+        y_val_horizon = y_val.values[:self.horizon]
+
+        # Calculate validation metrics
+        from src.models.evaluate import (
+            mean_absolute_error,
+            symmetric_mean_absolute_percentage_error,
+            mean_absolute_scaled_error
+        )
+
+        metrics = {
+            'MAE': mean_absolute_error(y_val_horizon, val_predictions),
+            'sMAPE': symmetric_mean_absolute_percentage_error(y_val_horizon, val_predictions),
+            'MASE': mean_absolute_scaled_error(
+                y_val_horizon,
+                val_predictions,
+                y_train.values,
+                seasonality=24
+            )
+        }
+
+        logger.info(f"\nValidation metrics:")
+        logger.info(f"  MAE: {metrics['MAE']:.2f}")
+        logger.info(f"  sMAPE: {metrics['sMAPE']:.2f}%")
+        logger.info(f"  MASE: {metrics['MASE']:.4f}")
+
+        self.model = nf
+        return nf, metrics
 
     def predict(
         self,

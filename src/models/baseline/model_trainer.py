@@ -8,7 +8,6 @@ Supports:
 - XGBoost
 - LightGBM
 - Prophet
-- SARIMAX
 
 Targets:
 - Demand (consumption)
@@ -28,7 +27,6 @@ from catboost import CatBoostRegressor, Pool
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from prophet import Prophet
-from statsmodels.tsa.statespace.sarimax import SARIMAX
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -58,7 +56,7 @@ class ModelTrainer:
         Initialize model trainer.
 
         Args:
-            model_type: One of ['catboost', 'xgboost', 'lightgbm', 'prophet', 'sarimax']
+            model_type: One of ['catboost', 'xgboost', 'lightgbm', 'prophet']
             target: Target variable ('consumption' or 'price_real')
             hyperparams: Model hyperparameters
             random_seed: Random seed for reproducibility
@@ -71,6 +69,9 @@ class ModelTrainer:
         self.feature_selector = FeatureSelector(target=target)
         self.feature_names = None
         self.categorical_features = None
+        self.prophet_features = None  # Store numeric features for Prophet
+        self.numeric_features = None  # Store numeric features for boosting models
+        self.used_categorical_features = None  # Store actual categorical features used in training
 
     def _get_default_hyperparams(self) -> Dict[str, Any]:
         """Get default hyperparameters for each model type."""
@@ -102,11 +103,6 @@ class ModelTrainer:
                 'seasonality_prior_scale': 10.0,
                 'holidays_prior_scale': 10.0,
                 'seasonality_mode': 'additive'
-            },
-            'sarimax': {
-                'order': (1, 0, 1),
-                'seasonal_order': (1, 0, 1, 24),
-                'trend': 'c'
             }
         }
         return defaults.get(self.model_type, {})
@@ -173,8 +169,6 @@ class ModelTrainer:
             self.model = self._train_lightgbm(X_train, y_train, X_val, y_val)
         elif self.model_type == 'prophet':
             self.model = self._train_prophet(X_train, y_train)
-        elif self.model_type == 'sarimax':
-            self.model = self._train_sarimax(X_train, y_train)
         else:
             raise ValueError(f"Unknown model type: {self.model_type}")
 
@@ -189,20 +183,43 @@ class ModelTrainer:
         y_val: Optional[pd.Series]
     ) -> CatBoostRegressor:
         """Train CatBoost model."""
+        # Filter to numeric columns only, then add categorical back
+        numeric_cols = X_train.select_dtypes(include=[np.number]).columns.tolist()
+        X_train_clean = X_train[numeric_cols].copy()
+
+        # Add categorical features that should be categorical
+        cat_features_to_add = []
+        if self.categorical_features:
+            for cat_col in self.categorical_features:
+                if cat_col in X_train.columns and cat_col not in numeric_cols:
+                    X_train_clean[cat_col] = X_train[cat_col].astype(str)
+                    cat_features_to_add.append(cat_col)
+
+        # Store for prediction
+        self.numeric_features = numeric_cols
+        self.used_categorical_features = cat_features_to_add
+
+        logger.info(f"Using {len(numeric_cols)} numeric + {len(cat_features_to_add)} categorical features")
+
         # Create training pool
         train_pool = Pool(
-            data=X_train,
+            data=X_train_clean,
             label=y_train,
-            cat_features=self.categorical_features
+            cat_features=cat_features_to_add
         )
 
         # Create validation pool if provided
         eval_set = None
         if X_val is not None and y_val is not None:
+            X_val_clean = X_val[numeric_cols].copy()
+            for cat_col in cat_features_to_add:
+                if cat_col in X_val.columns:
+                    X_val_clean[cat_col] = X_val[cat_col].astype(str)
+
             eval_set = Pool(
-                data=X_val,
+                data=X_val_clean,
                 label=y_val,
-                cat_features=self.categorical_features
+                cat_features=cat_features_to_add
             )
 
         # Initialize and train
@@ -216,7 +233,7 @@ class ModelTrainer:
             eval_metric='RMSE',
             early_stopping_rounds=self.hyperparams.get('early_stopping_rounds', 50),
             verbose=100,
-            cat_features=self.categorical_features
+            cat_features=cat_features_to_add
         )
 
         model.fit(
@@ -236,20 +253,30 @@ class ModelTrainer:
         y_val: Optional[pd.Series]
     ) -> XGBRegressor:
         """Train XGBoost model."""
-        # Handle categorical features (convert to category dtype)
-        X_train_copy = X_train.copy()
+        # Filter to numeric columns only, then add categorical back
+        numeric_cols = X_train.select_dtypes(include=[np.number]).columns.tolist()
+        X_train_copy = X_train[numeric_cols].copy()
+
+        # Add categorical features that should be categorical
+        cat_features_to_add = []
         if self.categorical_features:
             for cat_col in self.categorical_features:
-                if cat_col in X_train_copy.columns:
-                    X_train_copy[cat_col] = X_train_copy[cat_col].astype('category')
+                if cat_col in X_train.columns and cat_col not in numeric_cols:
+                    X_train_copy[cat_col] = X_train[cat_col].astype('category')
+                    cat_features_to_add.append(cat_col)
+
+        # Store for prediction
+        self.numeric_features = numeric_cols
+        self.used_categorical_features = cat_features_to_add
+
+        logger.info(f"Using {len(numeric_cols)} numeric + {len(cat_features_to_add)} categorical features")
 
         eval_set = None
         if X_val is not None and y_val is not None:
-            X_val_copy = X_val.copy()
-            if self.categorical_features:
-                for cat_col in self.categorical_features:
-                    if cat_col in X_val_copy.columns:
-                        X_val_copy[cat_col] = X_val_copy[cat_col].astype('category')
+            X_val_copy = X_val[numeric_cols].copy()
+            for cat_col in cat_features_to_add:
+                if cat_col in X_val.columns:
+                    X_val_copy[cat_col] = X_val[cat_col].astype('category')
             eval_set = [(X_val_copy, y_val)]
 
         model = XGBRegressor(
@@ -280,20 +307,19 @@ class ModelTrainer:
         y_val: Optional[pd.Series]
     ) -> LGBMRegressor:
         """Train LightGBM model."""
-        # Handle categorical features
-        X_train_copy = X_train.copy()
-        if self.categorical_features:
-            for cat_col in self.categorical_features:
-                if cat_col in X_train_copy.columns:
-                    X_train_copy[cat_col] = X_train_copy[cat_col].astype('category')
+        # LightGBM: Use ONLY numeric features (no categorical to avoid mismatch errors)
+        numeric_cols = X_train.select_dtypes(include=[np.number]).columns.tolist()
+        X_train_copy = X_train[numeric_cols].copy()
+
+        # Store for prediction (no categorical features for LightGBM)
+        self.numeric_features = numeric_cols
+        self.used_categorical_features = []  # Empty - LightGBM doesn't use categorical
+
+        logger.info(f"Using {len(numeric_cols)} numeric features (no categorical to avoid LightGBM issues)")
 
         eval_set = None
         if X_val is not None and y_val is not None:
-            X_val_copy = X_val.copy()
-            if self.categorical_features:
-                for cat_col in self.categorical_features:
-                    if cat_col in X_val_copy.columns:
-                        X_val_copy[cat_col] = X_val_copy[cat_col].astype('category')
+            X_val_copy = X_val[numeric_cols].copy()
             eval_set = [(X_val_copy, y_val)]
 
         model = LGBMRegressor(
@@ -327,16 +353,36 @@ class ModelTrainer:
         y_train: pd.Series
     ) -> Prophet:
         """Train Prophet model."""
+        # Filter to numeric columns only (Prophet can't handle categorical)
+        numeric_cols = X_train.select_dtypes(include=[np.number]).columns.tolist()
+        X_train_numeric = X_train[numeric_cols]
+
+        logger.info(f"Filtered to {len(numeric_cols)} numeric features (removed categorical)")
+
         # Prepare data for Prophet
+        # Remove timezone from datetime index (Prophet doesn't support it)
+        ds_values = y_train.index
+        if hasattr(ds_values, 'tz') and ds_values.tz is not None:
+            ds_values = ds_values.tz_localize(None)
+
         df_prophet = pd.DataFrame({
-            'ds': y_train.index,
+            'ds': ds_values,
             'y': y_train.values
         })
 
-        # Add regressors from X_train
-        for col in X_train.columns:
-            if col != 'holiday_name':  # Skip text column
-                df_prophet[col] = X_train[col].values
+        # Add numeric regressors from X_train
+        for col in numeric_cols:
+            df_prophet[col] = X_train_numeric[col].values
+
+        # Drop rows with NaN values (from lag/rolling features)
+        rows_before = len(df_prophet)
+        df_prophet = df_prophet.dropna()
+        rows_after = len(df_prophet)
+        if rows_before > rows_after:
+            logger.info(f"Dropped {rows_before - rows_after} rows with NaN values ({rows_after} remaining)")
+
+        # Update numeric_cols to only include columns without NaN
+        numeric_cols = [col for col in numeric_cols if col in df_prophet.columns]
 
         # Initialize Prophet
         model = Prophet(
@@ -350,48 +396,17 @@ class ModelTrainer:
             daily_seasonality=True
         )
 
-        # Add regressors
-        for col in X_train.columns:
-            if col != 'holiday_name':
-                model.add_regressor(col)
+        # Add numeric regressors
+        for col in numeric_cols:
+            model.add_regressor(col)
+
+        # Store numeric columns for prediction
+        self.prophet_features = numeric_cols
 
         # Fit model
         model.fit(df_prophet)
 
         return model
-
-    def _train_sarimax(
-        self,
-        X_train: pd.DataFrame,
-        y_train: pd.Series
-    ) -> SARIMAX:
-        """Train SARIMAX model."""
-        # Limit features for SARIMAX (computational constraints)
-        # Use top 10 most correlated features
-        correlations = X_train.corrwith(y_train).abs().sort_values(ascending=False)
-        top_features = correlations.head(10).index.tolist()
-
-        X_train_subset = X_train[top_features]
-
-        logger.info(f"SARIMAX using top {len(top_features)} features: {top_features}")
-
-        # Fit SARIMAX
-        model = SARIMAX(
-            endog=y_train,
-            exog=X_train_subset,
-            order=self.hyperparams.get('order', (1, 0, 1)),
-            seasonal_order=self.hyperparams.get('seasonal_order', (1, 0, 1, 24)),
-            trend=self.hyperparams.get('trend', 'c'),
-            enforce_stationarity=False,
-            enforce_invertibility=False
-        )
-
-        fitted_model = model.fit(disp=False, maxiter=100)
-
-        # Store subset features for prediction
-        self.sarimax_features = top_features
-
-        return fitted_model
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         """
@@ -407,30 +422,45 @@ class ModelTrainer:
             raise ValueError("Model must be trained before prediction")
 
         if self.model_type in ['catboost', 'xgboost', 'lightgbm']:
-            # Handle categorical features
-            X_copy = X.copy()
-            if self.categorical_features and self.model_type in ['xgboost', 'lightgbm']:
-                for cat_col in self.categorical_features:
-                    if cat_col in X_copy.columns:
-                        X_copy[cat_col] = X_copy[cat_col].astype('category')
+            # Apply same transformation as training: numeric + categorical features
+            if self.numeric_features is None:
+                raise ValueError("Model must be trained first (numeric_features not set)")
+
+            # Start with numeric features
+            X_copy = X[self.numeric_features].copy()
+
+            # Add categorical features with appropriate dtype (not for LightGBM)
+            if self.used_categorical_features and self.model_type != 'lightgbm':
+                for cat_col in self.used_categorical_features:
+                    if cat_col in X.columns:
+                        if self.model_type == 'catboost':
+                            # CatBoost needs string dtype for categorical
+                            X_copy[cat_col] = X[cat_col].astype(str)
+                        elif self.model_type == 'xgboost':
+                            # XGBoost needs category dtype
+                            X_copy[cat_col] = X[cat_col].astype('category')
 
             return self.model.predict(X_copy)
 
         elif self.model_type == 'prophet':
-            # Prepare data for Prophet
-            df_prophet = pd.DataFrame({'ds': X.index})
-            for col in X.columns:
-                if col != 'holiday_name':
+            # Prepare data for Prophet (numeric columns only)
+            # Remove timezone from datetime index (Prophet doesn't support it)
+            ds_values = X.index
+            if hasattr(ds_values, 'tz') and ds_values.tz is not None:
+                ds_values = ds_values.tz_localize(None)
+
+            df_prophet = pd.DataFrame({'ds': ds_values})
+            # Use only the numeric features stored during training
+            for col in self.prophet_features:
+                if col in X.columns:
                     df_prophet[col] = X[col].values
+
+            # Fill NaN values with forward fill then backward fill
+            # (can't drop rows during prediction as we need same-length output)
+            df_prophet = df_prophet.fillna(method='ffill').fillna(method='bfill')
 
             forecast = self.model.predict(df_prophet)
             return forecast['yhat'].values
-
-        elif self.model_type == 'sarimax':
-            # Use subset of features
-            X_subset = X[self.sarimax_features]
-            predictions = self.model.forecast(steps=len(X), exog=X_subset)
-            return predictions.values
 
         else:
             raise ValueError(f"Unknown model type: {self.model_type}")
@@ -447,20 +477,24 @@ class ModelTrainer:
 
         if self.model_type == 'catboost':
             importance = self.model.get_feature_importance()
+            # Use actual features used in training
+            used_features = self.numeric_features + (self.used_categorical_features or [])
             return pd.DataFrame({
-                'feature': self.feature_names,
+                'feature': used_features,
                 'importance': importance
             }).sort_values('importance', ascending=False)
 
         elif self.model_type in ['xgboost', 'lightgbm']:
             importance = self.model.feature_importances_
+            # Use actual features used in training
+            used_features = self.numeric_features + (self.used_categorical_features or [])
             return pd.DataFrame({
-                'feature': self.feature_names,
+                'feature': used_features,
                 'importance': importance
             }).sort_values('importance', ascending=False)
 
-        elif self.model_type in ['prophet', 'sarimax']:
-            logger.info("Feature importance not available for statistical models")
+        elif self.model_type == 'prophet':
+            logger.info("Feature importance not available for Prophet")
             return None
 
         else:

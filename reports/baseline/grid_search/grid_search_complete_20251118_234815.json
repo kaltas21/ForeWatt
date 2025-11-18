@@ -1,0 +1,922 @@
+{
+  "consumption": {
+    "catboost": {
+      "catboost_light": {
+        "metrics": {
+          "MAE": 478.3245115072824,
+          "RMSE": 716.2096917811045,
+          "MAPE": 1.1797924161433315,
+          "sMAPE": 1.1849493568965106,
+          "MASE": 0.25057206905239987,
+          "training_time_seconds": 1.7006421089172363
+        },
+        "config": {
+          "iterations": 500,
+          "learning_rate": 0.1,
+          "depth": 4,
+          "l2_leaf_reg": 5.0,
+          "bagging_temperature": 0.5,
+          "random_strength": 0.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast training with shallow trees",
+        "feature_selection": "top_50"
+      },
+      "catboost_balanced": {
+        "metrics": {
+          "MAE": 491.3029801446372,
+          "RMSE": 780.8382266768178,
+          "MAPE": 1.1829538826248096,
+          "sMAPE": 1.192329681970611,
+          "MASE": 0.25737088797419405,
+          "training_time_seconds": 2.6027817726135254
+        },
+        "config": {
+          "iterations": 1000,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "Balanced performance and speed (recommended)",
+        "feature_selection": "all"
+      },
+      "catboost_deep": {
+        "metrics": {
+          "MAE": 456.486021060423,
+          "RMSE": 726.9605436171257,
+          "MAPE": 1.1003981216390075,
+          "sMAPE": 1.1082459568049028,
+          "MASE": 0.23913189485140174,
+          "training_time_seconds": 15.309982061386108
+        },
+        "config": {
+          "iterations": 2000,
+          "learning_rate": 0.05,
+          "depth": 8,
+          "l2_leaf_reg": 1.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep trees for complex patterns",
+        "feature_selection": "all"
+      },
+      "catboost_price_optimized": {
+        "metrics": {
+          "MAE": 475.676920838163,
+          "RMSE": 759.1422192015812,
+          "MAPE": 1.1451249711122513,
+          "sMAPE": 1.1541030671221202,
+          "MASE": 0.2491851188627168,
+          "training_time_seconds": 8.76293683052063
+        },
+        "config": {
+          "iterations": 1500,
+          "learning_rate": 0.08,
+          "depth": 7,
+          "l2_leaf_reg": 2.0,
+          "bagging_temperature": 0.8,
+          "random_strength": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "Optimized for price volatility",
+        "feature_selection": "price_focused"
+      },
+      "catboost_demand_optimized": {
+        "metrics": {
+          "MAE": 484.2515366670699,
+          "RMSE": 754.4288428342426,
+          "MAPE": 1.1746467922191572,
+          "sMAPE": 1.1815565821129266,
+          "MASE": 0.25367696316065624,
+          "training_time_seconds": 1.837158203125
+        },
+        "config": {
+          "iterations": 1200,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.5,
+          "bagging_temperature": 0.7,
+          "random_strength": 0.8,
+          "early_stopping_rounds": 60
+        },
+        "description": "Optimized for demand patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "xgboost": {
+      "xgboost_light": {
+        "metrics": {
+          "MAE": 514.6260262792189,
+          "RMSE": 775.5399198291818,
+          "MAPE": 1.2702213869355545,
+          "sMAPE": 1.2768441936555481,
+          "MASE": 0.26958875217716144,
+          "training_time_seconds": 0.8229336738586426
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "min_child_weight": 3,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast, regularized model",
+        "feature_selection": "top_50"
+      },
+      "xgboost_balanced": {
+        "metrics": {
+          "MAE": 503.7660936876425,
+          "RMSE": 773.7162762942451,
+          "MAPE": 1.2338446144967112,
+          "sMAPE": 1.2396456671465022,
+          "MASE": 0.263899736218799,
+          "training_time_seconds": 0.6752209663391113
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "Standard XGBoost (recommended)",
+        "feature_selection": "all"
+      },
+      "xgboost_deep": {
+        "metrics": {
+          "MAE": 472.98380873182725,
+          "RMSE": 743.3288663525486,
+          "MAPE": 1.1496066985820614,
+          "sMAPE": 1.15519527113554,
+          "MASE": 0.24777432209934763,
+          "training_time_seconds": 1.8162379264831543
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "min_child_weight": 1,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep trees with more estimators",
+        "feature_selection": "all"
+      },
+      "xgboost_price_optimized": {
+        "metrics": {
+          "MAE": 464.4027237742303,
+          "RMSE": 726.5333939941892,
+          "MAPE": 1.1317379646535215,
+          "sMAPE": 1.137543612134972,
+          "MASE": 0.24327908892435537,
+          "training_time_seconds": 1.2990708351135254
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "min_child_weight": 2,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "Handles price spikes better",
+        "feature_selection": "price_focused"
+      },
+      "xgboost_demand_optimized": {
+        "metrics": {
+          "MAE": 486.2059783263255,
+          "RMSE": 780.5906631022082,
+          "MAPE": 1.1762184636918738,
+          "sMAPE": 1.1837779529711596,
+          "MASE": 0.25470080467122125,
+          "training_time_seconds": 1.1548411846160889
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "Focus on temporal + weather patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "lightgbm": {
+      "lightgbm_light": {
+        "metrics": {
+          "MAE": 529.7909982222009,
+          "RMSE": 804.7088780807719,
+          "MAPE": 1.3094141602124645,
+          "sMAPE": 1.316454022569,
+          "MASE": 0.27753297896349194,
+          "training_time_seconds": 0.8576600551605225
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "num_leaves": 15,
+          "min_child_samples": 30,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast LightGBM with leaf-wise growth",
+        "feature_selection": "top_50"
+      },
+      "lightgbm_balanced": {
+        "metrics": {
+          "MAE": 428.0106363601247,
+          "RMSE": 646.9134983576487,
+          "MAPE": 1.0596014199439259,
+          "sMAPE": 1.063409688618938,
+          "MASE": 0.22421495898513646,
+          "training_time_seconds": 7.001724004745483
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 31,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "Balanced LightGBM (recommended)",
+        "feature_selection": "all"
+      },
+      "lightgbm_deep": {
+        "metrics": {
+          "MAE": 440.82409737328334,
+          "RMSE": 678.6132232832049,
+          "MAPE": 1.0830437001682016,
+          "sMAPE": 1.0884256483715664,
+          "MASE": 0.2309273380511224,
+          "training_time_seconds": 12.601171016693115
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "num_leaves": 63,
+          "min_child_samples": 10,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep leaf-wise trees",
+        "feature_selection": "all"
+      },
+      "lightgbm_price_optimized": {
+        "metrics": {
+          "MAE": 439.87414348224195,
+          "RMSE": 673.5521862628494,
+          "MAPE": 1.083672600313581,
+          "sMAPE": 1.0868888613271142,
+          "MASE": 0.2304297011827283,
+          "training_time_seconds": 6.8271238803863525
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "num_leaves": 50,
+          "min_child_samples": 15,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "Optimized for price prediction",
+        "feature_selection": "price_focused"
+      },
+      "lightgbm_demand_optimized": {
+        "metrics": {
+          "MAE": 443.0982688814637,
+          "RMSE": 683.2456921844675,
+          "MAPE": 1.0877703820816413,
+          "sMAPE": 1.0929194677369287,
+          "MASE": 0.23211867122865304,
+          "training_time_seconds": 6.954841136932373
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 40,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "Optimized for demand patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "prophet": {
+      "prophet_light": {
+        "metrics": {
+          "MAE": 5039.219988602356,
+          "RMSE": 5602.122944986121,
+          "MAPE": 12.626347034719739,
+          "sMAPE": 13.604356340624154,
+          "MASE": 2.639814077215817,
+          "training_time_seconds": 15.93740200996399
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.01,
+          "seasonality_prior_scale": 5.0,
+          "holidays_prior_scale": 5.0,
+          "seasonality_mode": "additive",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": false
+        },
+        "description": "Conservative, low-variance Prophet",
+        "feature_selection": "prophet_minimal"
+      },
+      "prophet_balanced": {
+        "metrics": {
+          "MAE": 11065.270440997041,
+          "RMSE": 11841.94167805811,
+          "MAPE": 27.762519751394933,
+          "sMAPE": 32.742502430193,
+          "MASE": 5.796582952205192,
+          "training_time_seconds": 23.84101104736328
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 10.0,
+          "holidays_prior_scale": 10.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Standard Prophet (recommended)",
+        "feature_selection": "prophet_standard"
+      },
+      "prophet_flexible": {
+        "metrics": {
+          "MAE": 11554.34711491378,
+          "RMSE": 12503.742591312444,
+          "MAPE": 28.847277990539194,
+          "sMAPE": 34.3524321772182,
+          "MASE": 6.052787581406423,
+          "training_time_seconds": 37.89660596847534
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.5,
+          "seasonality_prior_scale": 20.0,
+          "holidays_prior_scale": 20.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Flexible Prophet with strong seasonality",
+        "feature_selection": "prophet_extended"
+      },
+      "prophet_price_optimized": {
+        "metrics": {
+          "MAE": 11245.38017876195,
+          "RMSE": 12069.990843687021,
+          "MAPE": 28.170416674583198,
+          "sMAPE": 33.33017121836062,
+          "MASE": 5.890934106207367,
+          "training_time_seconds": 31.791099309921265
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 15.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Prophet for price with consumption regressor",
+        "feature_selection": "prophet_price"
+      },
+      "prophet_demand_optimized": {
+        "metrics": {
+          "MAE": 11176.339479461281,
+          "RMSE": 11956.934700791751,
+          "MAPE": 28.044873947453336,
+          "sMAPE": 33.13444514471678,
+          "MASE": 5.8547668798654025,
+          "training_time_seconds": 27.271909713745117
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 12.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Prophet for demand with weather focus",
+        "feature_selection": "prophet_weather"
+      }
+    }
+  },
+  "price_real": {
+    "catboost": {
+      "catboost_light": {
+        "metrics": {
+          "MAE": 121.6064607414512,
+          "RMSE": 144.2463930245448,
+          "MAPE": 199158008026.4138,
+          "sMAPE": 21.300210441930382,
+          "MASE": 0.7493832910223803,
+          "training_time_seconds": 0.29839301109313965
+        },
+        "config": {
+          "iterations": 500,
+          "learning_rate": 0.1,
+          "depth": 4,
+          "l2_leaf_reg": 5.0,
+          "bagging_temperature": 0.5,
+          "random_strength": 0.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_balanced": {
+        "metrics": {
+          "MAE": 94.2302401398029,
+          "RMSE": 125.1296751004185,
+          "MAPE": 200033848931.98254,
+          "sMAPE": 17.540097199997785,
+          "MASE": 0.5806810513129651,
+          "training_time_seconds": 0.42264604568481445
+        },
+        "config": {
+          "iterations": 1000,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_deep": {
+        "metrics": {
+          "MAE": 100.03109901295467,
+          "RMSE": 134.6212568861681,
+          "MAPE": 219890546249.09778,
+          "sMAPE": 18.220624027452466,
+          "MASE": 0.6164280559261591,
+          "training_time_seconds": 1.0356359481811523
+        },
+        "config": {
+          "iterations": 2000,
+          "learning_rate": 0.05,
+          "depth": 8,
+          "l2_leaf_reg": 1.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_price_optimized": {
+        "metrics": {
+          "MAE": 96.01234752710874,
+          "RMSE": 131.3699838454393,
+          "MAPE": 229350392939.24304,
+          "sMAPE": 17.71682964003701,
+          "MASE": 0.5916630459431182,
+          "training_time_seconds": 0.6326930522918701
+        },
+        "config": {
+          "iterations": 1500,
+          "learning_rate": 0.08,
+          "depth": 7,
+          "l2_leaf_reg": 2.0,
+          "bagging_temperature": 0.8,
+          "random_strength": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_demand_optimized": {
+        "metrics": {
+          "MAE": 94.25927677807027,
+          "RMSE": 125.18141746751358,
+          "MAPE": 200093552548.99582,
+          "sMAPE": 17.543016661494995,
+          "MASE": 0.58085998565093,
+          "training_time_seconds": 0.4477970600128174
+        },
+        "config": {
+          "iterations": 1200,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.5,
+          "bagging_temperature": 0.7,
+          "random_strength": 0.8,
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "xgboost": {
+      "xgboost_light": {
+        "metrics": {
+          "MAE": 97.76590230170031,
+          "RMSE": 135.15824959409616,
+          "MAPE": 195303035146.26505,
+          "sMAPE": 17.84108718420275,
+          "MASE": 0.6024690889770103,
+          "training_time_seconds": 0.2654440402984619
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "min_child_weight": 3,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_balanced": {
+        "metrics": {
+          "MAE": 95.79894512615267,
+          "RMSE": 134.0177949389632,
+          "MAPE": 206872837100.14853,
+          "sMAPE": 17.700392270247274,
+          "MASE": 0.590347982643311,
+          "training_time_seconds": 0.4060189723968506
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_deep": {
+        "metrics": {
+          "MAE": 94.42691877089584,
+          "RMSE": 118.83080324124316,
+          "MAPE": 163158803971.6288,
+          "sMAPE": 17.274830762948227,
+          "MASE": 0.5818930566533357,
+          "training_time_seconds": 0.9886648654937744
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "min_child_weight": 1,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_price_optimized": {
+        "metrics": {
+          "MAE": 90.02525914266327,
+          "RMSE": 119.5224861398565,
+          "MAPE": 177641298233.93793,
+          "sMAPE": 16.84229283317147,
+          "MASE": 0.5547684272705408,
+          "training_time_seconds": 0.6132547855377197
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "min_child_weight": 2,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_demand_optimized": {
+        "metrics": {
+          "MAE": 99.76881401256296,
+          "RMSE": 137.94217688532592,
+          "MAPE": 208083337542.58972,
+          "sMAPE": 18.326062111149984,
+          "MASE": 0.6148117602492604,
+          "training_time_seconds": 0.4432981014251709
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "lightgbm": {
+      "lightgbm_light": {
+        "metrics": {
+          "MAE": 85.76778279140922,
+          "RMSE": 119.58030223635114,
+          "MAPE": 178455648608.83832,
+          "sMAPE": 16.34726713424037,
+          "MASE": 0.5285323077412006,
+          "training_time_seconds": 0.3210902214050293
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "num_leaves": 15,
+          "min_child_samples": 30,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_balanced": {
+        "metrics": {
+          "MAE": 80.49970528840613,
+          "RMSE": 108.11794850480352,
+          "MAPE": 136186293302.57573,
+          "sMAPE": 15.33460692997476,
+          "MASE": 0.4960684959297962,
+          "training_time_seconds": 0.6317129135131836
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 31,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_deep": {
+        "metrics": {
+          "MAE": 104.81950617371203,
+          "RMSE": 144.7250034945509,
+          "MAPE": 218149757310.45312,
+          "sMAPE": 18.883637081356333,
+          "MASE": 0.6459359644287568,
+          "training_time_seconds": 1.1164767742156982
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "num_leaves": 63,
+          "min_child_samples": 10,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_price_optimized": {
+        "metrics": {
+          "MAE": 114.66443673001677,
+          "RMSE": 152.42110661087358,
+          "MAPE": 217018773526.685,
+          "sMAPE": 20.14576896012965,
+          "MASE": 0.7066040113005105,
+          "training_time_seconds": 0.8424975872039795
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "num_leaves": 50,
+          "min_child_samples": 15,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_demand_optimized": {
+        "metrics": {
+          "MAE": 82.03577144684434,
+          "RMSE": 111.05100433406699,
+          "MAPE": 148409259475.7647,
+          "sMAPE": 15.627487040348573,
+          "MASE": 0.5055342949179428,
+          "training_time_seconds": 0.6976301670074463
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 40,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "prophet": {
+      "prophet_light": {
+        "metrics": {
+          "MAE": 261.65920629538124,
+          "RMSE": 316.9241859732085,
+          "MAPE": 273427152542.32892,
+          "sMAPE": 35.55805180241058,
+          "MASE": 1.6124393058098367,
+          "training_time_seconds": 22.762797832489014
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.01,
+          "seasonality_prior_scale": 5.0,
+          "holidays_prior_scale": 5.0,
+          "seasonality_mode": "additive",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": false
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_balanced": {
+        "metrics": {
+          "MAE": 118.94272504641698,
+          "RMSE": 133.9551435974698,
+          "MAPE": 11060674203.54604,
+          "sMAPE": 21.26792848593273,
+          "MASE": 0.7329683817372348,
+          "training_time_seconds": 21.6078097820282
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 10.0,
+          "holidays_prior_scale": 10.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_flexible": {
+        "metrics": {
+          "MAE": 120.24153576225699,
+          "RMSE": 135.17788554114938,
+          "MAPE": 10947818391.970108,
+          "sMAPE": 21.443429841152096,
+          "MASE": 0.7409721262974903,
+          "training_time_seconds": 25.2967369556427
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.5,
+          "seasonality_prior_scale": 20.0,
+          "holidays_prior_scale": 20.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_price_optimized": {
+        "metrics": {
+          "MAE": 120.34966327098768,
+          "RMSE": 135.23997271789037,
+          "MAPE": 10963687117.040558,
+          "sMAPE": 21.4641143838403,
+          "MASE": 0.7416384473782011,
+          "training_time_seconds": 23.391558170318604
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 15.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_demand_optimized": {
+        "metrics": {
+          "MAE": 119.55289656558263,
+          "RMSE": 134.51554338928383,
+          "MAPE": 10931076926.649649,
+          "sMAPE": 21.353861984636453,
+          "MASE": 0.7367284808169429,
+          "training_time_seconds": 23.22363805770874
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 12.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    }
+  }
+}
