@@ -1,0 +1,952 @@
+{
+  "consumption": {
+    "catboost": {
+      "catboost_light": {
+        "metrics": {
+          "MAE": 488.1648672779889,
+          "RMSE": 765.1699726658901,
+          "MAPE": 1.1886000280866404,
+          "sMAPE": 1.1925453394015881,
+          "MASE": 0.2527086909659888,
+          "training_time_seconds": 2.2484471797943115
+        },
+        "config": {
+          "iterations": 500,
+          "learning_rate": 0.1,
+          "depth": 4,
+          "l2_leaf_reg": 5.0,
+          "bagging_temperature": 0.5,
+          "random_strength": 0.5,
+          "early_stopping_rounds": 30,
+          "task_type": "GPU"
+        },
+        "description": "Fast training with shallow trees",
+        "feature_selection": "top_50"
+      },
+      "catboost_balanced": {
+        "metrics": {
+          "MAE": 432.59156366751824,
+          "RMSE": 707.0798283417118,
+          "MAPE": 1.0410730891693607,
+          "sMAPE": 1.0447133106028292,
+          "MASE": 0.22394001515700204,
+          "training_time_seconds": 7.621361255645752
+        },
+        "config": {
+          "iterations": 1000,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 50,
+          "task_type": "GPU"
+        },
+        "description": "Balanced performance and speed (recommended)",
+        "feature_selection": "all"
+      },
+      "catboost_deep": {
+        "metrics": {
+          "MAE": 463.45272999945513,
+          "RMSE": 772.8535403601418,
+          "MAPE": 1.0895479801382069,
+          "sMAPE": 1.0971437736652843,
+          "MASE": 0.23991593941577566,
+          "training_time_seconds": 22.953498363494873
+        },
+        "config": {
+          "iterations": 2000,
+          "learning_rate": 0.05,
+          "depth": 8,
+          "l2_leaf_reg": 1.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 100,
+          "task_type": "GPU"
+        },
+        "description": "Deep trees for complex patterns",
+        "feature_selection": "all"
+      },
+      "catboost_price_optimized": {
+        "metrics": {
+          "MAE": 436.90722414016676,
+          "RMSE": 726.293069325607,
+          "MAPE": 1.0415574101312255,
+          "sMAPE": 1.0470152313537595,
+          "MASE": 0.2261741065097409,
+          "training_time_seconds": 11.026195764541626
+        },
+        "config": {
+          "iterations": 1500,
+          "learning_rate": 0.08,
+          "depth": 7,
+          "l2_leaf_reg": 2.0,
+          "bagging_temperature": 0.8,
+          "random_strength": 1.2,
+          "early_stopping_rounds": 75,
+          "task_type": "GPU"
+        },
+        "description": "Optimized for price volatility",
+        "feature_selection": "price_focused"
+      },
+      "catboost_demand_optimized": {
+        "metrics": {
+          "MAE": 426.948621953907,
+          "RMSE": 697.7084607412953,
+          "MAPE": 1.0281921165994237,
+          "sMAPE": 1.0319933090948854,
+          "MASE": 0.22101882907985648,
+          "training_time_seconds": 7.49891471862793
+        },
+        "config": {
+          "iterations": 1200,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.5,
+          "bagging_temperature": 0.7,
+          "random_strength": 0.8,
+          "early_stopping_rounds": 60,
+          "task_type": "GPU"
+        },
+        "description": "Optimized for demand patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "xgboost": {
+      "xgboost_light": {
+        "metrics": {
+          "MAE": 444.4074795083219,
+          "RMSE": 668.6695547130591,
+          "MAPE": 1.0909474175738647,
+          "sMAPE": 1.0920428108243263,
+          "MASE": 0.23005676960789823,
+          "training_time_seconds": 1.8471288681030273
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "min_child_weight": 3,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast, regularized model",
+        "feature_selection": "top_50"
+      },
+      "xgboost_balanced": {
+        "metrics": {
+          "MAE": 434.54645568054065,
+          "RMSE": 656.9810019378557,
+          "MAPE": 1.0610502673838693,
+          "sMAPE": 1.0623503248321733,
+          "MASE": 0.22495200564362886,
+          "training_time_seconds": 4.175252437591553
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 50
+        },
+        "description": "Standard XGBoost (recommended)",
+        "feature_selection": "all"
+      },
+      "xgboost_deep": {
+        "metrics": {
+          "MAE": 444.0600364466224,
+          "RMSE": 704.494517162595,
+          "MAPE": 1.0661683675782008,
+          "sMAPE": 1.0708660181051481,
+          "MASE": 0.2298769084847558,
+          "training_time_seconds": 7.46395468711853
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "min_child_weight": 1,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep trees with more estimators",
+        "feature_selection": "all"
+      },
+      "xgboost_price_optimized": {
+        "metrics": {
+          "MAE": 443.2934158015813,
+          "RMSE": 694.6468656198766,
+          "MAPE": 1.0698290983073713,
+          "sMAPE": 1.0736402091529698,
+          "MASE": 0.22948005137220676,
+          "training_time_seconds": 4.790440082550049
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "min_child_weight": 2,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 75
+        },
+        "description": "Handles price spikes better",
+        "feature_selection": "price_focused"
+      },
+      "xgboost_demand_optimized": {
+        "metrics": {
+          "MAE": 444.9615687170056,
+          "RMSE": 671.0640911241131,
+          "MAPE": 1.0872396869138758,
+          "sMAPE": 1.0886184479662981,
+          "MASE": 0.2303436054045536,
+          "training_time_seconds": 2.6629669666290283
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "tree_method": "gpu_hist",
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "Focus on temporal + weather patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "lightgbm": {
+      "lightgbm_light": {
+        "metrics": {
+          "MAE": 458.704419485908,
+          "RMSE": 696.0359309408991,
+          "MAPE": 1.1220104852299584,
+          "sMAPE": 1.1241486440840645,
+          "MASE": 0.23745787777592556,
+          "training_time_seconds": 1.0394668579101562
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "num_leaves": 15,
+          "min_child_samples": 30,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "device": "gpu",
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast LightGBM with leaf-wise growth",
+        "feature_selection": "top_50"
+      },
+      "lightgbm_balanced": {
+        "metrics": {
+          "MAE": 445.7200131491493,
+          "RMSE": 675.7966997723199,
+          "MAPE": 1.0947208076547155,
+          "sMAPE": 1.0946652453583865,
+          "MASE": 0.23073622993053844,
+          "training_time_seconds": 3.0526492595672607
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 31,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "device": "gpu",
+          "early_stopping_rounds": 50
+        },
+        "description": "Balanced LightGBM (recommended)",
+        "feature_selection": "all"
+      },
+      "lightgbm_deep": {
+        "metrics": {
+          "MAE": 435.82230592850675,
+          "RMSE": 675.3316633267611,
+          "MAPE": 1.0597388535276961,
+          "sMAPE": 1.061310089481657,
+          "MASE": 0.2256124760454215,
+          "training_time_seconds": 7.403830051422119
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "num_leaves": 63,
+          "min_child_samples": 10,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "device": "gpu",
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep leaf-wise trees",
+        "feature_selection": "all"
+      },
+      "lightgbm_price_optimized": {
+        "metrics": {
+          "MAE": 439.54838062518064,
+          "RMSE": 692.2576252102162,
+          "MAPE": 1.0676993779228885,
+          "sMAPE": 1.0697477007019756,
+          "MASE": 0.22754135606558432,
+          "training_time_seconds": 4.280915021896362
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "num_leaves": 50,
+          "min_child_samples": 15,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "device": "gpu",
+          "early_stopping_rounds": 75
+        },
+        "description": "Optimized for price prediction",
+        "feature_selection": "price_focused"
+      },
+      "lightgbm_demand_optimized": {
+        "metrics": {
+          "MAE": 464.21400279882755,
+          "RMSE": 699.0521121704392,
+          "MAPE": 1.1397967959482425,
+          "sMAPE": 1.139384362616766,
+          "MASE": 0.24031002810484936,
+          "training_time_seconds": 5.244797706604004
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 40,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "device": "gpu",
+          "early_stopping_rounds": 60
+        },
+        "description": "Optimized for demand patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "prophet": {
+      "prophet_light": {
+        "metrics": {
+          "MAE": 2069.218715419355,
+          "RMSE": 2634.604495720054,
+          "MAPE": 5.635912073008294,
+          "sMAPE": 5.406591970120577,
+          "MASE": 1.0711740806168575,
+          "training_time_seconds": 50.80687165260315
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.01,
+          "seasonality_prior_scale": 5.0,
+          "holidays_prior_scale": 5.0,
+          "seasonality_mode": "additive",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": false
+        },
+        "description": "Conservative, low-variance Prophet",
+        "feature_selection": "prophet_minimal"
+      },
+      "prophet_balanced": {
+        "metrics": {
+          "MAE": 8547.166802499314,
+          "RMSE": 9270.641410147058,
+          "MAPE": 21.83570973254832,
+          "sMAPE": 19.352017858175287,
+          "MASE": 4.424618564157266,
+          "training_time_seconds": 77.58608150482178
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 10.0,
+          "holidays_prior_scale": 10.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Standard Prophet (recommended)",
+        "feature_selection": "prophet_standard"
+      },
+      "prophet_flexible": {
+        "metrics": {
+          "MAE": 12474.674923194545,
+          "RMSE": 13384.77521283222,
+          "MAPE": 31.706244793864137,
+          "sMAPE": 26.872322089179356,
+          "MASE": 6.457774783435102,
+          "training_time_seconds": 94.71031212806702
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.5,
+          "seasonality_prior_scale": 20.0,
+          "holidays_prior_scale": 20.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Flexible Prophet with strong seasonality",
+        "feature_selection": "prophet_extended"
+      },
+      "prophet_price_optimized": {
+        "metrics": {
+          "MAE": 10221.502796084153,
+          "RMSE": 11014.607838351507,
+          "MAPE": 26.040806969080922,
+          "sMAPE": 22.643857627906158,
+          "MASE": 5.291373395440761,
+          "training_time_seconds": 86.37838101387024
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 15.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Prophet for price with consumption regressor",
+        "feature_selection": "prophet_price"
+      },
+      "prophet_demand_optimized": {
+        "metrics": {
+          "MAE": 8225.374127075745,
+          "RMSE": 8938.45189105989,
+          "MAPE": 21.026611432350677,
+          "sMAPE": 18.70301935860434,
+          "MASE": 4.258035896661809,
+          "training_time_seconds": 83.17419075965881
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 12.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Prophet for demand with weather focus",
+        "feature_selection": "prophet_weather"
+      }
+    }
+  },
+  "price_real": {
+    "catboost": {
+      "catboost_light": {
+        "metrics": {
+          "MAE": 123.25418476655975,
+          "RMSE": 139.31185160670913,
+          "MAPE": 217.884228210981,
+          "sMAPE": 24.921730821361894,
+          "MASE": 0.7810957215720964,
+          "training_time_seconds": 0.5106816291809082
+        },
+        "config": {
+          "iterations": 500,
+          "learning_rate": 0.1,
+          "depth": 4,
+          "l2_leaf_reg": 5.0,
+          "bagging_temperature": 0.5,
+          "random_strength": 0.5,
+          "early_stopping_rounds": 30,
+          "task_type": "GPU"
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_balanced": {
+        "metrics": {
+          "MAE": 76.80584916813609,
+          "RMSE": 101.42056115575082,
+          "MAPE": 247.1457671478416,
+          "sMAPE": 16.980008934742084,
+          "MASE": 0.4867398238085589,
+          "training_time_seconds": 0.8336427211761475
+        },
+        "config": {
+          "iterations": 1000,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 50,
+          "task_type": "GPU"
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_deep": {
+        "metrics": {
+          "MAE": 79.79511342391616,
+          "RMSE": 102.64893274543365,
+          "MAPE": 241.9957793840607,
+          "sMAPE": 17.44599427278084,
+          "MASE": 0.5056836148470576,
+          "training_time_seconds": 2.2642576694488525
+        },
+        "config": {
+          "iterations": 2000,
+          "learning_rate": 0.05,
+          "depth": 8,
+          "l2_leaf_reg": 1.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 100,
+          "task_type": "GPU"
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_price_optimized": {
+        "metrics": {
+          "MAE": 79.2131215601917,
+          "RMSE": 105.0683594542884,
+          "MAPE": 251.32864371048234,
+          "sMAPE": 17.342344574220327,
+          "MASE": 0.5019953720859218,
+          "training_time_seconds": 1.1498403549194336
+        },
+        "config": {
+          "iterations": 1500,
+          "learning_rate": 0.08,
+          "depth": 7,
+          "l2_leaf_reg": 2.0,
+          "bagging_temperature": 0.8,
+          "random_strength": 1.2,
+          "early_stopping_rounds": 75,
+          "task_type": "GPU"
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_demand_optimized": {
+        "metrics": {
+          "MAE": 75.16384183198839,
+          "RMSE": 98.14948878766442,
+          "MAPE": 223.70234716827943,
+          "sMAPE": 16.89036489670158,
+          "MASE": 0.47633397099728025,
+          "training_time_seconds": 0.800957202911377
+        },
+        "config": {
+          "iterations": 1200,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.5,
+          "bagging_temperature": 0.7,
+          "random_strength": 0.8,
+          "early_stopping_rounds": 60,
+          "task_type": "GPU"
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "xgboost": {
+      "xgboost_light": {
+        "metrics": {
+          "MAE": 76.08457239875223,
+          "RMSE": 94.68605350811158,
+          "MAPE": 164.4330591561954,
+          "sMAPE": 16.76992236726175,
+          "MASE": 0.4821688942315866,
+          "training_time_seconds": 0.40984225273132324
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "min_child_weight": 3,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_balanced": {
+        "metrics": {
+          "MAE": 88.78193618024375,
+          "RMSE": 104.4219690996868,
+          "MAPE": 171.89061227912117,
+          "sMAPE": 18.47450335831707,
+          "MASE": 0.5626355862449384,
+          "training_time_seconds": 0.6468019485473633
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_deep": {
+        "metrics": {
+          "MAE": 85.92513515159291,
+          "RMSE": 102.54825511282246,
+          "MAPE": 172.09105148938002,
+          "sMAPE": 17.999486683024635,
+          "MASE": 0.5445312511662698,
+          "training_time_seconds": 1.9740235805511475
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "min_child_weight": 1,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_price_optimized": {
+        "metrics": {
+          "MAE": 82.43526066148821,
+          "RMSE": 98.64257002217549,
+          "MAPE": 180.69358866946735,
+          "sMAPE": 17.503991753402975,
+          "MASE": 0.5224149551702578,
+          "training_time_seconds": 1.0980815887451172
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "min_child_weight": 2,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "tree_method": "gpu_hist",
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_demand_optimized": {
+        "metrics": {
+          "MAE": 88.56072130012622,
+          "RMSE": 104.17098514981997,
+          "MAPE": 171.0098993351243,
+          "sMAPE": 18.376069771802182,
+          "MASE": 0.561233686611793,
+          "training_time_seconds": 0.7492814064025879
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "tree_method": "gpu_hist",
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "lightgbm": {
+      "lightgbm_light": {
+        "metrics": {
+          "MAE": 70.29453927538891,
+          "RMSE": 91.49654118391243,
+          "MAPE": 189.21264294643902,
+          "sMAPE": 15.907736642200849,
+          "MASE": 0.4454758593542278,
+          "training_time_seconds": 0.3204324245452881
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "num_leaves": 15,
+          "min_child_samples": 30,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "device": "gpu",
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_balanced": {
+        "metrics": {
+          "MAE": 85.98626825244388,
+          "RMSE": 101.92112944235318,
+          "MAPE": 187.2057057654705,
+          "sMAPE": 17.867287864369178,
+          "MASE": 0.5449186684666362,
+          "training_time_seconds": 0.46959638595581055
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 31,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "device": "gpu",
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_deep": {
+        "metrics": {
+          "MAE": 86.11106641854555,
+          "RMSE": 101.60043789304544,
+          "MAPE": 183.54489372921196,
+          "sMAPE": 17.91887043779233,
+          "MASE": 0.5457095488232478,
+          "training_time_seconds": 0.8241033554077148
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "num_leaves": 63,
+          "min_child_samples": 10,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "device": "gpu",
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_price_optimized": {
+        "metrics": {
+          "MAE": 85.34593116646478,
+          "RMSE": 101.09896445075545,
+          "MAPE": 188.64883602818887,
+          "sMAPE": 17.800632918629848,
+          "MASE": 0.5408606759597732,
+          "training_time_seconds": 0.6117153167724609
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "num_leaves": 50,
+          "min_child_samples": 15,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "device": "gpu",
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_demand_optimized": {
+        "metrics": {
+          "MAE": 94.52657137232252,
+          "RMSE": 109.08511783248616,
+          "MAPE": 160.21423256137427,
+          "sMAPE": 19.382903860009375,
+          "MASE": 0.5990409219260246,
+          "training_time_seconds": 0.5070030689239502
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 40,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "device": "gpu",
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "prophet": {
+      "prophet_light": {
+        "metrics": {
+          "MAE": 106.85860243956263,
+          "RMSE": 132.476570997841,
+          "MAPE": 272.8844822829397,
+          "sMAPE": 21.640915790936674,
+          "MASE": 0.6771923998913296,
+          "training_time_seconds": 114.26709461212158
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.01,
+          "seasonality_prior_scale": 5.0,
+          "holidays_prior_scale": 5.0,
+          "seasonality_mode": "additive",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": false
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_balanced": {
+        "metrics": {
+          "MAE": 259.4616298920887,
+          "RMSE": 286.76350416286743,
+          "MAPE": 144.78610230430812,
+          "sMAPE": 36.25862659446358,
+          "MASE": 1.6442798222605937,
+          "training_time_seconds": 95.49502801895142
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 10.0,
+          "holidays_prior_scale": 10.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_flexible": {
+        "metrics": {
+          "MAE": 261.074941096589,
+          "RMSE": 288.66112670909735,
+          "MAPE": 144.9986345697408,
+          "sMAPE": 36.387566104681035,
+          "MASE": 1.654503819780728,
+          "training_time_seconds": 95.17901587486267
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.5,
+          "seasonality_prior_scale": 20.0,
+          "holidays_prior_scale": 20.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_price_optimized": {
+        "metrics": {
+          "MAE": 260.7667164722387,
+          "RMSE": 288.33309747813587,
+          "MAPE": 145.17213809778832,
+          "sMAPE": 36.35621190298612,
+          "MASE": 1.652550515429893,
+          "training_time_seconds": 78.76974201202393
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 15.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_demand_optimized": {
+        "metrics": {
+          "MAE": 260.355919210135,
+          "RMSE": 287.8241867795919,
+          "MAPE": 145.07550319180396,
+          "sMAPE": 36.33029678568847,
+          "MASE": 1.649947180018033,
+          "training_time_seconds": 89.92147469520569
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 12.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    }
+  }
+}

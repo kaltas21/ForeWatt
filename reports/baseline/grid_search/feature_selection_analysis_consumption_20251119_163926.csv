@@ -1,0 +1,10 @@
+feature_selection,MASE_mean,MASE_std,MASE_min,sMAPE_mean,sMAPE_std,sMAPE_min,config_count
+all,0.2292,0.0059,0.2239,1.0718,0.0205,1.0447,6
+demand_focused,0.2306,0.0096,0.221,1.0867,0.0537,1.032,3
+price_focused,0.2277,0.0017,0.2262,1.0635,0.0144,1.047,3
+prophet_extended,6.4578,,6.4578,26.8723,,26.8723,1
+prophet_minimal,1.0712,,1.0712,5.4066,,5.4066,1
+prophet_price,5.2914,,5.2914,22.6439,,22.6439,1
+prophet_standard,4.4246,,4.4246,19.352,,19.352,1
+prophet_weather,4.258,,4.258,18.703,,18.703,1
+top_50,0.2401,0.0116,0.2301,1.1362,0.0513,1.092,3

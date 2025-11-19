@@ -1,0 +1,2 @@
+feature_selection,MASE_mean,MASE_std,MASE_min,sMAPE_mean,sMAPE_std,sMAPE_min,config_count
+all,0.769,0.458,0.4455,21.9278,7.6383,15.9077,20
