@@ -194,7 +194,7 @@ class DeepLearningHyperparameterConfigs:
                 'input_size': 504,  # 3 weeks lookback
                 'horizon': 24,
                 'feature_selection': 'all',
-                'dropout': 0.1,  # Add dropout for regularization
+                # Note: dropout not supported by NeuralForecast NHITS API
                 'description': 'Maximum capacity N-HiTS for best possible performance'
             },
 
@@ -212,9 +212,9 @@ class DeepLearningHyperparameterConfigs:
                 'input_size': 168,
                 'horizon': 24,
                 'feature_selection': 'standard_dl',
-                'dropout': 0.2,  # Heavy dropout for regularization
-                # Note: weight_decay not supported by NeuralForecast NHITS API
-                'description': 'N-HiTS with strong dropout regularization for better generalization'
+                # Note: dropout and weight_decay not supported by NeuralForecast NHITS API
+                # Use smaller model size or early stopping for regularization instead
+                'description': 'N-HiTS with smaller architecture for regularization'
             }
         }
 

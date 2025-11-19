@@ -207,12 +207,8 @@ class NHiTSTrainer:
             'devices': devices
         }
 
-        # Add optional dropout if present (for regularization)
-        if 'dropout' in hyperparams:
-            nhits_params['dropout'] = hyperparams['dropout']
-
-        # Note: weight_decay is not supported by NeuralForecast's NHITS API
-        # Use dropout for regularization instead
+        # Note: dropout and weight_decay are not supported by NeuralForecast's NHITS API
+        # Use model architecture (hidden_size, n_blocks) and early stopping for regularization
 
         model = NHITS(**nhits_params)
 
