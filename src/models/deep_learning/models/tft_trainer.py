@@ -167,7 +167,6 @@ class TFTTrainer:
             'h': self.horizon,
             'input_size': self.input_size,
             'hidden_size': hyperparams['hidden_size'],
-            'n_rnn_layers': hyperparams['n_rnn_layers'],
             'n_head': hyperparams['n_head'],
             'dropout': hyperparams['dropout'],
             'learning_rate': hyperparams['learning_rate'],
@@ -183,6 +182,10 @@ class TFTTrainer:
             'accelerator': accelerator,
             'devices': devices
         }
+
+        # Add lstm_n_layers if present (mapped to TFT's internal RNN layers)
+        if 'lstm_n_layers' in hyperparams:
+            tft_params['lstm_n_layers'] = hyperparams['lstm_n_layers']
 
         model = TFT(**tft_params)
 

@@ -1,0 +1,797 @@
+{
+  "consumption": {
+    "catboost": {
+      "catboost_light": {
+        "metrics": {
+          "MAE": 526.3643789915947,
+          "RMSE": 812.7819006714583,
+          "MAPE": 1.2757006821775827,
+          "sMAPE": 1.281037289123343,
+          "MASE": 0.2724834622528133,
+          "training_time_seconds": 1.1336331367492676
+        },
+        "config": {
+          "iterations": 500,
+          "learning_rate": 0.1,
+          "depth": 4,
+          "l2_leaf_reg": 5.0,
+          "bagging_temperature": 0.5,
+          "random_strength": 0.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast training with shallow trees",
+        "feature_selection": "top_50"
+      },
+      "catboost_balanced": {
+        "metrics": {
+          "MAE": 468.2156200297207,
+          "RMSE": 754.339329953089,
+          "MAPE": 1.1134075603883737,
+          "sMAPE": 1.1198412286391397,
+          "MASE": 0.24238154844551757,
+          "training_time_seconds": 3.8181850910186768
+        },
+        "config": {
+          "iterations": 1000,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "Balanced performance and speed (recommended)",
+        "feature_selection": "all"
+      },
+      "catboost_deep": {
+        "metrics": {
+          "MAE": 473.2139920485892,
+          "RMSE": 779.5233660514957,
+          "MAPE": 1.1126197936322304,
+          "sMAPE": 1.120625546757727,
+          "MASE": 0.2449690596215932,
+          "training_time_seconds": 14.621847152709961
+        },
+        "config": {
+          "iterations": 2000,
+          "learning_rate": 0.05,
+          "depth": 8,
+          "l2_leaf_reg": 1.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep trees for complex patterns",
+        "feature_selection": "all"
+      },
+      "catboost_price_optimized": {
+        "metrics": {
+          "MAE": 463.22126261654853,
+          "RMSE": 761.3550619548587,
+          "MAPE": 1.0961651067715001,
+          "sMAPE": 1.1032795646392943,
+          "MASE": 0.2397961155135317,
+          "training_time_seconds": 7.043004035949707
+        },
+        "config": {
+          "iterations": 1500,
+          "learning_rate": 0.08,
+          "depth": 7,
+          "l2_leaf_reg": 2.0,
+          "bagging_temperature": 0.8,
+          "random_strength": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "Optimized for price volatility",
+        "feature_selection": "price_focused"
+      },
+      "catboost_demand_optimized": {
+        "metrics": {
+          "MAE": 457.90315598250436,
+          "RMSE": 744.7924857031809,
+          "MAPE": 1.0885667720002297,
+          "sMAPE": 1.0948773232422553,
+          "MASE": 0.23704308706762856,
+          "training_time_seconds": 5.267110109329224
+        },
+        "config": {
+          "iterations": 1200,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.5,
+          "bagging_temperature": 0.7,
+          "random_strength": 0.8,
+          "early_stopping_rounds": 60
+        },
+        "description": "Optimized for demand patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "xgboost": {
+      "xgboost_light": {
+        "metrics": {
+          "error": "[12:24:16] /Users/runner/work/xgboost/xgboost/src/data/cat_container.h:28: Found a category not in the training set for the 94th (0-based) column: `yram\u0131Demokrasi ve Milli Birli`\nStack trace:\n  [bt] (0) 1   libxgboost.dylib                    0x00000001258052dc dmlc::LogMessageFatal::~LogMessageFatal() + 124\n  [bt] (1) 2   libxgboost.dylib                    0x000000012597afa8 xgboost::EncErrorPolicy::Error(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>&&) const + 88\n  [bt] (2) 3   libxgboost.dylib                    0x00000001259d9f14 void enc::detail::ReportMissing<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, unsigned long) + 168\n  [bt] (3) 4   libxgboost.dylib                    0x00000001259d9ccc void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>)::'lambda'(enc::CatStrArrayView const&)::operator()(enc::CatStrArrayView const&) const + 456\n  [bt] (4) 5   libxgboost.dylib                    0x00000001259d9414 void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>) + 716\n  [bt] (5) 6   libxgboost.dylib                    0x00000001259d8fa4 xgboost::cpu_impl::MakeCatAccessor(xgboost::Context const*, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>> const&, xgboost::CatContainer const*) + 284\n  [bt] (6) 7   libxgboost.dylib                    0x00000001259d8e00 xgboost::data::MakeEncColumnarBatch(xgboost::Context const*, xgboost::data::ColumnarAdapter const*) + 164\n  [bt] (7) 8   libxgboost.dylib                    0x0000000125a0db14 decltype(auto) xgboost::data::cpu_impl::DispatchAny<true, std::__1::shared_ptr, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)>(xgboost::Context const*, std::__1::any, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)&&, bool*) + 1040\n  [bt] (8) 9   libxgboost.dylib                    0x0000000125a0d668 xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*) + 112\n\n"
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "min_child_weight": 3,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast, regularized model",
+        "feature_selection": "top_50"
+      },
+      "xgboost_balanced": {
+        "metrics": {
+          "error": "[12:24:16] /Users/runner/work/xgboost/xgboost/src/data/cat_container.h:28: Found a category not in the training set for the 94th (0-based) column: `yram\u0131Demokrasi ve Milli Birli`\nStack trace:\n  [bt] (0) 1   libxgboost.dylib                    0x00000001258052dc dmlc::LogMessageFatal::~LogMessageFatal() + 124\n  [bt] (1) 2   libxgboost.dylib                    0x000000012597afa8 xgboost::EncErrorPolicy::Error(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>&&) const + 88\n  [bt] (2) 3   libxgboost.dylib                    0x00000001259d9f14 void enc::detail::ReportMissing<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, unsigned long) + 168\n  [bt] (3) 4   libxgboost.dylib                    0x00000001259d9ccc void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>)::'lambda'(enc::CatStrArrayView const&)::operator()(enc::CatStrArrayView const&) const + 456\n  [bt] (4) 5   libxgboost.dylib                    0x00000001259d9414 void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>) + 716\n  [bt] (5) 6   libxgboost.dylib                    0x00000001259d8fa4 xgboost::cpu_impl::MakeCatAccessor(xgboost::Context const*, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>> const&, xgboost::CatContainer const*) + 284\n  [bt] (6) 7   libxgboost.dylib                    0x00000001259d8e00 xgboost::data::MakeEncColumnarBatch(xgboost::Context const*, xgboost::data::ColumnarAdapter const*) + 164\n  [bt] (7) 8   libxgboost.dylib                    0x0000000125a0db14 decltype(auto) xgboost::data::cpu_impl::DispatchAny<true, std::__1::shared_ptr, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)>(xgboost::Context const*, std::__1::any, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)&&, bool*) + 1040\n  [bt] (8) 9   libxgboost.dylib                    0x0000000125a0d668 xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*) + 112\n\n"
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "Standard XGBoost (recommended)",
+        "feature_selection": "all"
+      },
+      "xgboost_deep": {
+        "metrics": {
+          "error": "[12:24:16] /Users/runner/work/xgboost/xgboost/src/data/cat_container.h:28: Found a category not in the training set for the 94th (0-based) column: `yram\u0131Demokrasi ve Milli Birli`\nStack trace:\n  [bt] (0) 1   libxgboost.dylib                    0x00000001258052dc dmlc::LogMessageFatal::~LogMessageFatal() + 124\n  [bt] (1) 2   libxgboost.dylib                    0x000000012597afa8 xgboost::EncErrorPolicy::Error(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>&&) const + 88\n  [bt] (2) 3   libxgboost.dylib                    0x00000001259d9f14 void enc::detail::ReportMissing<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, unsigned long) + 168\n  [bt] (3) 4   libxgboost.dylib                    0x00000001259d9ccc void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>)::'lambda'(enc::CatStrArrayView const&)::operator()(enc::CatStrArrayView const&) const + 456\n  [bt] (4) 5   libxgboost.dylib                    0x00000001259d9414 void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>) + 716\n  [bt] (5) 6   libxgboost.dylib                    0x00000001259d8fa4 xgboost::cpu_impl::MakeCatAccessor(xgboost::Context const*, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>> const&, xgboost::CatContainer const*) + 284\n  [bt] (6) 7   libxgboost.dylib                    0x00000001259d8e00 xgboost::data::MakeEncColumnarBatch(xgboost::Context const*, xgboost::data::ColumnarAdapter const*) + 164\n  [bt] (7) 8   libxgboost.dylib                    0x0000000125a0db14 decltype(auto) xgboost::data::cpu_impl::DispatchAny<true, std::__1::shared_ptr, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)>(xgboost::Context const*, std::__1::any, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)&&, bool*) + 1040\n  [bt] (8) 9   libxgboost.dylib                    0x0000000125a0d668 xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*) + 112\n\n"
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "min_child_weight": 1,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep trees with more estimators",
+        "feature_selection": "all"
+      },
+      "xgboost_price_optimized": {
+        "metrics": {
+          "error": "[12:24:16] /Users/runner/work/xgboost/xgboost/src/data/cat_container.h:28: Found a category not in the training set for the 94th (0-based) column: `yram\u0131Demokrasi ve Milli Birli`\nStack trace:\n  [bt] (0) 1   libxgboost.dylib                    0x00000001258052dc dmlc::LogMessageFatal::~LogMessageFatal() + 124\n  [bt] (1) 2   libxgboost.dylib                    0x000000012597afa8 xgboost::EncErrorPolicy::Error(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>&&) const + 88\n  [bt] (2) 3   libxgboost.dylib                    0x00000001259d9f14 void enc::detail::ReportMissing<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, unsigned long) + 168\n  [bt] (3) 4   libxgboost.dylib                    0x00000001259d9ccc void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>)::'lambda'(enc::CatStrArrayView const&)::operator()(enc::CatStrArrayView const&) const + 456\n  [bt] (4) 5   libxgboost.dylib                    0x00000001259d9414 void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>) + 716\n  [bt] (5) 6   libxgboost.dylib                    0x00000001259d8fa4 xgboost::cpu_impl::MakeCatAccessor(xgboost::Context const*, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>> const&, xgboost::CatContainer const*) + 284\n  [bt] (6) 7   libxgboost.dylib                    0x00000001259d8e00 xgboost::data::MakeEncColumnarBatch(xgboost::Context const*, xgboost::data::ColumnarAdapter const*) + 164\n  [bt] (7) 8   libxgboost.dylib                    0x0000000125a0db14 decltype(auto) xgboost::data::cpu_impl::DispatchAny<true, std::__1::shared_ptr, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)>(xgboost::Context const*, std::__1::any, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)&&, bool*) + 1040\n  [bt] (8) 9   libxgboost.dylib                    0x0000000125a0d668 xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*) + 112\n\n"
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "min_child_weight": 2,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "Handles price spikes better",
+        "feature_selection": "price_focused"
+      },
+      "xgboost_demand_optimized": {
+        "metrics": {
+          "error": "[12:24:16] /Users/runner/work/xgboost/xgboost/src/data/cat_container.h:28: Found a category not in the training set for the 94th (0-based) column: `yram\u0131Demokrasi ve Milli Birli`\nStack trace:\n  [bt] (0) 1   libxgboost.dylib                    0x00000001258052dc dmlc::LogMessageFatal::~LogMessageFatal() + 124\n  [bt] (1) 2   libxgboost.dylib                    0x000000012597afa8 xgboost::EncErrorPolicy::Error(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>&&) const + 88\n  [bt] (2) 3   libxgboost.dylib                    0x00000001259d9f14 void enc::detail::ReportMissing<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, unsigned long) + 168\n  [bt] (3) 4   libxgboost.dylib                    0x00000001259d9ccc void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>)::'lambda'(enc::CatStrArrayView const&)::operator()(enc::CatStrArrayView const&) const + 456\n  [bt] (4) 5   libxgboost.dylib                    0x00000001259d9414 void enc::Recode<enc::Policy<xgboost::EncErrorPolicy>>(enc::Policy<xgboost::EncErrorPolicy> const&, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int const, 18446744073709551615ul>, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>>, xgboost::common::Span<int, 18446744073709551615ul>) + 716\n  [bt] (5) 6   libxgboost.dylib                    0x00000001259d8fa4 xgboost::cpu_impl::MakeCatAccessor(xgboost::Context const*, enc::detail::ColumnsViewImpl<std::__1::variant<enc::CatStrArrayView, xgboost::common::Span<unsigned char const, 18446744073709551615ul>, xgboost::common::Span<signed char const, 18446744073709551615ul>, xgboost::common::Span<unsigned short const, 18446744073709551615ul>, xgboost::common::Span<short const, 18446744073709551615ul>, xgboost::common::Span<unsigned int const, 18446744073709551615ul>, xgboost::common::Span<int const, 18446744073709551615ul>, xgboost::common::Span<unsigned long long const, 18446744073709551615ul>, xgboost::common::Span<long long const, 18446744073709551615ul>, xgboost::common::Span<float const, 18446744073709551615ul>, xgboost::common::Span<double const, 18446744073709551615ul>>> const&, xgboost::CatContainer const*) + 284\n  [bt] (6) 7   libxgboost.dylib                    0x00000001259d8e00 xgboost::data::MakeEncColumnarBatch(xgboost::Context const*, xgboost::data::ColumnarAdapter const*) + 164\n  [bt] (7) 8   libxgboost.dylib                    0x0000000125a0db14 decltype(auto) xgboost::data::cpu_impl::DispatchAny<true, std::__1::shared_ptr, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)>(xgboost::Context const*, std::__1::any, xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*)::'lambda'(auto const&)&&, bool*) + 1040\n  [bt] (8) 9   libxgboost.dylib                    0x0000000125a0d668 xgboost::data::BatchColumns(xgboost::data::DMatrixProxy const*) + 112\n\n"
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "Focus on temporal + weather patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "lightgbm": {
+      "lightgbm_light": {
+        "metrics": {
+          "MAE": 489.255086671837,
+          "RMSE": 753.0178824424211,
+          "MAPE": 1.1807532780287777,
+          "sMAPE": 1.1858385443304162,
+          "MASE": 0.25327306569746283,
+          "training_time_seconds": 1.8915479183197021
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "num_leaves": 15,
+          "min_child_samples": 30,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "Fast LightGBM with leaf-wise growth",
+        "feature_selection": "top_50"
+      },
+      "lightgbm_balanced": {
+        "metrics": {
+          "MAE": 466.541679343722,
+          "RMSE": 731.4389117954902,
+          "MAPE": 1.119263973499287,
+          "sMAPE": 1.1242655419501444,
+          "MASE": 0.24151499825342326,
+          "training_time_seconds": 4.009773015975952
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 31,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "Balanced LightGBM (recommended)",
+        "feature_selection": "all"
+      },
+      "lightgbm_deep": {
+        "metrics": {
+          "MAE": 455.3338622571522,
+          "RMSE": 717.8497959761471,
+          "MAPE": 1.0895917386803586,
+          "sMAPE": 1.0945571652735797,
+          "MASE": 0.23571303876312585,
+          "training_time_seconds": 10.93203091621399
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "num_leaves": 63,
+          "min_child_samples": 10,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "Deep leaf-wise trees",
+        "feature_selection": "all"
+      },
+      "lightgbm_price_optimized": {
+        "metrics": {
+          "MAE": 468.32291581832993,
+          "RMSE": 737.6543915306792,
+          "MAPE": 1.1216042434317957,
+          "sMAPE": 1.1267009242686576,
+          "MASE": 0.24243709234083471,
+          "training_time_seconds": 6.843655109405518
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "num_leaves": 50,
+          "min_child_samples": 15,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "Optimized for price prediction",
+        "feature_selection": "price_focused"
+      },
+      "lightgbm_demand_optimized": {
+        "metrics": {
+          "MAE": 475.0208659614723,
+          "RMSE": 746.1871047652488,
+          "MAPE": 1.139008080145809,
+          "sMAPE": 1.143872135470468,
+          "MASE": 0.24590442546184993,
+          "training_time_seconds": 3.1613218784332275
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 40,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "Optimized for demand patterns",
+        "feature_selection": "demand_focused"
+      }
+    },
+    "prophet": {
+      "prophet_light": {
+        "metrics": {
+          "MAE": 2072.8016669841813,
+          "RMSE": 2639.208061161627,
+          "MAPE": 5.646437348370884,
+          "sMAPE": 5.4158087137869035,
+          "MASE": 1.0730288699727377,
+          "training_time_seconds": 18.391584157943726
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.01,
+          "seasonality_prior_scale": 5.0,
+          "holidays_prior_scale": 5.0,
+          "seasonality_mode": "additive",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": false
+        },
+        "description": "Conservative, low-variance Prophet",
+        "feature_selection": "prophet_minimal"
+      },
+      "prophet_balanced": {
+        "metrics": {
+          "MAE": 8233.077213621496,
+          "RMSE": 8941.486281784864,
+          "MAPE": 21.0476672375142,
+          "sMAPE": 18.72176592208702,
+          "MASE": 4.262023559535274,
+          "training_time_seconds": 27.892779111862183
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 10.0,
+          "holidays_prior_scale": 10.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Standard Prophet (recommended)",
+        "feature_selection": "prophet_standard"
+      },
+      "prophet_flexible": {
+        "metrics": {
+          "MAE": 13410.88040934663,
+          "RMSE": 14368.027213088542,
+          "MAPE": 34.063676596413664,
+          "sMAPE": 28.570070523508555,
+          "MASE": 6.942421014123277,
+          "training_time_seconds": 27.93838596343994
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.5,
+          "seasonality_prior_scale": 20.0,
+          "holidays_prior_scale": 20.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Flexible Prophet with strong seasonality",
+        "feature_selection": "prophet_extended"
+      },
+      "prophet_price_optimized": {
+        "metrics": {
+          "MAE": 10237.145067740124,
+          "RMSE": 11031.492260481946,
+          "MAPE": 26.078949663459056,
+          "sMAPE": 22.673085118613155,
+          "MASE": 5.299470942517339,
+          "training_time_seconds": 30.00939393043518
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 15.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Prophet for price with consumption regressor",
+        "feature_selection": "prophet_price"
+      },
+      "prophet_demand_optimized": {
+        "metrics": {
+          "MAE": 8309.031356083038,
+          "RMSE": 9021.392274848035,
+          "MAPE": 21.237708926898808,
+          "sMAPE": 18.874219874078708,
+          "MASE": 4.301342800229361,
+          "training_time_seconds": 29.753871202468872
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 12.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "Prophet for demand with weather focus",
+        "feature_selection": "prophet_weather"
+      }
+    }
+  },
+  "price_real": {
+    "catboost": {
+      "catboost_light": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "iterations": 500,
+          "learning_rate": 0.1,
+          "depth": 4,
+          "l2_leaf_reg": 5.0,
+          "bagging_temperature": 0.5,
+          "random_strength": 0.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_balanced": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "iterations": 1000,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_deep": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "iterations": 2000,
+          "learning_rate": 0.05,
+          "depth": 8,
+          "l2_leaf_reg": 1.0,
+          "bagging_temperature": 1.0,
+          "random_strength": 1.0,
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_price_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "iterations": 1500,
+          "learning_rate": 0.08,
+          "depth": 7,
+          "l2_leaf_reg": 2.0,
+          "bagging_temperature": 0.8,
+          "random_strength": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "catboost_demand_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "iterations": 1200,
+          "learning_rate": 0.1,
+          "depth": 6,
+          "l2_leaf_reg": 3.5,
+          "bagging_temperature": 0.7,
+          "random_strength": 0.8,
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "xgboost": {
+      "xgboost_light": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "min_child_weight": 3,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_balanced": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_deep": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "min_child_weight": 1,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_price_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "min_child_weight": 2,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "xgboost_demand_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "min_child_weight": 1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "lightgbm": {
+      "lightgbm_light": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 500,
+          "learning_rate": 0.1,
+          "max_depth": 4,
+          "num_leaves": 15,
+          "min_child_samples": 30,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 30
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_balanced": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 1000,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 31,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.0,
+          "early_stopping_rounds": 50
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_deep": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 2000,
+          "learning_rate": 0.05,
+          "max_depth": 8,
+          "num_leaves": 63,
+          "min_child_samples": 10,
+          "subsample": 0.9,
+          "colsample_bytree": 0.9,
+          "reg_alpha": 0.0,
+          "reg_lambda": 0.5,
+          "early_stopping_rounds": 100
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_price_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 1500,
+          "learning_rate": 0.08,
+          "max_depth": 7,
+          "num_leaves": 50,
+          "min_child_samples": 15,
+          "subsample": 0.85,
+          "colsample_bytree": 0.85,
+          "reg_alpha": 0.05,
+          "reg_lambda": 1.2,
+          "early_stopping_rounds": 75
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "lightgbm_demand_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "n_estimators": 1200,
+          "learning_rate": 0.1,
+          "max_depth": 6,
+          "num_leaves": 40,
+          "min_child_samples": 20,
+          "subsample": 0.8,
+          "colsample_bytree": 0.75,
+          "reg_alpha": 0.0,
+          "reg_lambda": 1.5,
+          "early_stopping_rounds": 60
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    },
+    "prophet": {
+      "prophet_light": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.01,
+          "seasonality_prior_scale": 5.0,
+          "holidays_prior_scale": 5.0,
+          "seasonality_mode": "additive",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": false
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_balanced": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 10.0,
+          "holidays_prior_scale": 10.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_flexible": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.5,
+          "seasonality_prior_scale": 20.0,
+          "holidays_prior_scale": 20.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_price_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 15.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      },
+      "prophet_demand_optimized": {
+        "metrics": {
+          "error": "'price_real'"
+        },
+        "config": {
+          "growth": "linear",
+          "changepoint_prior_scale": 0.05,
+          "seasonality_prior_scale": 12.0,
+          "holidays_prior_scale": 15.0,
+          "seasonality_mode": "multiplicative",
+          "yearly_seasonality": true,
+          "weekly_seasonality": true,
+          "daily_seasonality": true
+        },
+        "description": "",
+        "feature_selection": "all"
+      }
+    }
+  }
+}

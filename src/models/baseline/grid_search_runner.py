@@ -45,7 +45,11 @@ from src.models.baseline.hyperparameter_configs import (
 from src.models.baseline.pipeline_runner import BaselinePipeline
 from src.models.baseline.data_loader import load_master_data, train_val_test_split
 
-logging.basicConfig(level=logging.INFO)
+# Configure root logger to capture ALL output from ALL modules
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Check GPU availability once at module load
@@ -97,12 +101,13 @@ class GridSearchRunner:
         log_dir.mkdir(parents=True, exist_ok=True)
         overall_log_file = log_dir / f'grid_search_run_{timestamp}.log'
 
-        # Add file handler for overall run
+        # Add file handler to ROOT logger to capture ALL output from ALL modules
+        root_logger = logging.getLogger()
         overall_file_handler = logging.FileHandler(overall_log_file)
         overall_file_handler.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         overall_file_handler.setFormatter(formatter)
-        logger.addHandler(overall_file_handler)
+        root_logger.addHandler(overall_file_handler)
 
         logger.info(f"\n{'█'*100}")
         logger.info("BASELINE MODELS GRID SEARCH")
@@ -157,12 +162,12 @@ class GridSearchRunner:
                         log_dir.mkdir(parents=True, exist_ok=True)
                         log_file = log_dir / f'{config_name}_{timestamp}.log'
 
-                        # Add file handler to logger
+                        # Add file handler to ROOT logger to capture detailed per-config logs
                         file_handler = logging.FileHandler(log_file)
                         file_handler.setLevel(logging.INFO)
                         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
                         file_handler.setFormatter(formatter)
-                        logger.addHandler(file_handler)
+                        root_logger.addHandler(file_handler)
 
                         logger.info(f"\n{'─'*100}")
                         logger.info(f"Config: {config_name}")
@@ -218,8 +223,8 @@ class GridSearchRunner:
                             }
 
                         finally:
-                            # Remove file handler
-                            logger.removeHandler(file_handler)
+                            # Remove file handler from root logger
+                            root_logger.removeHandler(file_handler)
                             file_handler.close()
 
             elapsed_time = time.time() - start_time
@@ -233,8 +238,8 @@ class GridSearchRunner:
             return self.all_results
 
         finally:
-            # Remove overall log file handler
-            logger.removeHandler(overall_file_handler)
+            # Remove overall log file handler from root logger
+            root_logger.removeHandler(overall_file_handler)
             overall_file_handler.close()
 
     def generate_summary_reports(self):
