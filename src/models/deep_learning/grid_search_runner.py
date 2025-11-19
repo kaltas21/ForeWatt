@@ -9,8 +9,11 @@ Targets:
 - price_real: Day-ahead market price (PTF, inflation-adjusted TL/MWh)
 
 Usage:
-    # Run all configs for both targets
+    # Run all configs for both targets (skips already-trained models by default)
     python src/models/deep_learning/grid_search_runner.py
+
+    # Force retrain all models (ignore existing)
+    python src/models/deep_learning/grid_search_runner.py --retrain
 
     # Run specific model configs
     python src/models/deep_learning/grid_search_runner.py --models nhits tft
@@ -69,7 +72,8 @@ class DeepLearningGridSearchRunner:
         cv_folds: int = 3,
         use_optuna: bool = False,
         n_trials: int = 20,
-        mlflow_uri: Optional[str] = None
+        mlflow_uri: Optional[str] = None,
+        skip_existing: bool = True
     ):
         """
         Initialize grid search runner.
@@ -83,6 +87,7 @@ class DeepLearningGridSearchRunner:
             use_optuna: Whether to use Optuna for optimization (slower but better)
             n_trials: Number of Optuna trials (if use_optuna=True)
             mlflow_uri: MLflow tracking URI
+            skip_existing: If True, skip training if model already exists (default: True)
         """
         self.targets = targets or ['consumption', 'price_real']
         self.models = models or ['nhits', 'tft', 'patchtst']
@@ -92,6 +97,7 @@ class DeepLearningGridSearchRunner:
         self.use_optuna = use_optuna
         self.n_trials = n_trials
         self.mlflow_uri = mlflow_uri
+        self.skip_existing = skip_existing
 
         self.all_results = {}
         self.configs = DeepLearningHyperparameterConfigs.get_all_deep_learning_configs()
@@ -166,7 +172,8 @@ class DeepLearningGridSearchRunner:
         target: str,
         train_df: pd.DataFrame,
         val_df: pd.DataFrame,
-        test_df: pd.DataFrame
+        test_df: pd.DataFrame,
+        skip_existing: bool = True
     ) -> Dict:
         """
         Train a single configuration.
@@ -179,6 +186,7 @@ class DeepLearningGridSearchRunner:
             train_df: Training data
             val_df: Validation data
             test_df: Test data
+            skip_existing: If True, skip training if model already exists
 
         Returns:
             Dictionary with results
@@ -201,7 +209,50 @@ class DeepLearningGridSearchRunner:
         logger.info(f"Log file: {log_file}")
         logger.info(f"{'─'*100}")
 
+        # Clear GPU memory before starting (prevent fragmentation from previous runs)
+        import gc
+        import torch
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+            mem_allocated = torch.cuda.memory_allocated() / 1024**3
+            mem_reserved = torch.cuda.memory_reserved() / 1024**3
+            logger.info(f"GPU memory at start: {mem_allocated:.2f} GB allocated, {mem_reserved:.2f} GB reserved")
+
         try:
+            # Check if model already exists and skip if requested
+            if skip_existing:
+                model_dir = PROJECT_ROOT / 'models' / 'deep_learning' / target
+                existing_models = list(model_dir.glob(f"{model_type}_{config_name}_*.pkl")) if model_dir.exists() else []
+
+                if existing_models:
+                    # Load the most recent model
+                    latest_model = max(existing_models, key=lambda p: p.stat().st_mtime)
+                    logger.info(f"⏭ Skipping {config_name} - found existing model: {latest_model.name}")
+
+                    try:
+                        import joblib
+                        saved_data = joblib.load(latest_model)
+
+                        # Return cached results if available
+                        if 'metrics' in saved_data:
+                            val_smape = saved_data['metrics'].get('val_sMAPE', 'N/A')
+                            logger.info(f"✓ Loaded cached results - Val sMAPE: {val_smape}")
+                            logger.removeHandler(file_handler)
+                            file_handler.close()
+                            return {
+                                'metrics': saved_data.get('metrics', {}),
+                                'config': saved_data.get('config', {}),
+                                'description': saved_data.get('description', ''),
+                                'feature_selection': saved_data.get('feature_selection', ''),
+                                'cached': True,
+                                'model_path': str(latest_model)
+                            }
+                    except Exception as e:
+                        logger.warning(f"Failed to load existing model {latest_model.name}: {e}")
+                        logger.info("Proceeding with training...")
+
             # Extract metadata
             description = config_params.pop('description', '')
             feature_selection = config_params.pop('feature_selection', 'standard_dl')
@@ -275,29 +326,34 @@ class DeepLearningGridSearchRunner:
                     hyperparams=config_params
                 )
 
-                # Predict on test
-                # Note: NeuralForecast generates ONE h-step forecast from end of data
-                # To evaluate properly: use data UP TO (T-horizon), forecast (T-horizon+1) to T
-                # This way we can compare forecasts against known values in test set
+                # Predict on test WITHOUT test target values (avoid data leakage!)
+                # For proper out-of-sample evaluation, we predict from the end of validation
+                # The model should NOT have access to test targets
+                #
+                # We'll predict the last 'horizon' hours of test by:
+                # 1. Using train+val data as context (model was trained on this)
+                # 2. Predicting the next horizon hours (which fall in test period)
+                # 3. Comparing against actual test values
 
-                # Use all but last 'horizon' samples for prediction input
-                # IMPORTANT: Pass actual y values for autoregressive models!
-                X_test_input = X_test.iloc[:-horizon] if len(X_test) > horizon else X_test
-                y_test_input = y_test.iloc[:-horizon] if len(y_test) > horizon else y_test
-                test_predictions = trainer.predict(X_test_input, y=y_test_input)
+                # Combine train and val for context (model saw these during training)
+                train_val_X = pd.concat([X_train, X_val], axis=0)
+                train_val_y = pd.concat([y_train, y_val], axis=0)
+
+                # Predict the NEXT horizon hours after train+val (these are FIRST hours of test)
+                test_predictions = trainer.predict(train_val_X, y=train_val_y, horizon=horizon)
 
                 # Ensure predictions are 2D: (1, horizon) if they're 1D
                 if len(test_predictions.shape) == 1:
                     test_predictions = test_predictions.reshape(1, -1)
 
-                # Ground truth: the last 'horizon' values from y_test
-                # These are the actual values we're forecasting
-                y_test_last = y_test.values[-horizon:]
+                # Ground truth: the FIRST 'horizon' values from y_test
+                # These are the hours immediately following validation (true out-of-sample)
+                y_test_first = y_test.values[:horizon]
 
                 # Evaluate the h-step forecast
                 evaluator = HorizonWiseEvaluator(horizon=horizon)
                 horizon_metrics_df = evaluator.evaluate_all_horizons(
-                    y_true=y_test_last.reshape(1, -1) if len(y_test_last.shape) == 1 else y_test_last,
+                    y_true=y_test_first.reshape(1, -1) if len(y_test_first.shape) == 1 else y_test_first,
                     y_pred=test_predictions,
                     y_train=y_train.values
                 )
@@ -376,6 +432,15 @@ class DeepLearningGridSearchRunner:
             logger.removeHandler(file_handler)
             file_handler.close()
 
+            # Clear GPU memory to prevent OOM in subsequent runs
+            import gc
+            import torch
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                logger.info(f"GPU memory cleared after {config_name}")
+
     def run_grid_search(self) -> Dict:
         """
         Run grid search across all configurations.
@@ -403,6 +468,7 @@ class DeepLearningGridSearchRunner:
         logger.info(f"Targets: {', '.join(self.targets)}")
         logger.info(f"Models: {', '.join(self.models)}")
         logger.info(f"Hardware: {self.hw_config.device_type.upper()}")
+        logger.info(f"Skip existing models: {self.skip_existing}")
 
         total_configs = sum(
             len(self.configs[model])
@@ -454,7 +520,8 @@ class DeepLearningGridSearchRunner:
                             target=target,
                             train_df=train_df,
                             val_df=val_df,
-                            test_df=test_df
+                            test_df=test_df,
+                            skip_existing=self.skip_existing
                         )
 
                         self.all_results[target][model_type][config_name] = result
@@ -558,6 +625,17 @@ def main():
         description='Grid search for deep learning model hyperparameters'
     )
     parser.add_argument(
+        '--skip-existing',
+        action='store_true',
+        default=True,
+        help='Skip training if model already exists (default: True)'
+    )
+    parser.add_argument(
+        '--retrain',
+        action='store_true',
+        help='Force retrain all models (ignore existing)'
+    )
+    parser.add_argument(
         '--targets',
         nargs='+',
         choices=['consumption', 'price_real'],
@@ -607,6 +685,9 @@ def main():
 
     args = parser.parse_args()
 
+    # Handle --retrain flag (overrides --skip-existing)
+    skip_existing = args.skip_existing and not args.retrain
+
     # Run grid search
     runner = DeepLearningGridSearchRunner(
         targets=args.targets,
@@ -616,7 +697,8 @@ def main():
         cv_folds=args.cv_folds,
         use_optuna=args.use_optuna,
         n_trials=args.n_trials,
-        mlflow_uri=args.mlflow_uri
+        mlflow_uri=args.mlflow_uri,
+        skip_existing=skip_existing
     )
 
     results = runner.run_grid_search()

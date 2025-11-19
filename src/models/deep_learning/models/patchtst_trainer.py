@@ -297,12 +297,19 @@ class PatchTSTTrainer:
             logger.error(f"Training failed with RuntimeError: {e}")
             raise
 
-        # Predict on validation (returns forecast for next h steps)
-        val_pred = nf.predict(df=full_df)
-        val_predictions = val_pred['PatchTST'].values
-
-        # Use only first h validation samples for metrics (single forecast evaluation)
-        y_val_horizon = y_val.values[:self.horizon]
+        # Predict on validation using same methodology as test:
+        # Use data UP TO last horizon hours, predict those last horizon hours
+        # This matches how we evaluate on test set in grid_search_runner
+        if len(val_df) > self.horizon:
+            val_input_df = full_df.iloc[:-self.horizon].copy()
+            val_predictions = nf.predict(df=val_input_df, h=self.horizon)['PatchTST'].values
+            y_val_horizon = y_val.values[-self.horizon:]  # Last horizon hours for comparison
+        else:
+            # If validation is too short, use first horizon hours (fallback)
+            val_pred = nf.predict(df=full_df, h=self.horizon)
+            val_predictions = val_pred['PatchTST'].values
+            y_val_horizon = y_val.values[:self.horizon]
+            logger.warning(f"Validation set too short ({len(val_df)} < {self.horizon}), using first {self.horizon} hours")
 
         # Calculate validation metrics
         from src.models.evaluate import (

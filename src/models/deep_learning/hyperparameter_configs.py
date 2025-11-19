@@ -169,7 +169,7 @@ class DeepLearningHyperparameterConfigs:
                 'n_pool_kernel_size': [2, 1],
                 'n_freq_downsample': [2, 1],
                 'hidden_size': 128,
-                'n_mlp_layers': 1,
+                'n_mlp_layers': 2,  # Minimum 2 layers required by NHITS
                 'learning_rate': 2e-3,  # Higher LR for faster convergence
                 'batch_size': 256,  # Large batches for speed
                 'max_steps': 300,
@@ -212,9 +212,9 @@ class DeepLearningHyperparameterConfigs:
                 'input_size': 168,
                 'horizon': 24,
                 'feature_selection': 'standard_dl',
-                'dropout': 0.2,  # Heavy dropout
-                'weight_decay': 1e-4,  # L2 regularization
-                'description': 'N-HiTS with strong regularization for better generalization'
+                'dropout': 0.2,  # Heavy dropout for regularization
+                # Note: weight_decay not supported by NeuralForecast NHITS API
+                'description': 'N-HiTS with strong dropout regularization for better generalization'
             }
         }
 
@@ -266,7 +266,7 @@ class DeepLearningHyperparameterConfigs:
                 'n_head': 8,
                 'dropout': 0.1,
                 'learning_rate': 5e-4,
-                'batch_size': 16,  # Reduced from 32 to avoid OOM
+                'batch_size': 8,  # Reduced to 8 for large input_size (336h)
                 'max_steps': 2000,
                 'early_stop_patience_steps': 150,
                 'input_size': 336,  # 2 weeks
@@ -353,10 +353,10 @@ class DeepLearningHyperparameterConfigs:
             'tft_ultra_deep': {
                 'hidden_size': 256,  # Very large
                 'n_rnn_layers': 4,  # Deep LSTM stack
-                'n_head': 16,  # Many attention heads
+                'n_head': 8,  # Reduced from 16 to avoid OOM
                 'dropout': 0.15,
                 'learning_rate': 3e-4,
-                'batch_size': 16,
+                'batch_size': 4,  # Reduced from 16 to avoid OOM (504h input is huge!)
                 'max_steps': 3000,
                 'early_stop_patience_steps': 200,
                 'input_size': 504,  # 3 weeks

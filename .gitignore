@@ -75,6 +75,19 @@ mlflow_server.log
 # Model Training Artifacts
 # ══════════════════════════════════════════════════════════
 catboost_info/
+lightning_logs/
+models/**/*.pkl
+!models/.gitkeep
+
+# ══════════════════════════════════════════════════════════
+# Reports & Logs
+# ══════════════════════════════════════════════════════════
+reports/**/*.csv
+reports/**/*.json
+reports/**/*.log
+!reports/.gitkeep
+!reports/*/.gitkeep
+
 
 # ══════════════════════════════════════════════════════════
 # Jupyter Notebooks
