@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def load_master_data(
     start_date: str = '2020-01-01',
-    end_date: str = '2024-12-31'
+    end_date: str = '2025-10-31'
 ) -> pd.DataFrame:
     """
     Load master dataset from Gold layer.

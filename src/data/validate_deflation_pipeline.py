@@ -158,7 +158,7 @@ class DeflationPipelineValidator:
 
         # Generate monthly data for 2020-2024 (full coverage)
         # Start from 2020-01 to match EPİAŞ data range
-        date_range = pd.date_range('2020-01-01', '2024-12-31', freq='MS')
+        date_range = pd.date_range('2020-01-01', '2025-10-31', freq='MS')
 
         # Synthetic EVDS data (realistic Turkish inflation patterns)
         np.random.seed(42)
@@ -189,7 +189,7 @@ class DeflationPipelineValidator:
         bronze_dir = Path('data/bronze/macro')
         bronze_dir.mkdir(parents=True, exist_ok=True)
 
-        output_path = bronze_dir / 'macro_evds_2020-01-01_2024-12-31_SYNTHETIC.parquet'
+        output_path = bronze_dir / 'macro_evds_2020-01-01_2025-10-31_SYNTHETIC.parquet'
         synthetic_macro.to_parquet(output_path, engine='pyarrow', compression='snappy')
 
         logger.info(f"  Created {len(synthetic_macro)} months of synthetic data")
@@ -227,7 +227,7 @@ class DeflationPipelineValidator:
             from evds_fetcher import fetch_evds_data, save_bronze
 
             logger.info("Fetching real EVDS data (2020-2024)...")
-            df = fetch_evds_data(start_date='2020-01-01', end_date='2024-12-31')
+            df = fetch_evds_data(start_date='2020-01-01', end_date='2025-10-31')
 
             # Validate data
             required_cols = ['DATE', 'TUFE', 'UFE']
@@ -240,7 +240,7 @@ class DeflationPipelineValidator:
                 }
 
             # Save bronze
-            save_bronze(df, start_date='2020-01-01', end_date='2024-12-31')
+            save_bronze(df, start_date='2020-01-01', end_date='2025-10-31')
 
             return {
                 'status': 'pass',
@@ -390,7 +390,7 @@ class DeflationPipelineValidator:
         logger.info("Testing price deflation...")
 
         # Check if silver price data exists
-        price_file = Path('data/silver/epias/price_ptf_normalized_2020-01-01_2024-12-31.parquet')
+        price_file = Path('data/silver/epias/price_ptf_normalized_2020-01-01_2025-10-31.parquet')
         if not price_file.exists():
             return {
                 'status': 'skip',
@@ -408,7 +408,7 @@ class DeflationPipelineValidator:
             df_deflated = deflator.deflate_dataset(
                 dataset_name='price_ptf',
                 start_date='2020-01-01',
-                end_date='2024-12-31',
+                end_date='2025-10-31',
                 layer='silver'
             )
 
@@ -453,7 +453,7 @@ class DeflationPipelineValidator:
         logger.info("Validating output quality...")
 
         # Check if gold deflated data exists
-        deflated_file = Path('data/gold/epias/price_ptf_deflated_2020-01-01_2024-12-31.parquet')
+        deflated_file = Path('data/gold/epias/price_ptf_deflated_2020-01-01_2025-10-31.parquet')
 
         if not deflated_file.exists():
             return {

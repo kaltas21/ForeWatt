@@ -312,7 +312,7 @@ class RollingFeaturesGenerator:
             if n_missing > 0:
                 logger.info(f"  {col}: {n_missing} ({n_missing/len(df)*100:.2f}%)")
 
-    def run_pipeline(self, start_date: str = '2020-01-01', end_date: str = '2024-12-31'):
+    def run_pipeline(self, start_date: str = '2020-01-01', end_date: str = '2025-10-31'):
         """Run complete rolling features pipeline."""
         logger.info("="*60)
         logger.info("ROLLING FEATURES PIPELINE")
@@ -336,7 +336,7 @@ def main():
     generator = RollingFeaturesGenerator(data_dir='./data')
     rolling_df = generator.run_pipeline(
         start_date='2020-01-01',
-        end_date='2024-12-31'
+        end_date='2025-10-31'
     )
 
     print("\nRolling features preview:")

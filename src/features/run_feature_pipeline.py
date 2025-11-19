@@ -18,7 +18,7 @@ Usage:
     python src/features/run_feature_pipeline.py
 
 Or with custom date range:
-    python src/features/run_feature_pipeline.py --start 2020-01-01 --end 2024-12-31
+    python src/features/run_feature_pipeline.py --start 2020-01-01 --end 2025-10-31
 
 Author: ForeWatt Team
 Date: November 2025
@@ -133,7 +133,7 @@ def main():
     parser.add_argument(
         '--end',
         type=str,
-        default='2024-12-31',
+        default='2025-10-31',
         help='End date (YYYY-MM-DD)'
     )
     parser.add_argument(

@@ -54,7 +54,7 @@ Or import as module:
     deflate_price_dataset(
         dataset_name='price_ptf',
         start_date='2020-01-01',
-        end_date='2024-12-31',
+        end_date='2025-10-31',
         deflator_method='baseline'  # or 'dfm'
     )
 
@@ -361,7 +361,7 @@ class PriceDeflator:
     def deflate_all_price_datasets(
         self,
         start_date: str = "2020-01-01",
-        end_date: str = "2024-12-31",
+        end_date: str = "2025-10-31",
         layer: Literal['bronze', 'silver'] = 'silver'
     ):
         """
@@ -420,7 +420,7 @@ if __name__ == "__main__":
     # Deflate all price datasets
     results = deflator.deflate_all_price_datasets(
         start_date='2020-01-01',
-        end_date='2024-12-31',
+        end_date='2025-10-31',
         layer='silver'  # Use normalized silver layer data
     )
 

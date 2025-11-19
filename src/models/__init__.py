@@ -11,7 +11,7 @@ Models:
 - SARIMAX: Seasonal ARIMA with exogenous features
 
 All models:
-- Train on 2020-2022, validate on 2023, test on 2024
+- Train on 2020-2023, validate on 2024, test on 2025 (Jan-Oct)
 - Log to MLflow (MAE, RMSE, MAPE, MASE)
 - Include basic hyperparameter tuning
 - Save artifacts (model, predictions, plots)

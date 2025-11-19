@@ -192,7 +192,7 @@ class CalendarFeaturesGenerator:
             if len(holidays) > 10:
                 logger.info(f"  ... and {len(holidays) - 10} more")
 
-    def run_pipeline(self, start_date: str = '2020-01-01', end_date: str = '2024-12-31'):
+    def run_pipeline(self, start_date: str = '2020-01-01', end_date: str = '2025-10-31'):
         """Run complete calendar features pipeline."""
         logger.info("="*60)
         logger.info("CALENDAR FEATURES PIPELINE")
@@ -216,7 +216,7 @@ def main():
     generator = CalendarFeaturesGenerator(data_dir='./data')
     calendar_df = generator.run_pipeline(
         start_date='2020-01-01',
-        end_date='2024-12-31'
+        end_date='2025-10-31'
     )
 
     print("\nCalendar features preview:")

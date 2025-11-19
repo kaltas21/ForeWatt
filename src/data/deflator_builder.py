@@ -12,7 +12,7 @@ Output:
 - DID_index: Deflator index (base=100 at BASE_MONTH)
 - Use to convert nominal TL prices to real values
 
-Aligned with EPİAŞ pipeline: 2020-01-01 to 2024-12-31
+Aligned with EPİAŞ pipeline: 2020-01-01 to 2025-10-31
 """
 import os
 import pandas as pd
@@ -25,7 +25,7 @@ from pathlib import Path
 
 # File paths (supports both CSV and Parquet)
 BRONZE_PATH_CSV = "data/bronze/macro/macro_evds_raw.csv"
-BRONZE_PATH_PARQUET = "data/bronze/macro/macro_evds_2020-01-01_2024-12-31.parquet"
+BRONZE_PATH_PARQUET = "data/bronze/macro/macro_evds_2020-01-01_2025-10-31.parquet"
 SILVER_DIR = "data/silver/macro"
 BASE_MONTH = "2022-01"  # DID base month (middle of dataset, YYYY-MM format)
 

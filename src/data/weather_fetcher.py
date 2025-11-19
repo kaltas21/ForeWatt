@@ -774,7 +774,7 @@ class DemandWeatherFetcher:
 
 def load_weather_features(
     start_date: str = "2020-01-01",
-    end_date: str = "2024-12-31",
+    end_date: str = "2025-10-31",
     output_dir: str = './data',
     layer: str = 'gold'
 ) -> pd.DataFrame:
@@ -792,7 +792,7 @@ def load_weather_features(
 
     Example:
         >>> from src.data.weather_fetcher import load_weather_features
-        >>> df = load_weather_features('2020-01-01', '2024-12-31', layer='gold')
+        >>> df = load_weather_features('2020-01-01', '2025-10-31', layer='gold')
         >>> print(df[['temp_national', 'HDD', 'CDD']].head())
     """
     fetcher = DemandWeatherFetcher()
@@ -801,7 +801,7 @@ def load_weather_features(
 
 def fetch_weather_features(
     start_date: str = "2020-01-01",
-    end_date: str = "2024-12-31",
+    end_date: str = "2025-10-31",
     output_dir: str = './data',
     force_refetch: bool = False,
     delay_between_requests: float = 7.0
@@ -821,7 +821,7 @@ def fetch_weather_features(
 
     Example:
         >>> from src.data.weather_fetcher import fetch_weather_features
-        >>> df = fetch_weather_features('2020-01-01', '2024-12-31')
+        >>> df = fetch_weather_features('2020-01-01', '2025-10-31')
         >>> # First run: Fetches from API (~15 min)
         >>> # Second run: Loads from disk instantly!
     """
@@ -882,7 +882,7 @@ if __name__ == "__main__":
 
     historical_features = fetcher.run_pipeline(
         start_date='2020-01-01',
-        end_date='2024-12-31',
+        end_date='2025-10-31',
         output_dir='./data',
         force_refetch=False  # Load from disk if exists (fast!)
     )

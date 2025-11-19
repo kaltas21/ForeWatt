@@ -7,7 +7,7 @@ load_dotenv()
 
 EVDS_API_KEY = os.getenv("EVDS_API_KEY")
 
-def fetch_evds_data(start_date="2020-01-01", end_date="2024-12-31"):
+def fetch_evds_data(start_date="2020-01-01", end_date="2025-10-31"):
     """
     TÜFE, ÜFE, M2, TL series will be fetched.
 
@@ -65,7 +65,7 @@ def rebase_index(df, column, base_date="2022-01"):
     return df
 
 
-def save_bronze(df, start_date="2020-01-01", end_date="2024-12-31"):
+def save_bronze(df, start_date="2020-01-01", end_date="2025-10-31"):
     """
     Save bronze layer in dual format (CSV + Parquet) to match EPİAŞ pipeline.
 
@@ -91,7 +91,7 @@ def save_bronze(df, start_date="2020-01-01", end_date="2024-12-31"):
 if __name__ == "__main__":
     # Date range aligned with EPİAŞ pipeline
     START_DATE = "2020-01-01"
-    END_DATE = "2024-12-31"
+    END_DATE = "2025-10-31"
 
     # fetching
     df = fetch_evds_data(start_date=START_DATE, end_date=END_DATE)

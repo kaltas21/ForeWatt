@@ -90,33 +90,32 @@ class EpiasDataFetcher:
             'description': 'Actual Generation by Source/Plant (TEİAŞ)',
             'data_id': '15',
             'api_params': {},
-            'use_fallback': True,
-            'fallback_endpoint': '/v1/generation/export/realtime-generation',
-            'fallback_extra_params': {}
+            'max_days_per_chunk': 90,  # EPİAŞ limit for generation endpoints
+            'use_fallback': False  # Fallback not needed - primary method works with smaller chunks
         },
         'capacity_eak': {
             'method': 'eak',  # Available capacity (Emre Amade Kapasite)
             'description': 'Available Capacity (EAK)',
             'data_id': '11',
             'api_params': {},
-            'use_fallback': True,
-            'fallback_endpoint': '/v1/generation/export/aic',
-            'fallback_extra_params': {'region': 'TR1'}
+            'max_days_per_chunk': 90,  # EPİAŞ limit for generation endpoints
+            'use_fallback': False
         },
         'plan_kgup': {
             'method': 'kgup',  # Day-ahead production plan (Kesinleşmiş Gün Öncesi Üretim Planı)
             'description': 'Day-Ahead Generation Plan (KGÜP)',
             'data_id': '13',
             'api_params': {},
-            'use_fallback': True,
-            'fallback_endpoint': '/v1/generation/export/dpp',
-            'fallback_extra_params': {'region': 'TR1'}
+            'max_days_per_chunk': 90,  # EPİAŞ limit for generation endpoints
+            'use_fallback': False
         },
         'plan_kudup': {
             'method': 'kudup',  # Bilateral contract plan (Kesinleşmiş Uzlaştırmaya Esas Dağıtım Üretim Planı)
             'description': 'Bilateral Contract Plan (KUDÜP)',
             'data_id': '14',
-            'api_params': {}
+            'api_params': {},
+            'max_days_per_chunk': 90,  # EPİAŞ limit for generation endpoints
+            'use_fallback': False
         },
         'wind_forecast': {
             'method': 'wind-forecast',  # Wind power forecast (RİTM)
@@ -214,14 +213,22 @@ class EpiasDataFetcher:
                 "Content-Type": "application/json"
             }
 
+            logger.info(f"    Attempting fallback API: {endpoint}")
             response = requests.post(url, json=body, headers=headers, timeout=60)
 
             if response.status_code == 200 and response.text:
+                logger.info(f"    ✓ Fallback succeeded")
                 return pd.read_csv(StringIO(response.text), sep=';', on_bad_lines='skip')
+            else:
+                # Log detailed error information
+                logger.error(f"    ✗ Fallback failed: HTTP {response.status_code}")
+                if response.text:
+                    error_preview = response.text[:200]
+                    logger.error(f"    Response: {error_preview}")
+                return None
 
-            return None
-
-        except Exception:
+        except Exception as e:
+            logger.error(f"    ✗ Fallback exception: {str(e)[:200]}")
             return None
 
     def _split_date_range(self, start_date: str, end_date: str, max_days: int = 365) -> List[Tuple[str, str]]:
@@ -289,12 +296,17 @@ class EpiasDataFetcher:
         fallback_endpoint = dataset_info.get('fallback_endpoint', None)
         fallback_extra_params = dataset_info.get('fallback_extra_params', {})
 
-        max_days = 365
+        # Use dataset-specific chunk size or default to 365 days
+        max_days = dataset_info.get('max_days_per_chunk', 365)
         date_chunks = self._split_date_range(start_date, end_date, max_days=max_days)
+
+        if max_days < 365:
+            logger.info(f"  Using smaller chunks ({max_days} days) for this endpoint")
 
         logger.info(f"Fetching {dataset_name}: {description} ({start_date} to {end_date})...")
         if len(date_chunks) > 1:
-            logger.info(f"  Splitting into {len(date_chunks)} yearly chunks")
+            chunk_label = "90-day chunks" if max_days == 90 else "yearly chunks"
+            logger.info(f"  Splitting into {len(date_chunks)} {chunk_label}")
 
         # Get client
         client = self._get_client()
@@ -334,7 +346,9 @@ class EpiasDataFetcher:
                         wait_time = retry_delay * (2 ** (attempt - 1))
                         time.sleep(wait_time)
                     else:
+                        # Try fallback mechanism if available
                         if use_fallback and fallback_endpoint:
+                            logger.warning(f"    Primary method failed, trying fallback...")
                             try:
                                 df_fallback = self._fetch_with_direct_api(
                                     fallback_endpoint,
@@ -345,9 +359,15 @@ class EpiasDataFetcher:
                                 if df_fallback is not None and not df_fallback.empty:
                                     df_fallback = self._standardize_timezone(df_fallback)
                                     all_data.append(df_fallback)
+                                    logger.info(f"    ✓ Fallback successful for chunk {chunk_idx}")
                                     break
-                            except Exception:
-                                pass
+                                else:
+                                    logger.error(f"    ✗ Fallback returned empty data")
+                            except Exception as fallback_error:
+                                logger.error(f"    ✗ Fallback failed: {str(fallback_error)[:200]}")
+                        else:
+                            if not use_fallback:
+                                logger.error(f"    No fallback mechanism configured for {dataset_name}")
 
             if chunk_idx < len(date_chunks):
                 time.sleep(1)
@@ -720,9 +740,10 @@ if __name__ == "__main__":
 
     all_data = fetcher.run_pipeline(
         start_date='2020-01-01',
-        end_date='2024-12-31',
+        end_date='2025-10-31',
         output_dir='./data'
         # datasets=None means fetch all available datasets
+        # Now with improved error logging to diagnose failures
     )
 
     print("\n" + "=" * 70)

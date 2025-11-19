@@ -43,7 +43,7 @@ Or import as module:
 
     df = fetch_external_features(
         start_date='2020-01-01',
-        end_date='2024-12-31'
+        end_date='2025-10-31'
     )
 
 Requirements:
@@ -115,7 +115,7 @@ class ExternalFeaturesFetcher:
     def fetch_daily_fx(
         self,
         start_date: str = "2020-01-01",
-        end_date: str = "2024-12-31",
+        end_date: str = "2025-10-31",
         include_derived: bool = True
     ) -> pd.DataFrame:
         """
@@ -371,7 +371,7 @@ class ExternalFeaturesFetcher:
 
 def fetch_external_features(
     start_date: str = "2020-01-01",
-    end_date: str = "2024-12-31",
+    end_date: str = "2025-10-31",
     include_derived: bool = True,
     save: bool = True
 ) -> tuple:
@@ -408,7 +408,7 @@ def fetch_external_features(
 
 def load_external_features(
     start_date: str = "2020-01-01",
-    end_date: str = "2024-12-31",
+    end_date: str = "2025-10-31",
     frequency: str = "hourly"
 ) -> pd.DataFrame:
     """
@@ -451,7 +451,7 @@ if __name__ == "__main__":
 
     # Aligned with EPİAŞ and EVDS pipeline
     START_DATE = "2020-01-01"
-    END_DATE = "2024-12-31"
+    END_DATE = "2025-10-31"
 
     logger.info("="*70)
     logger.info("EXTERNAL FEATURES FETCHER - Starting")
