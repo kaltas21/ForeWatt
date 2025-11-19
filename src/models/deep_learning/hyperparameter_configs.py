@@ -86,7 +86,7 @@ class DeepLearningHyperparameterConfigs:
                 'hidden_size': 1024,
                 'n_mlp_layers': 3,
                 'learning_rate': 5e-4,
-                'batch_size': 32,
+                'batch_size': 16,  # Reduced from 32 to avoid OOM
                 'max_steps': 2000,
                 'early_stop_patience_steps': 150,
                 'input_size': 336,  # 2 weeks lookback
@@ -266,7 +266,7 @@ class DeepLearningHyperparameterConfigs:
                 'n_head': 8,
                 'dropout': 0.1,
                 'learning_rate': 5e-4,
-                'batch_size': 32,
+                'batch_size': 16,  # Reduced from 32 to avoid OOM
                 'max_steps': 2000,
                 'early_stop_patience_steps': 150,
                 'input_size': 336,  # 2 weeks
@@ -436,7 +436,7 @@ class DeepLearningHyperparameterConfigs:
                 'n_heads': 16,
                 'dropout': 0.1,
                 'learning_rate': 5e-4,
-                'batch_size': 32,
+                'batch_size': 16,  # Reduced from 32 to avoid OOM
                 'max_steps': 2000,
                 'early_stop_patience_steps': 150,
                 'input_size': 336,  # 2 weeks

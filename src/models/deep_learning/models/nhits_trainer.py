@@ -354,6 +354,7 @@ class NHiTSTrainer:
     def predict(
         self,
         X: pd.DataFrame,
+        y: Optional[pd.Series] = None,
         horizon: Optional[int] = None
     ) -> np.ndarray:
         """
@@ -361,6 +362,7 @@ class NHiTSTrainer:
 
         Args:
             X: Features
+            y: Historical target values (required for autoregressive predictions!)
             horizon: Forecast horizon (default: use self.horizon)
 
         Returns:
@@ -372,12 +374,15 @@ class NHiTSTrainer:
         if horizon is None:
             horizon = self.horizon
 
-        # Prepare data
-        dummy_y = pd.Series(np.zeros(len(X)), index=X.index)
-        df = self.prepare_neuralforecast_data(X, dummy_y)
+        # Prepare data - use actual y values if provided, otherwise zeros
+        if y is None:
+            logger.warning("No y values provided for prediction - using zeros (may hurt performance)")
+            y = pd.Series(np.zeros(len(X)), index=X.index)
 
-        # Predict
-        predictions = self.model.predict(df=df, horizon=horizon)
+        df = self.prepare_neuralforecast_data(X, y)
+
+        # Predict (neuralforecast 3.x uses 'h' instead of 'horizon')
+        predictions = self.model.predict(df=df, h=horizon)
 
         return predictions['NHITS'].values
 

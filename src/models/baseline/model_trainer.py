@@ -253,30 +253,42 @@ class ModelTrainer:
         y_val: Optional[pd.Series]
     ) -> XGBRegressor:
         """Train XGBoost model."""
-        # Filter to numeric columns only, then add categorical back
+        # Filter to numeric columns only, then add categorical back as label-encoded
         numeric_cols = X_train.select_dtypes(include=[np.number]).columns.tolist()
         X_train_copy = X_train[numeric_cols].copy()
 
-        # Add categorical features that should be categorical
+        # Add categorical features as label-encoded integers (handle unseen categories)
         cat_features_to_add = []
+        self.category_mappings_ = {}  # Store mappings for prediction
+
         if self.categorical_features:
             for cat_col in self.categorical_features:
                 if cat_col in X_train.columns and cat_col not in numeric_cols:
-                    X_train_copy[cat_col] = X_train[cat_col].astype('category')
+                    # Convert to string and create mapping
+                    train_cats = X_train[cat_col].astype(str)
+                    unique_cats = train_cats.unique()
+                    cat_to_code = {cat: i for i, cat in enumerate(unique_cats)}
+                    cat_to_code['__UNKNOWN__'] = len(unique_cats)  # Code for unseen categories
+
+                    self.category_mappings_[cat_col] = cat_to_code
+                    X_train_copy[cat_col] = train_cats.map(cat_to_code).fillna(len(unique_cats))
                     cat_features_to_add.append(cat_col)
 
         # Store for prediction
         self.numeric_features = numeric_cols
         self.used_categorical_features = cat_features_to_add
 
-        logger.info(f"Using {len(numeric_cols)} numeric + {len(cat_features_to_add)} categorical features")
+        logger.info(f"Using {len(numeric_cols)} numeric + {len(cat_features_to_add)} categorical (label-encoded) features")
 
         eval_set = None
         if X_val is not None and y_val is not None:
             X_val_copy = X_val[numeric_cols].copy()
             for cat_col in cat_features_to_add:
                 if cat_col in X_val.columns:
-                    X_val_copy[cat_col] = X_val[cat_col].astype('category')
+                    # Use same mapping, unseen categories get __UNKNOWN__ code
+                    val_cats = X_val[cat_col].astype(str)
+                    mapping = self.category_mappings_[cat_col]
+                    X_val_copy[cat_col] = val_cats.map(mapping).fillna(mapping['__UNKNOWN__'])
             eval_set = [(X_val_copy, y_val)]
 
         model = XGBRegressor(
@@ -285,7 +297,7 @@ class ModelTrainer:
             max_depth=self.hyperparams.get('max_depth', 6),
             reg_lambda=self.hyperparams.get('reg_lambda', 1.0),
             random_state=self.random_seed,
-            enable_categorical=True,
+            enable_categorical=False,  # Disabled to handle unseen categories
             tree_method='hist',
             early_stopping_rounds=self.hyperparams.get('early_stopping_rounds', 50) if eval_set else None,
             verbosity=1
@@ -437,8 +449,14 @@ class ModelTrainer:
                             # CatBoost needs string dtype for categorical
                             X_copy[cat_col] = X[cat_col].astype(str)
                         elif self.model_type == 'xgboost':
-                            # XGBoost needs category dtype
-                            X_copy[cat_col] = X[cat_col].astype('category')
+                            # XGBoost needs label-encoded integers (handle unseen categories)
+                            if hasattr(self, 'category_mappings_') and cat_col in self.category_mappings_:
+                                pred_cats = X[cat_col].astype(str)
+                                mapping = self.category_mappings_[cat_col]
+                                X_copy[cat_col] = pred_cats.map(mapping).fillna(mapping['__UNKNOWN__'])
+                            else:
+                                # Fallback for old models
+                                X_copy[cat_col] = X[cat_col].astype('category').cat.codes
 
             return self.model.predict(X_copy)
 

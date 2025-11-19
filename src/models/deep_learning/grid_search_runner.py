@@ -276,17 +276,62 @@ class DeepLearningGridSearchRunner:
                 )
 
                 # Predict on test
-                test_predictions = trainer.predict(X_test)
+                # Note: NeuralForecast generates ONE h-step forecast from end of data
+                # To evaluate properly: use data UP TO (T-horizon), forecast (T-horizon+1) to T
+                # This way we can compare forecasts against known values in test set
 
-                # Evaluate
+                # Use all but last 'horizon' samples for prediction input
+                # IMPORTANT: Pass actual y values for autoregressive models!
+                X_test_input = X_test.iloc[:-horizon] if len(X_test) > horizon else X_test
+                y_test_input = y_test.iloc[:-horizon] if len(y_test) > horizon else y_test
+                test_predictions = trainer.predict(X_test_input, y=y_test_input)
+
+                # Ensure predictions are 2D: (1, horizon) if they're 1D
+                if len(test_predictions.shape) == 1:
+                    test_predictions = test_predictions.reshape(1, -1)
+
+                # Ground truth: the last 'horizon' values from y_test
+                # These are the actual values we're forecasting
+                y_test_last = y_test.values[-horizon:]
+
+                # Evaluate the h-step forecast
                 evaluator = HorizonWiseEvaluator(horizon=horizon)
-                test_metrics = evaluator.evaluate(
-                    y_true=y_test.values,
+                horizon_metrics_df = evaluator.evaluate_all_horizons(
+                    y_true=y_test_last.reshape(1, -1) if len(y_test_last.shape) == 1 else y_test_last,
                     y_pred=test_predictions,
                     y_train=y_train.values
                 )
+                test_metrics = evaluator.aggregate_metrics(horizon_metrics_df)
+
+                # Add per-horizon metrics to test_metrics
+                for h in range(1, horizon + 1):
+                    if h <= len(horizon_metrics_df):
+                        row = horizon_metrics_df.iloc[h-1]
+                        test_metrics[f'sMAPE_h{h}'] = row['sMAPE']
+                        test_metrics[f'MASE_h{h}'] = row['MASE']
 
                 training_time = time.time() - start_time
+
+                # Save model to disk
+                model_dir = PROJECT_ROOT / 'models' / 'deep_learning' / target
+                model_dir.mkdir(parents=True, exist_ok=True)
+                model_path = model_dir / f"{model_type}_{config_name}_{timestamp}.pkl"
+
+                import joblib
+                joblib.dump({
+                    'model': model,
+                    'trainer': trainer,
+                    'config': config_params,
+                    'feature_selection': feature_selection,
+                    'metrics': {
+                        'val_sMAPE': val_metrics['sMAPE'],
+                        'val_MASE': val_metrics['MASE']
+                    }
+                }, model_path)
+
+                # Log model to MLflow
+                mlflow.log_artifact(str(model_path), "model")
+                logger.info(f"  Model saved to: {model_path}")
 
                 # Log metrics
                 mlflow.log_metric("val_sMAPE", val_metrics['sMAPE'])
