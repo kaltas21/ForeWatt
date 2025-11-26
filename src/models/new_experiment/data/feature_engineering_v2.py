@@ -196,30 +196,39 @@ class FundamentalFeatureEngineerV2:
         """Load hydro energy provision (aggregated across all dams)."""
         logger.info("Loading hydro energy provision...")
 
-        hydro_file = self._find_latest_file(self.silver_epias, 'hydro_energy_provision_normalized*.csv')
-        df = pd.read_csv(hydro_file)
-        df = self._load_and_prepare_timestamps(df)
+        try:
+            hydro_file = self._find_latest_file(self.silver_epias, 'hydro_energy_provision_normalized*.csv')
+            df = pd.read_csv(hydro_file)
+            df = self._load_and_prepare_timestamps(df)
 
-        # Aggregate by datetime (sum across all dams)
-        if 'energyGeneration' in df.columns:
-            df['hydro_energy'] = df['energyGeneration']
-        else:
-            # Try to find any energy column
-            energy_cols = [c for c in df.columns if 'energy' in c.lower() or 'generation' in c.lower()]
-            if energy_cols:
-                df['hydro_energy'] = df[energy_cols[0]]
+            # Aggregate by datetime (sum across all dams)
+            if 'energyGeneration' in df.columns:
+                df['hydro_energy'] = df['energyGeneration']
             else:
-                raise ValueError("No hydro energy column found")
+                # Try to find any energy column
+                energy_cols = [c for c in df.columns if 'energy' in c.lower() or 'generation' in c.lower()]
+                if energy_cols:
+                    df['hydro_energy'] = df[energy_cols[0]]
+                else:
+                    raise ValueError("No hydro energy column found")
 
-        # Aggregate by hour
-        df = df.groupby(df.index).agg({'hydro_energy': 'sum'})
+            # Aggregate by hour
+            df = df.groupby(df.index).agg({'hydro_energy': 'sum'})
 
-        # Resample to ensure hourly
-        df = df.resample('h').mean().ffill()
+            # Resample to ensure hourly
+            df = df.resample('h').mean().ffill()
 
-        logger.info(f"  Hydro energy range: {df['hydro_energy'].min():.1f} - {df['hydro_energy'].max():.1f} MWh")
+            # Check if we have meaningful coverage
+            if len(df) < 1000:  # Less than ~42 days of data
+                logger.warning(f"  Hydro data has limited coverage ({len(df)} hours). Will use 0 as default.")
+                return pd.DataFrame()
 
-        return df[['hydro_energy']]
+            logger.info(f"  Hydro energy range: {df['hydro_energy'].min():.1f} - {df['hydro_energy'].max():.1f} MWh")
+            return df[['hydro_energy']]
+
+        except Exception as e:
+            logger.warning(f"  Could not load hydro energy: {e}. Will use 0 as default.")
+            return pd.DataFrame()
 
     def load_price_smf(self) -> pd.DataFrame:
         """Load System Marginal Price (SMF - balancing price)."""
@@ -244,8 +253,15 @@ class FundamentalFeatureEngineerV2:
         """Load Day-Ahead Price (PTF)."""
         logger.info("Loading PTF price...")
 
-        ptf_file = self._find_latest_file(self.silver_epias, 'price_ptf_normalized*.csv')
-        df = pd.read_csv(ptf_file)
+        # Try parquet first (has full data), fall back to CSV
+        try:
+            ptf_file = self._find_latest_file(self.silver_epias, 'price_ptf_normalized*.parquet')
+            df = pd.read_parquet(ptf_file)
+            logger.info(f"  Loaded from parquet: {ptf_file.name}")
+        except FileNotFoundError:
+            ptf_file = self._find_latest_file(self.silver_epias, 'price_ptf_normalized*.csv')
+            df = pd.read_csv(ptf_file)
+            logger.info(f"  Loaded from CSV: {ptf_file.name}")
         df = self._load_and_prepare_timestamps(df)
 
         if 'price' in df.columns:
@@ -334,8 +350,13 @@ class FundamentalFeatureEngineerV2:
         # Negative = system was long, future prices may fall
         logger.info("\n4. System Short Signal (24h lag):")
         df['price_smf_lag_24h'] = df['price_smf'].shift(24)
-        df['price_ptf_lag_24h_raw'] = df['price_ptf_raw'].shift(24)
-        df['system_short_signal'] = df['price_smf_lag_24h'] - df['price_ptf_lag_24h_raw']
+        # Use existing price_ptf_lag_24h if available (has better coverage than price_ptf_raw)
+        if 'price_ptf_lag_24h' in df.columns and df['price_ptf_lag_24h'].notna().sum() > df.get('price_ptf_raw', pd.Series()).notna().sum():
+            ptf_lag_24h = df['price_ptf_lag_24h']
+        else:
+            ptf_lag_24h = df['price_ptf_raw'].shift(24) if 'price_ptf_raw' in df.columns else df['price'].shift(24)
+        df['price_ptf_lag_24h_raw'] = ptf_lag_24h  # Keep for backwards compatibility
+        df['system_short_signal'] = df['price_smf_lag_24h'] - ptf_lag_24h
         logger.info(f"   Range: {df['system_short_signal'].min():.2f} to {df['system_short_signal'].max():.2f} TL/MWh")
 
         # 5. IMPORT COST PROXY (D-1 Safe)
@@ -534,8 +555,11 @@ class FundamentalFeatureEngineerV2:
 
         for source_df, name in data_sources:
             try:
-                df = df.join(source_df, how='left', rsuffix=f'_{name}')
-                logger.info(f"   Joined {name}: {source_df.shape[1]} columns")
+                if source_df is not None and len(source_df) > 0:
+                    df = df.join(source_df, how='left', rsuffix=f'_{name}')
+                    logger.info(f"   Joined {name}: {source_df.shape[1]} columns")
+                else:
+                    logger.warning(f"   Skipped {name}: no data available")
             except Exception as e:
                 logger.warning(f"   Failed to join {name}: {e}")
 
@@ -548,6 +572,11 @@ class FundamentalFeatureEngineerV2:
         for col in fill_cols:
             if col in df.columns:
                 df[col] = df[col].ffill()
+
+        # Handle missing hydro_energy (fill with 0 if not available)
+        if 'hydro_energy' not in df.columns or df['hydro_energy'].isna().all():
+            logger.warning("   hydro_energy not available, filling with 0")
+            df['hydro_energy'] = 0
 
         # Create fundamental features
         df = self.create_fundamental_features(df)

@@ -25,23 +25,24 @@ REPORTS_DIR = PROJECT_ROOT / 'reports' / 'new_experiment'
 __version__ = '2.0.0'
 __author__ = 'ForeWatt Team'
 
-# Deep Learning module
-from .deeplearning import (
-    FundamentalFeaturePreparerV2,
-    FundamentalGridSearchRunnerV2,
-    get_full_grid,
-    PatchTSTTrainer,
-    NHiTSTrainer,
-    TFTTrainer,
-)
+# Lazy imports to avoid loading PyTorch Lightning at package import time.
+# Import directly from submodules when needed:
+#   from src.models.new_experiment.baseline import BaselineFeaturePreparer
+#   from src.models.new_experiment.deeplearning import PatchTSTTrainer
 
-# Baseline module
-from .baseline import (
-    BaselineFeaturePreparer,
-    BaselineGridSearchRunner,
-    get_baseline_grid,
-    CatBoostTrainer,
-    XGBoostTrainer,
-    LightGBMTrainer,
-    ProphetTrainer,
-)
+def __getattr__(name):
+    """Lazy import of submodule components."""
+    # Deep Learning components
+    if name in ('FundamentalFeaturePreparerV2', 'FundamentalGridSearchRunnerV2',
+                'get_full_grid', 'PatchTSTTrainer', 'NHiTSTrainer', 'TFTTrainer'):
+        from . import deeplearning
+        return getattr(deeplearning, name)
+
+    # Baseline components
+    if name in ('BaselineFeaturePreparer', 'BaselineGridSearchRunner',
+                'get_baseline_grid', 'CatBoostTrainer', 'XGBoostTrainer',
+                'LightGBMTrainer', 'ProphetTrainer'):
+        from . import baseline
+        return getattr(baseline, name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -52,7 +52,8 @@ logger = logging.getLogger(__name__)
 from src.models.new_experiment.baseline.feature_preparer_baseline import (
     BaselineFeaturePreparer,
     BASELINE_FEATURE_STRATEGIES,
-    get_feature_strategy_for_tier
+    get_feature_strategy_for_tier,
+    load_master_v2
 )
 
 # Import grid generator
@@ -70,9 +71,6 @@ from src.models.new_experiment.baseline.models import (
     LightGBMTrainer,
     ProphetTrainer
 )
-
-# Import data loader
-from src.models.new_experiment.deeplearning.feature_preparer_v2 import load_master_v2
 
 # Import metrics
 try:

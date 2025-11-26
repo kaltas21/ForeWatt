@@ -22,11 +22,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Reuse D-1 safety from deep learning module
-from src.models.new_experiment.deeplearning.feature_preparer_v2 import (
-    FORBIDDEN_COLUMNS,
-    D1_SAFE_COLUMNS,
-    load_master_v2
-)
+# Use importlib to avoid triggering __init__.py which imports PyTorch Lightning
+import importlib.util
+_fp_v2_path = PROJECT_ROOT / 'src' / 'models' / 'new_experiment' / 'deeplearning' / 'feature_preparer_v2.py'
+_fp_v2_spec = importlib.util.spec_from_file_location('feature_preparer_v2', _fp_v2_path)
+_fp_v2_module = importlib.util.module_from_spec(_fp_v2_spec)
+_fp_v2_spec.loader.exec_module(_fp_v2_module)
+FORBIDDEN_COLUMNS = _fp_v2_module.FORBIDDEN_COLUMNS
+D1_SAFE_COLUMNS = _fp_v2_module.D1_SAFE_COLUMNS
+load_master_v2 = _fp_v2_module.load_master_v2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
