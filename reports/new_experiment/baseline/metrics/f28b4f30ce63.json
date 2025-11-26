@@ -1,0 +1,41 @@
+{
+  "config_hash": "f28b4f30ce63",
+  "timestamp": "2025-11-26T22:40:57.508799",
+  "target": "price_real",
+  "model_type": "lightgbm",
+  "config_name": "lightgbm_extended",
+  "feature_tier": "extended",
+  "feature_strategy": "baseline_extended",
+  "n_features": 47,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 82.2341112940505,
+    "sMAPE": 14.698745030456534,
+    "MASE": 0.5065551791409504
+  },
+  "test_metrics": {
+    "MAE": 87.56381675400523,
+    "sMAPE": 18.6196859204811,
+    "MASE": 0.5393857145665967
+  },
+  "training_time_seconds": 4.486018180847168,
+  "top_features": "price_ptf_rolling_std_24h,hour_cos,price_ptf_lag_168h,price_ptf_rolling_max_24h,renewable_saturation",
+  "config": {
+    "n_estimators": 1500,
+    "max_depth": 7,
+    "learning_rate": 0.03,
+    "num_leaves": 127,
+    "subsample": 0.8,
+    "colsample_bytree": 0.7,
+    "reg_alpha": 0.1,
+    "reg_lambda": 2.0,
+    "feature_tier": "extended",
+    "description": "LightGBM with extended features",
+    "config_name": "lightgbm_extended",
+    "model_type": "lightgbm",
+    "target": "price_real",
+    "feature_strategy": "baseline_extended",
+    "config_hash": "f28b4f30ce63"
+  },
+  "error": null
+}

@@ -1,0 +1,40 @@
+{
+  "config_hash": "1fa62a6d5f2f",
+  "timestamp": "2025-11-26T22:39:39.502689",
+  "target": "price_real",
+  "model_type": "xgboost",
+  "config_name": "xgboost_extended_deep",
+  "feature_tier": "extended",
+  "feature_strategy": "baseline_extended",
+  "n_features": 47,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 83.6378907046049,
+    "sMAPE": 14.956701135665881,
+    "MASE": 0.5152023417307552
+  },
+  "test_metrics": {
+    "MAE": 89.65959168683189,
+    "sMAPE": 18.93991479495625,
+    "MASE": 0.5522955111197689
+  },
+  "training_time_seconds": 6.733747720718384,
+  "top_features": "price_ptf_rolling_mean_24h,price_ptf_lag_24h,price_ptf_rolling_mean_168h,price_ptf_rolling_max_24h,price_ptf_lag_168h",
+  "config": {
+    "n_estimators": 2000,
+    "max_depth": 8,
+    "learning_rate": 0.02,
+    "subsample": 0.8,
+    "colsample_bytree": 0.7,
+    "reg_alpha": 0.1,
+    "reg_lambda": 3.0,
+    "feature_tier": "extended",
+    "description": "Deep XGBoost with extended features",
+    "config_name": "xgboost_extended_deep",
+    "model_type": "xgboost",
+    "target": "price_real",
+    "feature_strategy": "baseline_extended",
+    "config_hash": "1fa62a6d5f2f"
+  },
+  "error": null
+}

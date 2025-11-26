@@ -1,0 +1,41 @@
+{
+  "config_hash": "6327cf8137f8",
+  "timestamp": "2025-11-26T22:40:45.756431",
+  "target": "price_real",
+  "model_type": "lightgbm",
+  "config_name": "lightgbm_ultra_light",
+  "feature_tier": "minimal",
+  "feature_strategy": "baseline_minimal",
+  "n_features": 15,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 99.4003198863075,
+    "sMAPE": 16.97188771950998,
+    "MASE": 0.6122975740156035
+  },
+  "test_metrics": {
+    "MAE": 98.3843660204049,
+    "sMAPE": 19.949967049608127,
+    "MASE": 0.6060393840206875
+  },
+  "training_time_seconds": 0.20994901657104492,
+  "top_features": "price_ptf_lag_168h,renewable_saturation,price_ptf_lag_24h,reserve_margin_ratio,system_short_signal",
+  "config": {
+    "n_estimators": 200,
+    "max_depth": 4,
+    "learning_rate": 0.1,
+    "num_leaves": 15,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "feature_tier": "minimal",
+    "description": "Ultra-light LightGBM for fast iteration",
+    "config_name": "lightgbm_ultra_light",
+    "model_type": "lightgbm",
+    "target": "price_real",
+    "feature_strategy": "baseline_minimal",
+    "config_hash": "6327cf8137f8"
+  },
+  "error": null
+}

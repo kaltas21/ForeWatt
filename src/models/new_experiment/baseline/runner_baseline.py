@@ -151,6 +151,9 @@ class BaselineGridSearchRunner:
         self.run_session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         self._setup_file_logging()
 
+        # Track saved models
+        self.saved_model_hashes = self._scan_saved_models()
+
         logger.info(f"Baseline Runner initialized")
         logger.info(f"  Output dir: {self.output_dir}")
         logger.info(f"  Logs dir: {self.logs_dir}")
@@ -159,6 +162,7 @@ class BaselineGridSearchRunner:
         logger.info(f"  MLflow dir: {self.mlruns_dir}")
         logger.info(f"  Results file: {self.results_file}")
         logger.info(f"  Completed configs: {len(self.completed_hashes)}")
+        logger.info(f"  Saved models: {len(self.saved_model_hashes)}")
         logger.info(f"  MLflow available: {MLFLOW_AVAILABLE}")
 
     def _setup_mlflow(self):
@@ -392,6 +396,134 @@ class BaselineGridSearchRunner:
             logger.warning(f"Failed to save model: {e}")
             return None
 
+    def _scan_saved_models(self) -> Dict[str, Path]:
+        """
+        Scan models directory for saved models.
+
+        Returns:
+            Dictionary mapping config_hash to model directory path
+        """
+        saved_models = {}
+        if not self.models_dir.exists():
+            return saved_models
+
+        for model_dir in self.models_dir.iterdir():
+            if model_dir.is_dir():
+                metadata_path = model_dir / 'metadata.json'
+                if metadata_path.exists():
+                    try:
+                        with open(metadata_path, 'r') as f:
+                            metadata = json.load(f)
+                        config_hash = metadata.get('config_hash')
+                        if config_hash:
+                            saved_models[config_hash] = model_dir
+                    except Exception:
+                        pass
+
+        return saved_models
+
+    def _load_model(
+        self,
+        config_hash: str,
+        model_type: str,
+        target: str
+    ) -> Tuple[Optional[Any], Optional[Any]]:
+        """
+        Load a previously trained model.
+
+        Args:
+            config_hash: Configuration hash
+            model_type: Model type (catboost, xgboost, lightgbm, prophet)
+            target: Target variable
+
+        Returns:
+            Tuple of (model, trainer) or (None, None) if not found
+        """
+        if config_hash not in self.saved_model_hashes:
+            return None, None
+
+        model_dir = self.saved_model_hashes[config_hash]
+        logger.info(f"Loading saved model from: {model_dir}")
+
+        try:
+            import joblib
+
+            # Create trainer
+            trainer = self._create_trainer(model_type, target)
+
+            # Load model based on type
+            if model_type == 'catboost':
+                from catboost import CatBoostRegressor
+                model_path = model_dir / 'model.cbm'
+                if model_path.exists():
+                    model = CatBoostRegressor()
+                    model.load_model(str(model_path))
+                    trainer.model = model
+                else:
+                    return None, None
+
+            elif model_type == 'xgboost':
+                import xgboost as xgb
+                model_path = model_dir / 'model.json'
+                if model_path.exists():
+                    model = xgb.XGBRegressor()
+                    model.load_model(str(model_path))
+                    trainer.model = model
+                else:
+                    return None, None
+
+            elif model_type == 'lightgbm':
+                import lightgbm as lgb
+                model_path = model_dir / 'model.txt'
+                if model_path.exists():
+                    model = lgb.Booster(model_file=str(model_path))
+                    # Wrap in LGBMRegressor-like interface
+                    trainer.model = lgb.LGBMRegressor()
+                    trainer.model._Booster = model
+                    trainer.model.booster_ = model
+                else:
+                    return None, None
+
+            elif model_type == 'prophet':
+                model_path = model_dir / 'model.pkl'
+                if model_path.exists():
+                    model = joblib.load(model_path)
+                    trainer.model = model
+                    # Load regressor features if saved
+                    feature_path = model_dir / 'feature_importance.csv'
+                    if feature_path.exists():
+                        features_df = pd.read_csv(feature_path)
+                        trainer._regressor_features = features_df['feature'].tolist()[:10]
+                    else:
+                        trainer._regressor_features = []
+                else:
+                    return None, None
+
+            else:
+                # Fallback: try joblib
+                model_path = model_dir / 'model.pkl'
+                if model_path.exists():
+                    model = joblib.load(model_path)
+                    trainer.model = model
+                else:
+                    return None, None
+
+            # Load feature names if available
+            feature_path = model_dir / 'feature_importance.csv'
+            if feature_path.exists():
+                try:
+                    features_df = pd.read_csv(feature_path)
+                    trainer.feature_names = features_df['feature'].tolist()
+                except Exception:
+                    pass
+
+            logger.info(f"Model loaded successfully: {model_type}")
+            return trainer.model, trainer
+
+        except Exception as e:
+            logger.warning(f"Failed to load model: {e}")
+            return None, None
+
     def _prepare_data(
         self,
         target: str = 'price_real',
@@ -455,15 +587,33 @@ class BaselineGridSearchRunner:
         y_train: pd.Series,
         y_val: pd.Series,
         y_test: pd.Series,
-        target: str = 'price_real'
+        target: str = 'price_real',
+        load_if_trained: bool = False
     ) -> Dict[str, Any]:
-        """Run training for a single configuration."""
+        """
+        Run training for a single configuration.
+
+        Args:
+            config: Configuration dictionary
+            X_train, X_val, X_test: Feature dataframes
+            y_train, y_val, y_test: Target series
+            target: Target variable
+            load_if_trained: If True, load saved model instead of retraining
+        """
         model_type = config['model_type']
         config_hash = config['config_hash']
 
-        logger.info(f"\n{'='*80}")
-        logger.info(f"TRAINING: {model_type.upper()} | Target: {target} | Hash: {config_hash}")
-        logger.info(f"{'='*80}")
+        # Check if model exists and should be loaded
+        model_loaded = False
+        if load_if_trained and config_hash in self.saved_model_hashes:
+            logger.info(f"\n{'='*80}")
+            logger.info(f"LOADING SAVED MODEL: {model_type.upper()} | Target: {target} | Hash: {config_hash}")
+            logger.info(f"{'='*80}")
+            model_loaded = True
+        else:
+            logger.info(f"\n{'='*80}")
+            logger.info(f"TRAINING: {model_type.upper()} | Target: {target} | Hash: {config_hash}")
+            logger.info(f"{'='*80}")
 
         result = {
             'timestamp': datetime.now().isoformat(),
@@ -480,20 +630,34 @@ class BaselineGridSearchRunner:
         start_time = time.time()
 
         try:
-            # Create trainer
-            trainer = self._create_trainer(model_type, target)
+            # Either load saved model or train new one
+            if model_loaded:
+                model, trainer = self._load_model(config_hash, model_type, target)
+                if model is None:
+                    logger.warning(f"Failed to load model, falling back to training")
+                    model_loaded = False
 
-            # Train model
-            model, val_metrics = trainer.train(
-                X_train, y_train,
-                X_val, y_val,
-                hyperparams=config
-            )
+            if not model_loaded:
+                # Create trainer
+                trainer = self._create_trainer(model_type, target)
 
-            # Record validation metrics
-            result['val_mae'] = val_metrics.get('MAE', np.nan)
-            result['val_smape'] = val_metrics.get('sMAPE', np.nan)
-            result['val_mase'] = val_metrics.get('MASE', np.nan)
+                # Train model
+                model, val_metrics = trainer.train(
+                    X_train, y_train,
+                    X_val, y_val,
+                    hyperparams=config
+                )
+
+                # Record validation metrics
+                result['val_mae'] = val_metrics.get('MAE', np.nan)
+                result['val_smape'] = val_metrics.get('sMAPE', np.nan)
+                result['val_mase'] = val_metrics.get('MASE', np.nan)
+            else:
+                # For loaded models, we don't have validation metrics from training
+                result['val_mae'] = np.nan
+                result['val_smape'] = np.nan
+                result['val_mase'] = np.nan
+                result['loaded_from_cache'] = True
 
             # Evaluate on test set
             test_predictions = trainer.predict(X_test)
@@ -524,9 +688,15 @@ class BaselineGridSearchRunner:
                 except Exception:
                     result['top_features'] = ''
 
-            # Save model
-            model_path = self._save_model(model, trainer, config_hash, model_type, target)
-            result['model_path'] = str(model_path) if model_path else None
+            # Save model only if we trained it (not if loaded from cache)
+            if not model_loaded:
+                model_path = self._save_model(model, trainer, config_hash, model_type, target)
+                result['model_path'] = str(model_path) if model_path else None
+                # Update saved model cache
+                if model_path:
+                    self.saved_model_hashes[config_hash] = model_path
+            else:
+                result['model_path'] = str(self.saved_model_hashes.get(config_hash, ''))
 
         except Exception as e:
             result['status'] = 'failed'
@@ -548,7 +718,8 @@ class BaselineGridSearchRunner:
         model_types: List[str] = None,
         targets: List[str] = None,
         max_configs: int = None,
-        skip_completed: bool = True
+        skip_completed: bool = True,
+        load_if_trained: bool = False
     ):
         """
         Run full grid search.
@@ -558,6 +729,7 @@ class BaselineGridSearchRunner:
             targets: List of targets (default: all)
             max_configs: Maximum configs to run per target
             skip_completed: Skip already-completed configs
+            load_if_trained: Load saved models instead of retraining
         """
         logger.info("\n" + "="*80)
         logger.info("BASELINE GRID SEARCH")
@@ -644,7 +816,8 @@ class BaselineGridSearchRunner:
                     config,
                     X_train, X_val, X_test,
                     y_train, y_val, y_test,
-                    target=target
+                    target=target,
+                    load_if_trained=load_if_trained
                 )
 
                 # Save result
@@ -843,6 +1016,11 @@ def main():
         help='Do not skip completed configs'
     )
     parser.add_argument(
+        '--load-trained',
+        action='store_true',
+        help='Load saved models instead of retraining (skip training if model exists)'
+    )
+    parser.add_argument(
         '--analyze',
         action='store_true',
         help='Analyze existing results'
@@ -859,7 +1037,8 @@ def main():
             model_types=args.models,
             targets=args.targets,
             max_configs=args.max_configs,
-            skip_completed=not args.no_skip
+            skip_completed=not args.no_skip,
+            load_if_trained=args.load_trained
         )
 
 

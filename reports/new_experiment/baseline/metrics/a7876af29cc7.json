@@ -1,0 +1,41 @@
+{
+  "config_hash": "a7876af29cc7",
+  "timestamp": "2025-11-26T22:40:56.789375",
+  "target": "price_real",
+  "model_type": "lightgbm",
+  "config_name": "lightgbm_core_wide",
+  "feature_tier": "core",
+  "feature_strategy": "baseline_core",
+  "n_features": 27,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 85.35038745254393,
+    "sMAPE": 15.06660417983289,
+    "MASE": 0.525751177041064
+  },
+  "test_metrics": {
+    "MAE": 83.79078759882687,
+    "sMAPE": 18.017901511027194,
+    "MASE": 0.516144173683748
+  },
+  "training_time_seconds": 0.4679250717163086,
+  "top_features": "price_ptf_rolling_std_24h,price_ptf_rolling_mean_24h,price_ptf_lag_168h,hour_cos,thermal_gap",
+  "config": {
+    "n_estimators": 800,
+    "max_depth": 4,
+    "learning_rate": 0.08,
+    "num_leaves": 31,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "feature_tier": "core",
+    "description": "Wide shallow LightGBM with core features",
+    "config_name": "lightgbm_core_wide",
+    "model_type": "lightgbm",
+    "target": "price_real",
+    "feature_strategy": "baseline_core",
+    "config_hash": "a7876af29cc7"
+  },
+  "error": null
+}

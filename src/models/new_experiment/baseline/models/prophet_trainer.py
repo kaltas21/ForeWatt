@@ -101,8 +101,10 @@ class ProphetTrainer:
 
         # Prepare Prophet dataframe
         # Prophet requires 'ds' (datetime) and 'y' (target) columns
+        # Prophet doesn't support timezone-aware datetimes, so remove timezone
+        train_index = X_train.index.tz_localize(None) if X_train.index.tz is not None else X_train.index
         train_df = pd.DataFrame({
-            'ds': X_train.index,
+            'ds': train_index,
             'y': y_train.values
         })
 
@@ -144,9 +146,10 @@ class ProphetTrainer:
         # Store training end date
         self.train_end_date = train_df['ds'].max()
 
-        # Prepare validation dataframe
+        # Prepare validation dataframe (remove timezone for Prophet)
+        val_index = X_val.index.tz_localize(None) if X_val.index.tz is not None else X_val.index
         val_df = pd.DataFrame({
-            'ds': X_val.index
+            'ds': val_index
         })
         for feature in regressor_features:
             val_df[feature] = X_val[feature].values
@@ -184,8 +187,9 @@ class ProphetTrainer:
         if self.model is None:
             raise ValueError("Model not trained")
 
-        # Prepare prediction dataframe
-        pred_df = pd.DataFrame({'ds': X.index})
+        # Prepare prediction dataframe (remove timezone for Prophet)
+        pred_index = X.index.tz_localize(None) if X.index.tz is not None else X.index
+        pred_df = pd.DataFrame({'ds': pred_index})
 
         for feature in self._regressor_features:
             if feature in X.columns:

@@ -1,0 +1,41 @@
+{
+  "config_hash": "cbcc1b0b8edd",
+  "timestamp": "2025-11-26T22:40:48.030093",
+  "target": "price_real",
+  "model_type": "lightgbm",
+  "config_name": "lightgbm_balanced",
+  "feature_tier": "core",
+  "feature_strategy": "baseline_core",
+  "n_features": 27,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 85.62315146344822,
+    "sMAPE": 15.14555652399231,
+    "MASE": 0.5274313803074769
+  },
+  "test_metrics": {
+    "MAE": 87.56230900768983,
+    "sMAPE": 18.47746164050372,
+    "MASE": 0.5393764269766552
+  },
+  "training_time_seconds": 1.179429531097412,
+  "top_features": "price_ptf_rolling_std_24h,price_ptf_lag_168h,price_ptf_rolling_mean_24h,thermal_gap,hour_cos",
+  "config": {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "learning_rate": 0.05,
+    "num_leaves": 63,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "feature_tier": "core",
+    "description": "Balanced LightGBM - recommended default",
+    "config_name": "lightgbm_balanced",
+    "model_type": "lightgbm",
+    "target": "price_real",
+    "feature_strategy": "baseline_core",
+    "config_hash": "cbcc1b0b8edd"
+  },
+  "error": null
+}

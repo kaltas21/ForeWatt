@@ -162,6 +162,9 @@ class FundamentalGridSearchRunnerV2:
         self.run_session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         self._setup_file_logging()
 
+        # Track saved models
+        self.saved_model_hashes = self._scan_saved_models()
+
         logger.info(f"Runner initialized")
         logger.info(f"  Output dir: {self.output_dir}")
         logger.info(f"  Logs dir: {self.logs_dir}")
@@ -170,6 +173,7 @@ class FundamentalGridSearchRunnerV2:
         logger.info(f"  MLflow dir: {self.mlruns_dir}")
         logger.info(f"  Results file: {self.results_file}")
         logger.info(f"  Completed configs: {len(self.completed_hashes)}")
+        logger.info(f"  Saved models: {len(self.saved_model_hashes)}")
         logger.info(f"  MLflow available: {MLFLOW_AVAILABLE}")
 
     def _setup_mlflow(self):
@@ -385,6 +389,87 @@ class FundamentalGridSearchRunnerV2:
             logger.warning(f"Failed to save model: {e}")
             return None
 
+    def _scan_saved_models(self) -> Dict[str, Path]:
+        """
+        Scan models directory for saved models.
+
+        Returns:
+            Dictionary mapping config_hash to model directory path
+        """
+        saved_models = {}
+        if not self.models_dir.exists():
+            return saved_models
+
+        for model_dir in self.models_dir.iterdir():
+            if model_dir.is_dir():
+                metadata_path = model_dir / 'metadata.json'
+                if metadata_path.exists():
+                    try:
+                        with open(metadata_path, 'r') as f:
+                            metadata = json.load(f)
+                        config_hash = metadata.get('config_hash')
+                        if config_hash:
+                            saved_models[config_hash] = model_dir
+                    except Exception:
+                        pass
+
+        return saved_models
+
+    def _load_model(
+        self,
+        config_hash: str,
+        model_type: str,
+        config: Dict[str, Any],
+        target: str
+    ) -> Tuple[Optional[Any], Optional[Any]]:
+        """
+        Load a previously trained deep learning model.
+
+        Args:
+            config_hash: Configuration hash
+            model_type: Model type (patchtst, nhits, tft)
+            config: Configuration dictionary
+            target: Target variable
+
+        Returns:
+            Tuple of (model, trainer) or (None, None) if not found
+        """
+        if config_hash not in self.saved_model_hashes:
+            return None, None
+
+        model_dir = self.saved_model_hashes[config_hash]
+        logger.info(f"Loading saved model from: {model_dir}")
+
+        try:
+            from neuralforecast import NeuralForecast
+
+            # Create trainer
+            trainer = self._create_trainer(model_type, config, target)
+
+            # Try to load NeuralForecast model
+            model_path = model_dir / 'model'
+            if model_path.exists():
+                nf = NeuralForecast.load(str(model_path))
+                trainer.model = nf
+                logger.info(f"Model loaded successfully: {model_type}")
+                return nf, trainer
+            else:
+                # Try pickle fallback
+                import pickle
+                pkl_path = model_dir / 'model.pkl'
+                if pkl_path.exists():
+                    with open(pkl_path, 'rb') as f:
+                        nf = pickle.load(f)
+                    trainer.model = nf
+                    logger.info(f"Model loaded (pickle) successfully: {model_type}")
+                    return nf, trainer
+
+            return None, None
+
+        except Exception as e:
+            logger.warning(f"Failed to load model: {e}")
+            return None, None
+
     def _prepare_data(
         self,
         target: str = 'price_real',
@@ -556,7 +641,8 @@ class FundamentalGridSearchRunnerV2:
         y_train: pd.Series,
         y_val: pd.Series,
         y_test: pd.Series,
-        target: str = 'price_real'
+        target: str = 'price_real',
+        load_if_trained: bool = False
     ) -> Dict[str, Any]:
         """
         Run training for a single configuration.
@@ -566,6 +652,7 @@ class FundamentalGridSearchRunnerV2:
             X_train, X_val, X_test: Feature dataframes
             y_train, y_val, y_test: Target series
             target: Target variable
+            load_if_trained: If True, load saved model instead of retraining
 
         Returns:
             Result dictionary
@@ -573,9 +660,17 @@ class FundamentalGridSearchRunnerV2:
         model_type = config['model_type']
         config_hash = config['config_hash']
 
-        logger.info(f"\n{'='*80}")
-        logger.info(f"TRAINING: {model_type.upper()} | Target: {target} | Hash: {config_hash}")
-        logger.info(f"{'='*80}")
+        # Check if model exists and should be loaded
+        model_loaded = False
+        if load_if_trained and config_hash in self.saved_model_hashes:
+            logger.info(f"\n{'='*80}")
+            logger.info(f"LOADING SAVED MODEL: {model_type.upper()} | Target: {target} | Hash: {config_hash}")
+            logger.info(f"{'='*80}")
+            model_loaded = True
+        else:
+            logger.info(f"\n{'='*80}")
+            logger.info(f"TRAINING: {model_type.upper()} | Target: {target} | Hash: {config_hash}")
+            logger.info(f"{'='*80}")
 
         result = {
             'timestamp': datetime.now().isoformat(),
@@ -590,25 +685,39 @@ class FundamentalGridSearchRunnerV2:
         start_time = time.time()
 
         try:
-            # Create trainer
-            trainer = self._create_trainer(model_type, config, target)
+            # Either load saved model or train new one
+            if model_loaded:
+                model, trainer = self._load_model(config_hash, model_type, config, target)
+                if model is None:
+                    logger.warning(f"Failed to load model, falling back to training")
+                    model_loaded = False
 
-            # Convert config to hyperparameters
-            hyperparams = self._config_to_hyperparams(model_type, config)
+            if not model_loaded:
+                # Create trainer
+                trainer = self._create_trainer(model_type, config, target)
 
-            logger.info(f"Hyperparameters: {hyperparams}")
+                # Convert config to hyperparameters
+                hyperparams = self._config_to_hyperparams(model_type, config)
 
-            # Train model
-            model, val_metrics = trainer.train(
-                X_train, y_train,
-                X_val, y_val,
-                hyperparams=hyperparams
-            )
+                logger.info(f"Hyperparameters: {hyperparams}")
 
-            # Record validation metrics
-            result['val_mae'] = val_metrics.get('MAE', np.nan)
-            result['val_smape'] = val_metrics.get('sMAPE', np.nan)
-            result['val_mase'] = val_metrics.get('MASE', np.nan)
+                # Train model
+                model, val_metrics = trainer.train(
+                    X_train, y_train,
+                    X_val, y_val,
+                    hyperparams=hyperparams
+                )
+
+                # Record validation metrics
+                result['val_mae'] = val_metrics.get('MAE', np.nan)
+                result['val_smape'] = val_metrics.get('sMAPE', np.nan)
+                result['val_mase'] = val_metrics.get('MASE', np.nan)
+            else:
+                # For loaded models, we don't have validation metrics from training
+                result['val_mae'] = np.nan
+                result['val_smape'] = np.nan
+                result['val_mase'] = np.nan
+                result['loaded_from_cache'] = True
 
             # Evaluate on test set
             test_predictions = trainer.predict(X_test, y_test)
@@ -639,9 +748,15 @@ class FundamentalGridSearchRunnerV2:
             logger.info(f"  sMAPE: {result['test_smape']:.2f}%")
             logger.info(f"  MASE:  {result['test_mase']:.4f}")
 
-            # Save model
-            model_path = self._save_model(model, trainer, config_hash, model_type, target)
-            result['model_path'] = str(model_path) if model_path else None
+            # Save model only if we trained it (not if loaded from cache)
+            if not model_loaded:
+                model_path = self._save_model(model, trainer, config_hash, model_type, target)
+                result['model_path'] = str(model_path) if model_path else None
+                # Update saved model cache
+                if model_path:
+                    self.saved_model_hashes[config_hash] = model_path
+            else:
+                result['model_path'] = str(self.saved_model_hashes.get(config_hash, ''))
 
         except Exception as e:
             result['status'] = 'failed'
@@ -669,7 +784,8 @@ class FundamentalGridSearchRunnerV2:
         model_types: List[str] = None,
         targets: List[str] = None,
         max_configs: int = None,
-        skip_completed: bool = True
+        skip_completed: bool = True,
+        load_if_trained: bool = False
     ):
         """
         Run full grid search for multiple targets.
@@ -679,6 +795,7 @@ class FundamentalGridSearchRunnerV2:
             targets: List of targets to run (default: all from TARGETS)
             max_configs: Maximum configs to run per target (default: all)
             skip_completed: Skip configs that have already been run
+            load_if_trained: Load saved models instead of retraining
         """
         logger.info("\n" + "="*80)
         logger.info("FUNDAMENTAL V2 GRID SEARCH - RTX 5090 OPTIMIZED")
@@ -770,7 +887,8 @@ class FundamentalGridSearchRunnerV2:
                     config,
                     X_train, X_val, X_test,
                     y_train, y_val, y_test,
-                    target=target
+                    target=target,
+                    load_if_trained=load_if_trained
                 )
 
                 # Save result immediately
@@ -998,6 +1116,11 @@ def main():
         help='Do not skip completed configurations'
     )
     parser.add_argument(
+        '--load-trained',
+        action='store_true',
+        help='Load saved models instead of retraining (skip training if model exists)'
+    )
+    parser.add_argument(
         '--device',
         type=str,
         default=None,
@@ -1031,7 +1154,8 @@ def main():
             model_types=args.models,
             targets=args.targets,
             max_configs=args.max_configs,
-            skip_completed=not args.no_skip
+            skip_completed=not args.no_skip,
+            load_if_trained=args.load_trained
         )
 
 

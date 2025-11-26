@@ -1,0 +1,40 @@
+{
+  "config_hash": "e5ae9bcdc31d",
+  "timestamp": "2025-11-26T22:44:39.577659",
+  "target": "consumption",
+  "model_type": "xgboost",
+  "config_name": "xgboost_light",
+  "feature_tier": "minimal",
+  "feature_strategy": "consumption_baseline_minimal",
+  "n_features": 13,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 871.4781788943721,
+    "sMAPE": 2.2077251553873145,
+    "MASE": 0.45674626646782623
+  },
+  "test_metrics": {
+    "MAE": 988.7988631571204,
+    "sMAPE": 2.4567515024916995,
+    "MASE": 0.5182346500145539
+  },
+  "training_time_seconds": 0.6951014995574951,
+  "top_features": "consumption_lag_168h,consumption_lag_24h,is_holiday_day,is_weekend_x,dow_sin_x",
+  "config": {
+    "n_estimators": 500,
+    "max_depth": 5,
+    "learning_rate": 0.08,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "feature_tier": "minimal",
+    "description": "Light XGBoost with minimal features",
+    "config_name": "xgboost_light",
+    "model_type": "xgboost",
+    "target": "consumption",
+    "feature_strategy": "consumption_baseline_minimal",
+    "config_hash": "e5ae9bcdc31d"
+  },
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "config_hash": "85cefda951c4",
+  "timestamp": "2025-11-26T22:42:07.723259",
+  "target": "consumption",
+  "model_type": "catboost",
+  "config_name": "catboost_ultra_light",
+  "feature_tier": "minimal",
+  "feature_strategy": "consumption_baseline_minimal",
+  "n_features": 13,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 983.1004389374991,
+    "sMAPE": 2.480359465529811,
+    "MASE": 0.5152480761104731
+  },
+  "test_metrics": {
+    "MAE": 1077.3100639362617,
+    "sMAPE": 2.6759592160783754,
+    "MASE": 0.5646238327566234
+  },
+  "training_time_seconds": 0.6249711513519287,
+  "top_features": "consumption_lag_24h,consumption_lag_168h,dow_cos_x,dow_sin_x,is_holiday_day",
+  "config": {
+    "iterations": 200,
+    "depth": 4,
+    "learning_rate": 0.1,
+    "l2_leaf_reg": 3.0,
+    "border_count": 64,
+    "feature_tier": "minimal",
+    "description": "Ultra-light CatBoost for fast iteration",
+    "config_name": "catboost_ultra_light",
+    "model_type": "catboost",
+    "target": "consumption",
+    "feature_strategy": "consumption_baseline_minimal",
+    "config_hash": "85cefda951c4"
+  },
+  "error": null
+}

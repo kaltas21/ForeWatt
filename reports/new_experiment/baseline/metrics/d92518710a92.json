@@ -1,0 +1,40 @@
+{
+  "config_hash": "d92518710a92",
+  "timestamp": "2025-11-26T22:50:09.060709",
+  "target": "consumption",
+  "model_type": "prophet",
+  "config_name": "prophet_core_smooth",
+  "feature_tier": "core",
+  "feature_strategy": "consumption_baseline_core",
+  "n_features": 23,
+  "status": "failed",
+  "validation_metrics": {
+    "MAE": null,
+    "sMAPE": null,
+    "MASE": null
+  },
+  "test_metrics": {
+    "MAE": null,
+    "sMAPE": null,
+    "MASE": null
+  },
+  "training_time_seconds": 0.02519845962524414,
+  "top_features": null,
+  "config": {
+    "changepoint_prior_scale": 0.05,
+    "seasonality_prior_scale": 15.0,
+    "seasonality_mode": "additive",
+    "yearly_seasonality": true,
+    "weekly_seasonality": true,
+    "daily_seasonality": true,
+    "n_changepoints": 15,
+    "feature_tier": "core",
+    "description": "Smooth Prophet with core features",
+    "config_name": "prophet_core_smooth",
+    "model_type": "prophet",
+    "target": "consumption",
+    "feature_strategy": "consumption_baseline_core",
+    "config_hash": "d92518710a92"
+  },
+  "error": "Column ds has timezone specified, which is not supported. Remove timezone."
+}

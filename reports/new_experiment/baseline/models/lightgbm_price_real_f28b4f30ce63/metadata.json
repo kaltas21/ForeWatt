@@ -1,0 +1,8 @@
+{
+  "config_hash": "f28b4f30ce63",
+  "model_type": "lightgbm",
+  "target": "price_real",
+  "timestamp": "2025-11-26T22:41:01.991726",
+  "model_class": "<class 'lightgbm.sklearn.LGBMRegressor'>",
+  "model_file": "model.txt"
+}

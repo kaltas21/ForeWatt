@@ -1,0 +1,38 @@
+{
+  "config_hash": "ddc8524f362b",
+  "timestamp": "2025-11-26T22:38:18.008587",
+  "target": "price_real",
+  "model_type": "catboost",
+  "config_name": "catboost_extended_fast",
+  "feature_tier": "extended",
+  "feature_strategy": "baseline_extended",
+  "n_features": 47,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 99.70494788491995,
+    "sMAPE": 16.77982853493644,
+    "MASE": 0.614174056754703
+  },
+  "test_metrics": {
+    "MAE": 92.50198347909404,
+    "sMAPE": 19.183765126509126,
+    "MASE": 0.5698044044592935
+  },
+  "training_time_seconds": 1.0007450580596924,
+  "top_features": "price_ptf_rolling_mean_24h,price_ptf_lag_168h,price_ptf_lag_24h,price_ptf_rolling_max_24h,thermal_gap",
+  "config": {
+    "iterations": 800,
+    "depth": 6,
+    "learning_rate": 0.08,
+    "l2_leaf_reg": 3.0,
+    "border_count": 128,
+    "feature_tier": "extended",
+    "description": "Fast CatBoost with extended features",
+    "config_name": "catboost_extended_fast",
+    "model_type": "catboost",
+    "target": "price_real",
+    "feature_strategy": "baseline_extended",
+    "config_hash": "ddc8524f362b"
+  },
+  "error": null
+}

@@ -1,0 +1,41 @@
+{
+  "config_hash": "91053e21fdf9",
+  "timestamp": "2025-11-26T22:40:50.494911",
+  "target": "price_real",
+  "model_type": "lightgbm",
+  "config_name": "lightgbm_core_deep",
+  "feature_tier": "core",
+  "feature_strategy": "baseline_core",
+  "n_features": 27,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 88.04321174584487,
+    "sMAPE": 15.364778143275682,
+    "MASE": 0.5423387472211634
+  },
+  "test_metrics": {
+    "MAE": 105.7907035913998,
+    "sMAPE": 20.746866455867174,
+    "MASE": 0.6516617978343223
+  },
+  "training_time_seconds": 4.581131219863892,
+  "top_features": "price_ptf_rolling_std_24h,renewable_saturation,price_ptf_lag_168h,price_ptf_rolling_mean_24h,hour_cos",
+  "config": {
+    "n_estimators": 1500,
+    "max_depth": 8,
+    "learning_rate": 0.03,
+    "num_leaves": 127,
+    "subsample": 0.8,
+    "colsample_bytree": 0.7,
+    "reg_alpha": 0.1,
+    "reg_lambda": 2.0,
+    "feature_tier": "core",
+    "description": "Deep LightGBM with core features",
+    "config_name": "lightgbm_core_deep",
+    "model_type": "lightgbm",
+    "target": "price_real",
+    "feature_strategy": "baseline_core",
+    "config_hash": "91053e21fdf9"
+  },
+  "error": null
+}

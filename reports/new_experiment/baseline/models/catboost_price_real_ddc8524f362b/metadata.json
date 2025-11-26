@@ -1,0 +1,8 @@
+{
+  "config_hash": "ddc8524f362b",
+  "model_type": "catboost",
+  "target": "price_real",
+  "timestamp": "2025-11-26T22:38:19.006013",
+  "model_class": "<class 'catboost.core.CatBoostRegressor'>",
+  "model_file": "model.cbm"
+}

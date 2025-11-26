@@ -1,0 +1,38 @@
+{
+  "config_hash": "739828b0f25c",
+  "timestamp": "2025-11-26T22:42:30.412433",
+  "target": "consumption",
+  "model_type": "catboost",
+  "config_name": "catboost_core_regularized",
+  "feature_tier": "core",
+  "feature_strategy": "consumption_baseline_core",
+  "n_features": 23,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 686.53962243256,
+    "sMAPE": 1.7231295382952645,
+    "MASE": 0.359819002841963
+  },
+  "test_metrics": {
+    "MAE": 836.3124635584671,
+    "sMAPE": 2.0360406277856047,
+    "MASE": 0.4383157313421822
+  },
+  "training_time_seconds": 4.170854330062866,
+  "top_features": "consumption_lag_168h,consumption_lag_24h,consumption_rolling_mean_24h,dow_cos_x,dow_sin_x",
+  "config": {
+    "iterations": 1000,
+    "depth": 6,
+    "learning_rate": 0.05,
+    "l2_leaf_reg": 10.0,
+    "border_count": 128,
+    "feature_tier": "core",
+    "description": "Regularized CatBoost with core features",
+    "config_name": "catboost_core_regularized",
+    "model_type": "catboost",
+    "target": "consumption",
+    "feature_strategy": "consumption_baseline_core",
+    "config_hash": "739828b0f25c"
+  },
+  "error": null
+}

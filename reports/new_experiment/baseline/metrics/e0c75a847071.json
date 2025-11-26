@@ -1,0 +1,40 @@
+{
+  "config_hash": "e0c75a847071",
+  "timestamp": "2025-11-26T22:44:58.725541",
+  "target": "consumption",
+  "model_type": "xgboost",
+  "config_name": "xgboost_extended",
+  "feature_tier": "extended",
+  "feature_strategy": "consumption_baseline_full",
+  "n_features": 42,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 719.9606162334478,
+    "sMAPE": 1.7964780721753295,
+    "MASE": 0.37733512029606403
+  },
+  "test_metrics": {
+    "MAE": 981.3844310805094,
+    "sMAPE": 2.3618195006590557,
+    "MASE": 0.5143487074275946
+  },
+  "training_time_seconds": 9.002677202224731,
+  "top_features": "consumption_lag_168h,reserve_margin_ratio,load_factor,consumption_lag_24h,is_holiday_hour",
+  "config": {
+    "n_estimators": 1500,
+    "max_depth": 7,
+    "learning_rate": 0.03,
+    "subsample": 0.8,
+    "colsample_bytree": 0.7,
+    "reg_alpha": 0.1,
+    "reg_lambda": 2.0,
+    "feature_tier": "extended",
+    "description": "XGBoost with extended features",
+    "config_name": "xgboost_extended",
+    "model_type": "xgboost",
+    "target": "consumption",
+    "feature_strategy": "consumption_baseline_full",
+    "config_hash": "e0c75a847071"
+  },
+  "error": null
+}

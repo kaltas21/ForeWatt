@@ -1,0 +1,40 @@
+{
+  "config_hash": "ac374bb66818",
+  "timestamp": "2025-11-26T22:39:26.077574",
+  "target": "price_real",
+  "model_type": "xgboost",
+  "config_name": "xgboost_ultra_light",
+  "feature_tier": "minimal",
+  "feature_strategy": "baseline_minimal",
+  "n_features": 15,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 100.02291028061532,
+    "sMAPE": 17.12278848614558,
+    "MASE": 0.6161326782534582
+  },
+  "test_metrics": {
+    "MAE": 106.10069022876932,
+    "sMAPE": 20.869184575614362,
+    "MASE": 0.6535712893355138
+  },
+  "training_time_seconds": 0.6201775074005127,
+  "top_features": "price_ptf_lag_24h,spark_spread_proxy,price_ptf_lag_168h,is_holiday_day,renewable_saturation",
+  "config": {
+    "n_estimators": 200,
+    "max_depth": 4,
+    "learning_rate": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "feature_tier": "minimal",
+    "description": "Ultra-light XGBoost for fast iteration",
+    "config_name": "xgboost_ultra_light",
+    "model_type": "xgboost",
+    "target": "price_real",
+    "feature_strategy": "baseline_minimal",
+    "config_hash": "ac374bb66818"
+  },
+  "error": null
+}

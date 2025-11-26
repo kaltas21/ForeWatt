@@ -1,0 +1,38 @@
+{
+  "config_hash": "51c5b1325535",
+  "timestamp": "2025-11-26T22:38:19.269591",
+  "target": "price_real",
+  "model_type": "catboost",
+  "config_name": "catboost_extended_reg",
+  "feature_tier": "extended",
+  "feature_strategy": "baseline_extended",
+  "n_features": 47,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 87.51857791971369,
+    "sMAPE": 15.199330922067322,
+    "MASE": 0.5391070471687484
+  },
+  "test_metrics": {
+    "MAE": 90.07080189504796,
+    "sMAPE": 18.694896201593053,
+    "MASE": 0.5548285312668785
+  },
+  "training_time_seconds": 5.112269163131714,
+  "top_features": "price_ptf_rolling_mean_24h,price_ptf_lag_168h,price_ptf_lag_24h,price_ptf_rolling_max_24h,thermal_gap",
+  "config": {
+    "iterations": 1500,
+    "depth": 6,
+    "learning_rate": 0.03,
+    "l2_leaf_reg": 15.0,
+    "border_count": 254,
+    "feature_tier": "extended",
+    "description": "Regularized CatBoost with extended features",
+    "config_name": "catboost_extended_reg",
+    "model_type": "catboost",
+    "target": "price_real",
+    "feature_strategy": "baseline_extended",
+    "config_hash": "51c5b1325535"
+  },
+  "error": null
+}

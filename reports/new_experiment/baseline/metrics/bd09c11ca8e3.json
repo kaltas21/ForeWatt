@@ -1,0 +1,40 @@
+{
+  "config_hash": "bd09c11ca8e3",
+  "timestamp": "2025-11-26T22:39:35.263791",
+  "target": "price_real",
+  "model_type": "xgboost",
+  "config_name": "xgboost_core_wide",
+  "feature_tier": "core",
+  "feature_strategy": "baseline_core",
+  "n_features": 27,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 84.49462815497976,
+    "sMAPE": 14.9915252133427,
+    "MASE": 0.5204797720552535
+  },
+  "test_metrics": {
+    "MAE": 75.2495629365514,
+    "sMAPE": 16.841397546212296,
+    "MASE": 0.4635309512533248
+  },
+  "training_time_seconds": 0.5205774307250977,
+  "top_features": "price_ptf_rolling_mean_24h,price_ptf_lag_24h,price_ptf_lag_168h,thermal_gap,dow_cos_x",
+  "config": {
+    "n_estimators": 800,
+    "max_depth": 4,
+    "learning_rate": 0.08,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "feature_tier": "core",
+    "description": "Wide shallow XGBoost with core features",
+    "config_name": "xgboost_core_wide",
+    "model_type": "xgboost",
+    "target": "price_real",
+    "feature_strategy": "baseline_core",
+    "config_hash": "bd09c11ca8e3"
+  },
+  "error": null
+}

@@ -1,0 +1,40 @@
+{
+  "config_hash": "8ced6e1f196f",
+  "timestamp": "2025-11-26T22:39:33.820361",
+  "target": "price_real",
+  "model_type": "xgboost",
+  "config_name": "xgboost_core_regularized",
+  "feature_tier": "core",
+  "feature_strategy": "baseline_core",
+  "n_features": 27,
+  "status": "success",
+  "validation_metrics": {
+    "MAE": 85.81636764312519,
+    "sMAPE": 15.062688282870877,
+    "MASE": 0.5286215756530461
+  },
+  "test_metrics": {
+    "MAE": 93.97797186475718,
+    "sMAPE": 19.361047343975905,
+    "MASE": 0.5788963682361751
+  },
+  "training_time_seconds": 1.2008030414581299,
+  "top_features": "price_ptf_rolling_mean_24h,price_ptf_lag_24h,price_ptf_lag_168h,spark_spread_proxy,USD_TRY",
+  "config": {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "learning_rate": 0.05,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "reg_alpha": 1.0,
+    "reg_lambda": 5.0,
+    "feature_tier": "core",
+    "description": "Regularized XGBoost with core features",
+    "config_name": "xgboost_core_regularized",
+    "model_type": "xgboost",
+    "target": "price_real",
+    "feature_strategy": "baseline_core",
+    "config_hash": "8ced6e1f196f"
+  },
+  "error": null
+}
