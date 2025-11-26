@@ -127,14 +127,16 @@ class BaselineGridSearchRunner:
         self.output_dir = output_dir or PROJECT_ROOT / 'reports' / 'new_experiment' / 'baseline'
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create subdirectories for organized logging
+        # Create subdirectories for organized logging and model storage
         self.logs_dir = self.output_dir / 'logs'
         self.metrics_dir = self.output_dir / 'metrics'
         self.mlruns_dir = self.output_dir / 'mlruns'
+        self.models_dir = self.output_dir / 'models'
 
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.metrics_dir.mkdir(parents=True, exist_ok=True)
         self.mlruns_dir.mkdir(parents=True, exist_ok=True)
+        self.models_dir.mkdir(parents=True, exist_ok=True)
 
         self.results_file = self.output_dir / 'results.csv'
         self.val_size = val_size
@@ -155,6 +157,7 @@ class BaselineGridSearchRunner:
         logger.info(f"  Output dir: {self.output_dir}")
         logger.info(f"  Logs dir: {self.logs_dir}")
         logger.info(f"  Metrics dir: {self.metrics_dir}")
+        logger.info(f"  Models dir: {self.models_dir}")
         logger.info(f"  MLflow dir: {self.mlruns_dir}")
         logger.info(f"  Results file: {self.results_file}")
         logger.info(f"  Completed configs: {len(self.completed_hashes)}")
@@ -313,6 +316,84 @@ class BaselineGridSearchRunner:
         except Exception as e:
             logger.warning(f"Failed to log to MLflow: {e}")
 
+    def _save_model(
+        self,
+        model: Any,
+        trainer: Any,
+        config_hash: str,
+        model_type: str,
+        target: str
+    ) -> Optional[Path]:
+        """
+        Save trained model to file.
+
+        Args:
+            model: Trained model
+            trainer: Trainer instance
+            config_hash: Configuration hash
+            model_type: Model type (catboost, xgboost, lightgbm, prophet)
+            target: Target variable
+
+        Returns:
+            Path to saved model or None if failed
+        """
+        try:
+            import joblib
+
+            # Create model filename
+            model_filename = f"{model_type}_{target}_{config_hash}"
+            model_dir = self.models_dir / model_filename
+            model_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save model based on type
+            if model_type == 'catboost':
+                model_path = model_dir / 'model.cbm'
+                model.save_model(str(model_path))
+            elif model_type == 'xgboost':
+                model_path = model_dir / 'model.json'
+                model.save_model(str(model_path))
+            elif model_type == 'lightgbm':
+                model_path = model_dir / 'model.txt'
+                model.booster_.save_model(str(model_path))
+            elif model_type == 'prophet':
+                # Prophet models are serialized with joblib
+                model_path = model_dir / 'model.pkl'
+                joblib.dump(model, model_path)
+            else:
+                # Fallback: use joblib
+                model_path = model_dir / 'model.pkl'
+                joblib.dump(model, model_path)
+
+            logger.info(f"Model saved to: {model_path}")
+
+            # Save model metadata
+            metadata = {
+                'config_hash': config_hash,
+                'model_type': model_type,
+                'target': target,
+                'timestamp': datetime.now().isoformat(),
+                'model_class': str(type(model)),
+                'model_file': model_path.name,
+            }
+            metadata_path = model_dir / 'metadata.json'
+            with open(metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+
+            # Save feature importance if available
+            if hasattr(trainer, 'get_feature_importance'):
+                try:
+                    importance = trainer.get_feature_importance()
+                    importance_path = model_dir / 'feature_importance.csv'
+                    importance.to_csv(importance_path, index=False)
+                except Exception:
+                    pass
+
+            return model_dir
+
+        except Exception as e:
+            logger.warning(f"Failed to save model: {e}")
+            return None
+
     def _prepare_data(
         self,
         target: str = 'price_real',
@@ -444,6 +525,10 @@ class BaselineGridSearchRunner:
                     result['top_features'] = ','.join(top_features)
                 except Exception:
                     result['top_features'] = ''
+
+            # Save model
+            model_path = self._save_model(model, trainer, config_hash, model_type, target)
+            result['model_path'] = str(model_path) if model_path else None
 
         except Exception as e:
             result['status'] = 'failed'

@@ -134,14 +134,16 @@ class FundamentalGridSearchRunnerV2:
         self.output_dir = output_dir or PROJECT_ROOT / 'reports' / 'new_experiment' / 'deeplearning'
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create subdirectories for organized logging
+        # Create subdirectories for organized logging and model storage
         self.logs_dir = self.output_dir / 'logs'
         self.metrics_dir = self.output_dir / 'metrics'
         self.mlruns_dir = self.output_dir / 'mlruns'
+        self.models_dir = self.output_dir / 'models'
 
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.metrics_dir.mkdir(parents=True, exist_ok=True)
         self.mlruns_dir.mkdir(parents=True, exist_ok=True)
+        self.models_dir.mkdir(parents=True, exist_ok=True)
 
         self.results_file = self.output_dir / 'results.csv'
         self.device = device
@@ -164,6 +166,7 @@ class FundamentalGridSearchRunnerV2:
         logger.info(f"  Output dir: {self.output_dir}")
         logger.info(f"  Logs dir: {self.logs_dir}")
         logger.info(f"  Metrics dir: {self.metrics_dir}")
+        logger.info(f"  Models dir: {self.models_dir}")
         logger.info(f"  MLflow dir: {self.mlruns_dir}")
         logger.info(f"  Results file: {self.results_file}")
         logger.info(f"  Completed configs: {len(self.completed_hashes)}")
@@ -321,6 +324,66 @@ class FundamentalGridSearchRunnerV2:
 
         except Exception as e:
             logger.warning(f"Failed to log to MLflow: {e}")
+
+    def _save_model(
+        self,
+        model: Any,
+        trainer: Any,
+        config_hash: str,
+        model_type: str,
+        target: str
+    ) -> Optional[Path]:
+        """
+        Save trained model to file.
+
+        Args:
+            model: Trained model (NeuralForecast model)
+            trainer: Trainer instance
+            config_hash: Configuration hash
+            model_type: Model type (patchtst, nhits, tft)
+            target: Target variable
+
+        Returns:
+            Path to saved model or None if failed
+        """
+        try:
+            # Create model filename
+            model_filename = f"{model_type}_{target}_{config_hash}"
+            model_dir = self.models_dir / model_filename
+            model_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save the NeuralForecast model
+            # NeuralForecast models have a save method
+            if hasattr(model, 'save'):
+                model_path = model_dir / 'model'
+                model.save(str(model_path))
+                logger.info(f"Model saved to: {model_path}")
+
+                # Also save model metadata
+                metadata = {
+                    'config_hash': config_hash,
+                    'model_type': model_type,
+                    'target': target,
+                    'timestamp': datetime.now().isoformat(),
+                    'model_class': str(type(model)),
+                }
+                metadata_path = model_dir / 'metadata.json'
+                with open(metadata_path, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+
+                return model_dir
+            else:
+                # Fallback: try to save using pickle
+                import pickle
+                model_path = model_dir / 'model.pkl'
+                with open(model_path, 'wb') as f:
+                    pickle.dump(model, f)
+                logger.info(f"Model saved (pickle) to: {model_path}")
+                return model_dir
+
+        except Exception as e:
+            logger.warning(f"Failed to save model: {e}")
+            return None
 
     def _prepare_data(
         self,
@@ -575,6 +638,10 @@ class FundamentalGridSearchRunnerV2:
             logger.info(f"  MAE:   {result['test_mae']:.2f}")
             logger.info(f"  sMAPE: {result['test_smape']:.2f}%")
             logger.info(f"  MASE:  {result['test_mase']:.4f}")
+
+            # Save model
+            model_path = self._save_model(model, trainer, config_hash, model_type, target)
+            result['model_path'] = str(model_path) if model_path else None
 
         except Exception as e:
             result['status'] = 'failed'
