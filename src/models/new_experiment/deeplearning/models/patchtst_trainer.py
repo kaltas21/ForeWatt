@@ -264,16 +264,17 @@ class PatchTSTTrainer:
         if hyperparams is None:
             hyperparams = self.get_default_hyperparameters()
 
-        logger.info(f"\n{'='*80}")
-        logger.info(f"TRAINING PATCHTST: {self.target}")
-        logger.info(f"{'='*80}")
-        logger.info(f"Horizon: {self.horizon}h")
-        logger.info(f"Input size: {self.input_size}h")
-        logger.info(f"Patch length: {hyperparams['patch_len']}")
-        logger.info(f"Stride: {hyperparams['stride']}")
-        logger.info(f"Train samples: {len(X_train)}")
-        logger.info(f"Val samples: {len(X_val)}")
-        logger.info(f"Hyperparameters: {hyperparams}")
+        # Print training config
+        print(f"\n{'='*70}")
+        print(f"  PATCHTST TRAINING: {self.target}")
+        print(f"{'='*70}")
+        print(f"  Device: {self.device_type.upper()}")
+        print(f"  Horizon: {self.horizon}h, Input: {self.input_size}h")
+        print(f"  Config: patch_len={hyperparams['patch_len']}, stride={hyperparams['stride']}")
+        print(f"  Config: layers={hyperparams.get('encoder_layers', hyperparams.get('n_layers', 3))}, hidden={hyperparams['hidden_size']}, heads={hyperparams['n_heads']}")
+        print(f"  Config: lr={hyperparams['learning_rate']}, batch={hyperparams['batch_size']}, max_steps={hyperparams['max_steps']}")
+        print(f"  Data: train={len(X_train)}, val={len(X_val)}, features={X_train.shape[1]}")
+        print(f"{'='*70}")
 
         # Prepare data
         train_df = self.prepare_neuralforecast_data(X_train, y_train)
@@ -286,7 +287,7 @@ class PatchTSTTrainer:
         # Create NeuralForecast wrapper
         nf = NeuralForecast(models=[model], freq='H')
 
-        # Train
+        # Train - PyTorch Lightning has built-in progress bar
         try:
             nf.fit(
                 df=full_df,
@@ -296,6 +297,8 @@ class PatchTSTTrainer:
         except RuntimeError as e:
             logger.error(f"Training failed with RuntimeError: {e}")
             raise
+
+        print(f"  Training complete.")
 
         # Predict on validation using same methodology as test:
         # Use data UP TO last horizon hours, predict those last horizon hours

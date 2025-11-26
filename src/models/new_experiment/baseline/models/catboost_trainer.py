@@ -68,20 +68,31 @@ class CatBoostTrainer:
         logger.info(f"Features: {X_train.shape[1]}")
 
         # Extract hyperparameters
+        iterations = hyperparams.get('iterations', 1000)
+        depth = hyperparams.get('depth', 6)
+        learning_rate = hyperparams.get('learning_rate', 0.05)
+        l2_leaf_reg = hyperparams.get('l2_leaf_reg', 3.0)
+
         params = {
-            'iterations': hyperparams.get('iterations', 1000),
-            'depth': hyperparams.get('depth', 6),
-            'learning_rate': hyperparams.get('learning_rate', 0.05),
-            'l2_leaf_reg': hyperparams.get('l2_leaf_reg', 3.0),
+            'iterations': iterations,
+            'depth': depth,
+            'learning_rate': learning_rate,
+            'l2_leaf_reg': l2_leaf_reg,
             'border_count': hyperparams.get('border_count', 128),
             'random_seed': self.random_seed,
             'loss_function': 'RMSE',
             'eval_metric': 'MAE',
             'early_stopping_rounds': 50,
-            'verbose': 100 if self.verbose else False,
+            'verbose': 100,  # Built-in: log every 100 iterations
         }
 
-        logger.info(f"Hyperparameters: {params}")
+        # Print training config
+        print(f"\n{'='*70}")
+        print(f"  CATBOOST TRAINING: {self.target}")
+        print(f"{'='*70}")
+        print(f"  Config: iterations={iterations}, depth={depth}, lr={learning_rate}, l2={l2_leaf_reg}")
+        print(f"  Data: train={len(X_train)}, val={len(X_val)}, features={X_train.shape[1]}")
+        print(f"{'='*70}")
 
         self.model = CatBoostRegressor(**params)
         self.feature_names = list(X_train.columns)
@@ -91,6 +102,8 @@ class CatBoostTrainer:
             eval_set=(X_val, y_val),
             use_best_model=True
         )
+
+        print(f"  Training complete. Best iteration: {self.model.best_iteration_}")
 
         # Validation predictions
         val_pred = self.model.predict(X_val)

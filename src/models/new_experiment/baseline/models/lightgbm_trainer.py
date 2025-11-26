@@ -68,27 +68,42 @@ class LightGBMTrainer:
         logger.info(f"Features: {X_train.shape[1]}")
 
         # Extract hyperparameters
+        n_estimators = hyperparams.get('n_estimators', 1000)
+        max_depth = hyperparams.get('max_depth', 6)
+        learning_rate = hyperparams.get('learning_rate', 0.05)
+        num_leaves = hyperparams.get('num_leaves', 63)
+        subsample = hyperparams.get('subsample', 0.8)
+        reg_lambda = hyperparams.get('reg_lambda', 1.0)
+
         params = {
-            'n_estimators': hyperparams.get('n_estimators', 1000),
-            'max_depth': hyperparams.get('max_depth', 6),
-            'learning_rate': hyperparams.get('learning_rate', 0.05),
-            'num_leaves': hyperparams.get('num_leaves', 63),
-            'subsample': hyperparams.get('subsample', 0.8),
+            'n_estimators': n_estimators,
+            'max_depth': max_depth,
+            'learning_rate': learning_rate,
+            'num_leaves': num_leaves,
+            'subsample': subsample,
             'colsample_bytree': hyperparams.get('colsample_bytree', 0.8),
             'reg_alpha': hyperparams.get('reg_alpha', 0.1),
-            'reg_lambda': hyperparams.get('reg_lambda', 1.0),
+            'reg_lambda': reg_lambda,
             'random_state': self.random_seed,
             'objective': 'regression',
             'metric': 'mae',
-            'verbosity': 1 if self.verbose else -1,
+            'verbosity': -1,  # Suppress warnings, use callbacks for logging
+            'force_row_wise': True,  # Suppress row-wise warning
         }
 
-        logger.info(f"Hyperparameters: {params}")
+        # Print training config
+        print(f"\n{'='*70}")
+        print(f"  LIGHTGBM TRAINING: {self.target}")
+        print(f"{'='*70}")
+        print(f"  Config: n_estimators={n_estimators}, max_depth={max_depth}, lr={learning_rate}")
+        print(f"  Config: num_leaves={num_leaves}, subsample={subsample}, reg_lambda={reg_lambda}")
+        print(f"  Data: train={len(X_train)}, val={len(X_val)}, features={X_train.shape[1]}")
+        print(f"{'='*70}")
 
-        # Create callbacks
+        # Create callbacks - built-in logging
         callbacks = [
-            lgb.early_stopping(stopping_rounds=50, verbose=self.verbose),
-            lgb.log_evaluation(period=100 if self.verbose else 0)
+            lgb.early_stopping(stopping_rounds=50, verbose=True),
+            lgb.log_evaluation(period=100)  # Built-in: log every 100 rounds
         ]
 
         self.model = lgb.LGBMRegressor(**params)
@@ -99,6 +114,8 @@ class LightGBMTrainer:
             eval_set=[(X_val, y_val)],
             callbacks=callbacks
         )
+
+        print(f"  Training complete. Best iteration: {self.model.best_iteration_}")
 
         # Validation predictions
         val_pred = self.model.predict(X_val)

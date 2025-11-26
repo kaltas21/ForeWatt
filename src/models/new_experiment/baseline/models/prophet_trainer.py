@@ -69,24 +69,35 @@ class ProphetTrainer:
         logger.info(f"Val samples: {len(X_val)}")
         logger.info(f"Features: {X_train.shape[1]}")
 
-        # Suppress Prophet's cmdstanpy logs
-        if not self.verbose:
-            warnings.filterwarnings('ignore')
-            logging.getLogger('cmdstanpy').setLevel(logging.WARNING)
-            logging.getLogger('prophet').setLevel(logging.WARNING)
+        # Suppress Prophet's cmdstanpy logs (always suppress internal logs)
+        warnings.filterwarnings('ignore')
+        logging.getLogger('cmdstanpy').setLevel(logging.WARNING)
+        logging.getLogger('prophet').setLevel(logging.WARNING)
 
         # Extract hyperparameters
+        changepoint_prior = hyperparams.get('changepoint_prior_scale', 0.1)
+        seasonality_prior = hyperparams.get('seasonality_prior_scale', 10.0)
+        seasonality_mode = hyperparams.get('seasonality_mode', 'additive')
+        n_changepoints = hyperparams.get('n_changepoints', 25)
+
         params = {
-            'changepoint_prior_scale': hyperparams.get('changepoint_prior_scale', 0.1),
-            'seasonality_prior_scale': hyperparams.get('seasonality_prior_scale', 10.0),
-            'seasonality_mode': hyperparams.get('seasonality_mode', 'additive'),
+            'changepoint_prior_scale': changepoint_prior,
+            'seasonality_prior_scale': seasonality_prior,
+            'seasonality_mode': seasonality_mode,
             'yearly_seasonality': hyperparams.get('yearly_seasonality', True),
             'weekly_seasonality': hyperparams.get('weekly_seasonality', True),
             'daily_seasonality': hyperparams.get('daily_seasonality', True),
-            'n_changepoints': hyperparams.get('n_changepoints', 25),
+            'n_changepoints': n_changepoints,
         }
 
-        logger.info(f"Hyperparameters: {params}")
+        # Always print training config
+        print(f"\n{'='*70}")
+        print(f"  PROPHET TRAINING: {self.target}")
+        print(f"{'='*70}")
+        print(f"  Config: changepoint_prior={changepoint_prior}, seasonality_prior={seasonality_prior}")
+        print(f"  Config: seasonality_mode={seasonality_mode}, n_changepoints={n_changepoints}")
+        print(f"  Data: train={len(X_train)}, val={len(X_val)}, features={X_train.shape[1]}")
+        print(f"{'='*70}")
 
         # Prepare Prophet dataframe
         # Prophet requires 'ds' (datetime) and 'y' (target) columns
@@ -122,10 +133,12 @@ class ProphetTrainer:
         )
 
         # Add regressors
+        print(f"  Regressors: {regressor_features[:5]}{'...' if len(regressor_features) > 5 else ''}")
         for feature in regressor_features:
             self.model.add_regressor(feature)
 
-        # Fit model
+        # Fit model (Prophet has no built-in progress bar, so we time it)
+        print(f"  Fitting Prophet model...")
         self.model.fit(train_df)
 
         # Store training end date
@@ -141,6 +154,7 @@ class ProphetTrainer:
         # Predict on validation
         forecast = self.model.predict(val_df)
         val_pred = forecast['yhat'].values
+        print(f"  Training complete.")
 
         # Calculate metrics
         from src.models.evaluate import (

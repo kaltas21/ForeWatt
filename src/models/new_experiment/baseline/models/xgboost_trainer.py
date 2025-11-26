@@ -68,21 +68,33 @@ class XGBoostTrainer:
         logger.info(f"Features: {X_train.shape[1]}")
 
         # Extract hyperparameters
+        n_estimators = hyperparams.get('n_estimators', 1000)
+        max_depth = hyperparams.get('max_depth', 6)
+        learning_rate = hyperparams.get('learning_rate', 0.05)
+        subsample = hyperparams.get('subsample', 0.8)
+        reg_lambda = hyperparams.get('reg_lambda', 1.0)
+
         params = {
-            'n_estimators': hyperparams.get('n_estimators', 1000),
-            'max_depth': hyperparams.get('max_depth', 6),
-            'learning_rate': hyperparams.get('learning_rate', 0.05),
-            'subsample': hyperparams.get('subsample', 0.8),
+            'n_estimators': n_estimators,
+            'max_depth': max_depth,
+            'learning_rate': learning_rate,
+            'subsample': subsample,
             'colsample_bytree': hyperparams.get('colsample_bytree', 0.8),
             'reg_alpha': hyperparams.get('reg_alpha', 0.1),
-            'reg_lambda': hyperparams.get('reg_lambda', 1.0),
+            'reg_lambda': reg_lambda,
             'random_state': self.random_seed,
             'objective': 'reg:squarederror',
             'early_stopping_rounds': 50,
-            'verbosity': 1 if self.verbose else 0,
         }
 
-        logger.info(f"Hyperparameters: {params}")
+        # Print training config
+        print(f"\n{'='*70}")
+        print(f"  XGBOOST TRAINING: {self.target}")
+        print(f"{'='*70}")
+        print(f"  Config: n_estimators={n_estimators}, max_depth={max_depth}, lr={learning_rate}")
+        print(f"  Config: subsample={subsample}, reg_lambda={reg_lambda}")
+        print(f"  Data: train={len(X_train)}, val={len(X_val)}, features={X_train.shape[1]}")
+        print(f"{'='*70}")
 
         self.model = xgb.XGBRegressor(**params)
         self.feature_names = list(X_train.columns)
@@ -90,8 +102,10 @@ class XGBoostTrainer:
         self.model.fit(
             X_train, y_train,
             eval_set=[(X_val, y_val)],
-            verbose=self.verbose
+            verbose=100  # Built-in: log every 100 rounds
         )
+
+        print(f"  Training complete. Best iteration: {self.model.best_iteration}")
 
         # Validation predictions
         val_pred = self.model.predict(X_val)
