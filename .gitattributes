@@ -1,3 +1,4 @@
 *.pkl filter=lfs diff=lfs merge=lfs -text
 *.csv filter=lfs diff=lfs merge=lfs -text
-reports/new_experiment/*/models/**/model.json filter=lfs diff=lfs merge=lfs -text
+reports/** filter=lfs diff=lfs merge=lfs -text
+lightning_logs/** filter=lfs diff=lfs merge=lfs -text
