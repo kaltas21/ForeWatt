@@ -182,15 +182,21 @@ class NHiTSTrainer:
             accelerator = 'cpu'
             devices = 'auto'
 
+        # Get stack_types with default if not provided
+        # Note: neuralforecast 2.0.1 only supports 'identity' stack type
+        n_stacks = len(hyperparams['n_blocks'])
+        stack_types = hyperparams.get('stack_types', ['identity'] * n_stacks)
+
         # Extract only valid N-HiTS parameters
         nhits_params = {
             'h': self.horizon,
             'input_size': self.input_size,
-            'stack_types': hyperparams['stack_types'],
+            'stack_types': stack_types,
             'n_blocks': hyperparams['n_blocks'],  # Already a list matching stack_types
             'n_pool_kernel_size': hyperparams['n_pool_kernel_size'],
             'n_freq_downsample': hyperparams['n_freq_downsample'],
-            'mlp_units': [[hyperparams['hidden_size']] * hyperparams['n_mlp_layers']] * len(hyperparams['stack_types']),
+            # mlp_units: [[in, out], [in, out], ...] per stack - each inner list is [hidden_size, hidden_size]
+            'mlp_units': [[hyperparams['hidden_size'], hyperparams['hidden_size']] for _ in range(len(stack_types))],
             'interpolation_mode': 'linear',
             'pooling_mode': 'MaxPool1d',
             'batch_size': hyperparams['batch_size'],
@@ -323,11 +329,11 @@ class NHiTSTrainer:
         # This matches how we evaluate on test set in grid_search_runner
         if len(val_df) > self.horizon:
             val_input_df = full_df.iloc[:-self.horizon].copy()
-            val_predictions = nf.predict(df=val_input_df, h=self.horizon)['NHITS'].values
+            val_predictions = nf.predict(df=val_input_df)['NHITS'].values
             y_val_horizon = y_val.values[-self.horizon:]  # Last horizon hours for comparison
         else:
             # If validation is too short, use first horizon hours (fallback)
-            val_pred = nf.predict(df=full_df, h=self.horizon)
+            val_pred = nf.predict(df=full_df)
             val_predictions = val_pred['NHITS'].values
             y_val_horizon = y_val.values[:self.horizon]
             logger.warning(f"Validation set too short ({len(val_df)} < {self.horizon}), using first {self.horizon} hours")
@@ -389,7 +395,7 @@ class NHiTSTrainer:
         df = self.prepare_neuralforecast_data(X, y)
 
         # Predict (neuralforecast 3.x uses 'h' instead of 'horizon')
-        predictions = self.model.predict(df=df, h=horizon)
+        predictions = self.model.predict(df=df)
 
         return predictions['NHITS'].values
 

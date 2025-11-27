@@ -1,8 +1,0 @@
-{
-  "config_hash": "89d109986af4",
-  "model_type": "xgboost",
-  "target": "consumption",
-  "timestamp": "2025-11-26T22:47:26.918881",
-  "model_class": "<class 'xgboost.sklearn.XGBRegressor'>",
-  "model_file": "model.json"
-}

@@ -1,8 +1,0 @@
-{
-  "config_hash": "12bde3de1578",
-  "model_type": "lightgbm",
-  "target": "consumption",
-  "timestamp": "2025-11-26T22:48:07.191198",
-  "model_class": "<class 'lightgbm.sklearn.LGBMRegressor'>",
-  "model_file": "model.txt"
-}

@@ -118,7 +118,7 @@ class FundamentalGridSearchRunnerV2:
         use_mixed_precision: bool = True,
         val_size: float = 0.2,
         test_size: float = 0.2,
-        experiment_name: str = "deeplearning_grid_search"
+        experiment_name: str = "deeplearning_grid_search_v2"
     ):
         """
         Initialize runner.
@@ -182,8 +182,8 @@ class FundamentalGridSearchRunnerV2:
             logger.warning("MLflow not available. Install with: pip install mlflow")
             return
 
-        # Set tracking URI to local directory
-        tracking_uri = f"sqlite:///{self.mlruns_dir / 'mlflow.db'}"
+        # Set tracking URI to local directory with new database
+        tracking_uri = f"sqlite:///{self.mlruns_dir / 'mlflow_v2.db'}"
         mlflow.set_tracking_uri(tracking_uri)
 
         # Create or get experiment
@@ -671,6 +671,7 @@ class FundamentalGridSearchRunnerV2:
             logger.info(f"\n{'='*80}")
             logger.info(f"TRAINING: {model_type.upper()} | Target: {target} | Hash: {config_hash}")
             logger.info(f"{'='*80}")
+            
 
         result = {
             'timestamp': datetime.now().isoformat(),

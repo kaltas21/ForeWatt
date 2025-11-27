@@ -1,13 +1,13 @@
 """
 Baseline Module for New Experiment V2
 =====================================
-CatBoost, XGBoost, LightGBM, and Prophet grid search.
+CatBoost, XGBoost, and LightGBM grid search.
 
 Components:
 - BaselineFeaturePreparer: D-1 safe feature preparation
 - BaselineGridConfigGenerator: 15 configs per model
 - BaselineGridSearchRunner: Grid search runner with logging
-- Trainers: CatBoost, XGBoost, LightGBM, Prophet
+- Trainers: CatBoost, XGBoost, LightGBM
 
 Author: ForeWatt Team - New Experiment V2
 Date: November 2025
@@ -27,7 +27,6 @@ from .grid_config_baseline import (
     CATBOOST_CONFIGS,
     XGBOOST_CONFIGS,
     LIGHTGBM_CONFIGS,
-    PROPHET_CONFIGS,
     TARGETS,
     TARGET_STRATEGIES
 )
@@ -38,7 +37,6 @@ from .models import (
     CatBoostTrainer,
     XGBoostTrainer,
     LightGBMTrainer,
-    ProphetTrainer
 )
 
 __all__ = [
@@ -54,7 +52,6 @@ __all__ = [
     'CATBOOST_CONFIGS',
     'XGBOOST_CONFIGS',
     'LIGHTGBM_CONFIGS',
-    'PROPHET_CONFIGS',
     'TARGETS',
     'TARGET_STRATEGIES',
     # Runner
@@ -63,5 +60,4 @@ __all__ = [
     'CatBoostTrainer',
     'XGBoostTrainer',
     'LightGBMTrainer',
-    'ProphetTrainer',
 ]

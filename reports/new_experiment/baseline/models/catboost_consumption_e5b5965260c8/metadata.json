@@ -1,8 +1,0 @@
-{
-  "config_hash": "e5b5965260c8",
-  "model_type": "catboost",
-  "target": "consumption",
-  "timestamp": "2025-11-26T22:42:20.161317",
-  "model_class": "<class 'catboost.core.CatBoostRegressor'>",
-  "model_file": "model.cbm"
-}

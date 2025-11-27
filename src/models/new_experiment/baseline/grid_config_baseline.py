@@ -1,7 +1,7 @@
 """
 Baseline Grid Configuration Generator
 =====================================
-Pre-defined configurations for CatBoost, XGBoost, LightGBM, and Prophet.
+Pre-defined configurations for CatBoost, XGBoost, and LightGBM.
 
 15 configurations per model with feature tier distribution:
 - minimal:  3 configs
@@ -560,185 +560,6 @@ LIGHTGBM_CONFIGS = {
 }
 
 
-# =============================================================================
-# PROPHET CONFIGURATIONS (15 configs)
-# =============================================================================
-PROPHET_CONFIGS = {
-    # === MINIMAL TIER (3 configs) ===
-    'prophet_ultra_light': {
-        'changepoint_prior_scale': 0.05,
-        'seasonality_prior_scale': 10.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 15,
-        'feature_tier': 'minimal',
-        'description': 'Ultra-light Prophet for fast iteration'
-    },
-    'prophet_light': {
-        'changepoint_prior_scale': 0.1,
-        'seasonality_prior_scale': 10.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 25,
-        'feature_tier': 'minimal',
-        'description': 'Light Prophet with minimal features'
-    },
-    'prophet_minimal_flexible': {
-        'changepoint_prior_scale': 0.2,
-        'seasonality_prior_scale': 5.0,
-        'seasonality_mode': 'multiplicative',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 25,
-        'feature_tier': 'minimal',
-        'description': 'Flexible Prophet with minimal features'
-    },
-
-    # === CORE TIER (5 configs) ===
-    'prophet_balanced': {
-        'changepoint_prior_scale': 0.1,
-        'seasonality_prior_scale': 10.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 25,
-        'feature_tier': 'core',
-        'description': 'Balanced Prophet - recommended default'
-    },
-    'prophet_core_flexible': {
-        'changepoint_prior_scale': 0.2,
-        'seasonality_prior_scale': 5.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 35,
-        'feature_tier': 'core',
-        'description': 'Flexible Prophet with core features'
-    },
-    'prophet_core_multiplicative': {
-        'changepoint_prior_scale': 0.1,
-        'seasonality_prior_scale': 10.0,
-        'seasonality_mode': 'multiplicative',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 25,
-        'feature_tier': 'core',
-        'description': 'Multiplicative Prophet with core features'
-    },
-    'prophet_core_smooth': {
-        'changepoint_prior_scale': 0.05,
-        'seasonality_prior_scale': 15.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 15,
-        'feature_tier': 'core',
-        'description': 'Smooth Prophet with core features'
-    },
-    'prophet_core_sensitive': {
-        'changepoint_prior_scale': 0.3,
-        'seasonality_prior_scale': 5.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 50,
-        'feature_tier': 'core',
-        'description': 'Sensitive Prophet with core features'
-    },
-
-    # === EXTENDED TIER (4 configs) ===
-    'prophet_extended': {
-        'changepoint_prior_scale': 0.15,
-        'seasonality_prior_scale': 10.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 35,
-        'feature_tier': 'extended',
-        'description': 'Prophet with extended features'
-    },
-    'prophet_extended_flexible': {
-        'changepoint_prior_scale': 0.25,
-        'seasonality_prior_scale': 5.0,
-        'seasonality_mode': 'multiplicative',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 50,
-        'feature_tier': 'extended',
-        'description': 'Flexible Prophet with extended features'
-    },
-    'prophet_extended_smooth': {
-        'changepoint_prior_scale': 0.05,
-        'seasonality_prior_scale': 15.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 25,
-        'feature_tier': 'extended',
-        'description': 'Smooth Prophet with extended features'
-    },
-    'prophet_extended_multiplicative': {
-        'changepoint_prior_scale': 0.15,
-        'seasonality_prior_scale': 10.0,
-        'seasonality_mode': 'multiplicative',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 35,
-        'feature_tier': 'extended',
-        'description': 'Multiplicative Prophet with extended features'
-    },
-
-    # === FULL TIER (3 configs) ===
-    'prophet_full': {
-        'changepoint_prior_scale': 0.15,
-        'seasonality_prior_scale': 10.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 50,
-        'feature_tier': 'full',
-        'description': 'Full Prophet with all features'
-    },
-    'prophet_full_flexible': {
-        'changepoint_prior_scale': 0.3,
-        'seasonality_prior_scale': 5.0,
-        'seasonality_mode': 'multiplicative',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 75,
-        'feature_tier': 'full',
-        'description': 'Flexible Prophet with all features'
-    },
-    'prophet_full_smooth': {
-        'changepoint_prior_scale': 0.05,
-        'seasonality_prior_scale': 20.0,
-        'seasonality_mode': 'additive',
-        'yearly_seasonality': True,
-        'weekly_seasonality': True,
-        'daily_seasonality': True,
-        'n_changepoints': 25,
-        'feature_tier': 'full',
-        'description': 'Smooth Prophet with all features'
-    },
-}
-
-
 def _compute_config_hash(config: Dict[str, Any], target: str) -> str:
     """Compute unique hash for a configuration."""
     hash_dict = {**config, 'target': target}
@@ -754,7 +575,7 @@ def get_baseline_grid(
     Get grid of baseline configurations.
 
     Args:
-        model_type: 'catboost', 'xgboost', 'lightgbm', 'prophet', or None for all
+        model_type: 'catboost', 'xgboost', 'lightgbm', or None for all
         target: Target variable
 
     Returns:
@@ -766,7 +587,6 @@ def get_baseline_grid(
         'catboost': CATBOOST_CONFIGS,
         'xgboost': XGBOOST_CONFIGS,
         'lightgbm': LIGHTGBM_CONFIGS,
-        'prophet': PROPHET_CONFIGS,
     }
 
     # Feature tier mapping for targets
@@ -834,18 +654,15 @@ class BaselineGridConfigGenerator:
             'catboost': {'count': len(CATBOOST_CONFIGS)},
             'xgboost': {'count': len(XGBOOST_CONFIGS)},
             'lightgbm': {'count': len(LIGHTGBM_CONFIGS)},
-            'prophet': {'count': len(PROPHET_CONFIGS)},
             'total_per_target': (
                 len(CATBOOST_CONFIGS) +
                 len(XGBOOST_CONFIGS) +
-                len(LIGHTGBM_CONFIGS) +
-                len(PROPHET_CONFIGS)
+                len(LIGHTGBM_CONFIGS)
             ),
             'total_all_targets': (
                 len(CATBOOST_CONFIGS) +
                 len(XGBOOST_CONFIGS) +
-                len(LIGHTGBM_CONFIGS) +
-                len(PROPHET_CONFIGS)
+                len(LIGHTGBM_CONFIGS)
             ) * len(self.targets),
             'targets': self.targets
         }
@@ -861,7 +678,6 @@ class BaselineGridConfigGenerator:
         print(f"  CatBoost:  {summary['catboost']['count']} configurations")
         print(f"  XGBoost:   {summary['xgboost']['count']} configurations")
         print(f"  LightGBM:  {summary['lightgbm']['count']} configurations")
-        print(f"  Prophet:   {summary['prophet']['count']} configurations")
         print(f"\nTotal per target: {summary['total_per_target']} configurations")
         print(f"Targets: {summary['targets']}")
         print(f"Total all targets: {summary['total_all_targets']} configurations")
@@ -875,7 +691,7 @@ def main():
 
     # Print tier distribution
     print("\nFeature tier distribution per model:")
-    for model in ['catboost', 'xgboost', 'lightgbm', 'prophet']:
+    for model in ['catboost', 'xgboost', 'lightgbm']:
         configs = get_baseline_grid(model, 'price_real')
         tiers = {}
         for c in configs:

@@ -1,7 +1,7 @@
 """
 Baseline Grid Search Runner
 ===========================
-Runs grid search for CatBoost, XGBoost, LightGBM, and Prophet.
+Runs grid search for CatBoost, XGBoost, and LightGBM.
 
 Features:
 - Saves results after every training run (append mode)
@@ -69,7 +69,6 @@ from src.models.new_experiment.baseline.models import (
     CatBoostTrainer,
     XGBoostTrainer,
     LightGBMTrainer,
-    ProphetTrainer
 )
 
 # Import metrics
@@ -99,7 +98,7 @@ class BaselineGridSearchRunner:
     Grid search runner for baseline models.
 
     Features:
-    - CatBoost, XGBoost, LightGBM, Prophet support
+    - CatBoost, XGBoost, LightGBM support
     - Multiple feature strategies
     - Resume capability via config hash
     - Results saved after each run
@@ -111,7 +110,7 @@ class BaselineGridSearchRunner:
         output_dir: Path = None,
         val_size: float = 0.2,
         test_size: float = 0.2,
-        experiment_name: str = "baseline_grid_search"
+        experiment_name: str = "baseline_grid_search_v2"
     ):
         """
         Initialize runner.
@@ -171,8 +170,8 @@ class BaselineGridSearchRunner:
             logger.warning("MLflow not available. Install with: pip install mlflow")
             return
 
-        # Set tracking URI to local directory
-        tracking_uri = f"sqlite:///{self.mlruns_dir / 'mlflow.db'}"
+        # Set tracking URI to local directory with new database
+        tracking_uri = f"sqlite:///{self.mlruns_dir / 'mlflow_v2.db'}"
         mlflow.set_tracking_uri(tracking_uri)
 
         # Create or get experiment
@@ -333,7 +332,7 @@ class BaselineGridSearchRunner:
             model: Trained model
             trainer: Trainer instance
             config_hash: Configuration hash
-            model_type: Model type (catboost, xgboost, lightgbm, prophet)
+            model_type: Model type (catboost, xgboost, lightgbm)
             target: Target variable
 
         Returns:
@@ -357,10 +356,6 @@ class BaselineGridSearchRunner:
             elif model_type == 'lightgbm':
                 model_path = model_dir / 'model.txt'
                 model.booster_.save_model(str(model_path))
-            elif model_type == 'prophet':
-                # Prophet models are serialized with joblib
-                model_path = model_dir / 'model.pkl'
-                joblib.dump(model, model_path)
             else:
                 # Fallback: use joblib
                 model_path = model_dir / 'model.pkl'
@@ -433,7 +428,7 @@ class BaselineGridSearchRunner:
 
         Args:
             config_hash: Configuration hash
-            model_type: Model type (catboost, xgboost, lightgbm, prophet)
+            model_type: Model type (catboost, xgboost, lightgbm)
             target: Target variable
 
         Returns:
@@ -481,21 +476,6 @@ class BaselineGridSearchRunner:
                     trainer.model = lgb.LGBMRegressor()
                     trainer.model._Booster = model
                     trainer.model.booster_ = model
-                else:
-                    return None, None
-
-            elif model_type == 'prophet':
-                model_path = model_dir / 'model.pkl'
-                if model_path.exists():
-                    model = joblib.load(model_path)
-                    trainer.model = model
-                    # Load regressor features if saved
-                    feature_path = model_dir / 'feature_importance.csv'
-                    if feature_path.exists():
-                        features_df = pd.read_csv(feature_path)
-                        trainer._regressor_features = features_df['feature'].tolist()[:10]
-                    else:
-                        trainer._regressor_features = []
                 else:
                     return None, None
 
@@ -570,7 +550,6 @@ class BaselineGridSearchRunner:
             'catboost': CatBoostTrainer,
             'xgboost': XGBoostTrainer,
             'lightgbm': LightGBMTrainer,
-            'prophet': ProphetTrainer,
         }
 
         if model_type not in trainers:
@@ -733,7 +712,7 @@ class BaselineGridSearchRunner:
         """
         logger.info("\n" + "="*80)
         logger.info("BASELINE GRID SEARCH")
-        logger.info("CatBoost | XGBoost | LightGBM | Prophet")
+        logger.info("CatBoost | XGBoost | LightGBM")
         logger.info("="*80)
 
         # Generate grid
@@ -744,12 +723,11 @@ class BaselineGridSearchRunner:
         logger.info(f"  CatBoost:  {summary['catboost']['count']} configurations")
         logger.info(f"  XGBoost:   {summary['xgboost']['count']} configurations")
         logger.info(f"  LightGBM:  {summary['lightgbm']['count']} configurations")
-        logger.info(f"  Prophet:   {summary['prophet']['count']} configurations")
         logger.info(f"  Total per target: {summary['total_per_target']} configurations")
 
         # Filter by model types and targets
         if model_types is None:
-            model_types = ['catboost', 'xgboost', 'lightgbm', 'prophet']
+            model_types = ['catboost', 'xgboost', 'lightgbm']
         if targets is None:
             targets = TARGETS
 
@@ -993,7 +971,7 @@ def main():
     parser.add_argument(
         '--models',
         nargs='+',
-        choices=['catboost', 'xgboost', 'lightgbm', 'prophet'],
+        choices=['catboost', 'xgboost', 'lightgbm'],
         default=None,
         help='Model types to run'
     )

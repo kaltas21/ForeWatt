@@ -183,9 +183,11 @@ class TFTTrainer:
             'devices': devices
         }
 
-        # Add lstm_n_layers if present (mapped to TFT's internal RNN layers)
+        # Add n_rnn_layers if present (neuralforecast 2.0.1 uses n_rnn_layers, not lstm_n_layers)
         if 'lstm_n_layers' in hyperparams:
-            tft_params['lstm_n_layers'] = hyperparams['lstm_n_layers']
+            tft_params['n_rnn_layers'] = hyperparams['lstm_n_layers']
+        elif 'n_rnn_layers' in hyperparams:
+            tft_params['n_rnn_layers'] = hyperparams['n_rnn_layers']
 
         model = TFT(**tft_params)
 
@@ -256,8 +258,8 @@ class TFTTrainer:
         print(f"{'='*70}")
         print(f"  Device: {self.device_type.upper()}")
         print(f"  Horizon: {self.horizon}h, Input: {self.input_size}h")
-        print(f"  Config: hidden={hyperparams['hidden_size']}, attn_heads={hyperparams['attn_heads']}")
-        print(f"  Config: n_head={hyperparams.get('n_head', 2)}, dropout={hyperparams['dropout']}")
+        print(f"  Config: hidden={hyperparams['hidden_size']}, n_head={hyperparams.get('n_head', 4)}")
+        print(f"  Config: lstm_layers={hyperparams.get('lstm_n_layers', 2)}, dropout={hyperparams['dropout']}")
         print(f"  Config: lr={hyperparams['learning_rate']}, batch={hyperparams['batch_size']}, max_steps={hyperparams['max_steps']}")
         print(f"  Data: train={len(X_train)}, val={len(X_val)}, features={X_train.shape[1]}")
         print(f"{'='*70}")
@@ -291,11 +293,11 @@ class TFTTrainer:
         # This matches how we evaluate on test set in grid_search_runner
         if len(val_df) > self.horizon:
             val_input_df = full_df.iloc[:-self.horizon].copy()
-            val_predictions = nf.predict(df=val_input_df, h=self.horizon)['TFT'].values
+            val_predictions = nf.predict(df=val_input_df)['TFT'].values
             y_val_horizon = y_val.values[-self.horizon:]  # Last horizon hours for comparison
         else:
             # If validation is too short, use first horizon hours (fallback)
-            val_pred = nf.predict(df=full_df, h=self.horizon)
+            val_pred = nf.predict(df=full_df)
             val_predictions = val_pred['TFT'].values
             y_val_horizon = y_val.values[:self.horizon]
             logger.warning(f"Validation set too short ({len(val_df)} < {self.horizon}), using first {self.horizon} hours")
@@ -356,7 +358,7 @@ class TFTTrainer:
         df = self.prepare_neuralforecast_data(X, y)
 
         # Predict (neuralforecast 3.x uses 'h' instead of 'horizon')
-        predictions = self.model.predict(df=df, h=horizon)
+        predictions = self.model.predict(df=df)
 
         return predictions['TFT'].values
 

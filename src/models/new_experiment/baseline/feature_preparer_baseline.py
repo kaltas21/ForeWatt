@@ -1,7 +1,7 @@
 """
 Baseline Feature Preparer for Tree-Based Models
 ================================================
-Feature preparation for CatBoost, XGBoost, LightGBM, and Prophet.
+Feature preparation for CatBoost, XGBoost, and LightGBM.
 
 D-1 SAFE: All features verified available at prediction time for day-ahead forecasting.
 Uses the same forbidden columns as deep learning module.
@@ -404,7 +404,7 @@ CONSUMPTION_FEATURE_TIERS = {
 
 class BaselineFeaturePreparer:
     """
-    Feature preparer for baseline models (CatBoost, XGBoost, LightGBM, Prophet).
+    Feature preparer for baseline models (CatBoost, XGBoost, LightGBM).
 
     All features are D-1 safe (available at day-ahead prediction time).
     """
