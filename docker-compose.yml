@@ -1,6 +1,24 @@
-version: "3.9"
-
 services:
+  # Real-time forecasting scheduler - runs every hour
+  scheduler:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    container_name: forewatt_scheduler_${USER_NAME}
+    env_file: .env
+    depends_on:
+      - influxdb
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - PYTHONUNBUFFERED=1
+    command: python services/scheduler.py --interval 60
+    restart: unless-stopped
+    networks:
+      - forewatt_net
+
   api:
     build: ./api
     container_name: forewatt_api_${USER_NAME}

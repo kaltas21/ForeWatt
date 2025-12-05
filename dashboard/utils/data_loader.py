@@ -286,8 +286,10 @@ def get_daily_patterns(df: pd.DataFrame) -> pd.DataFrame:
         ('median', 'median')
     ])
 
-    daily.index = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
-                   'Friday', 'Saturday', 'Sunday']
+    # Map day numbers to names (handles cases where not all days are present)
+    day_names = {0: 'Monday', 1: 'Tuesday', 2: 'Wednesday', 3: 'Thursday',
+                 4: 'Friday', 5: 'Saturday', 6: 'Sunday'}
+    daily.index = daily.index.map(day_names)
 
     return daily
 

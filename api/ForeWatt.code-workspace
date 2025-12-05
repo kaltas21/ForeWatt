@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../lightning_logs"
+		}
+	],
+	"settings": {}
+}

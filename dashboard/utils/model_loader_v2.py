@@ -55,10 +55,21 @@ def load_results_from_csv(
     # Load deep learning results
     if (model_category is None or model_category == 'deeplearning') and DEEPLEARNING_RESULTS_CSV.exists():
         try:
+            import json
             df_dl = pd.read_csv(DEEPLEARNING_RESULTS_CSV)
             df_dl = df_dl[df_dl['target'] == target]
             df_dl = df_dl[df_dl['status'] == 'success']
             df_dl['category'] = 'deeplearning'
+
+            # Extract config_name from config_json
+            def extract_config_name(config_json):
+                try:
+                    config = json.loads(config_json)
+                    return config.get('config_name', config.get('description', 'unknown'))
+                except:
+                    return 'unknown'
+
+            df_dl['config_name'] = df_dl['config_json'].apply(extract_config_name)
             all_results.append(df_dl)
         except Exception as e:
             logger.warning(f"Failed to load deeplearning results: {e}")

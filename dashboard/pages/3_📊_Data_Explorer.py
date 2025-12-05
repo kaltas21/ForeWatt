@@ -22,10 +22,7 @@ from utils import (
 # Page configuration
 st.set_page_config(**PAGE_CONFIG)
 
-st.title("📊 Data Explorer")
-st.markdown("Explore historical electricity consumption data, features, and patterns.")
-
-st.divider()
+st.markdown("## 📊 Data Explorer")
 
 try:
     # Load data
@@ -213,8 +210,11 @@ try:
     # Feature analysis
     st.markdown("## Feature Analysis")
 
-    st.markdown("""
-    The dataset contains **106 engineered features** grouped into categories:
+    # Get actual feature count
+    actual_feature_count = data_summary['num_features']
+
+    st.markdown(f"""
+    The dataset contains **{actual_feature_count} engineered features** grouped into categories:
     lag features, rolling statistics, calendar features, weather data, prices, and macroeconomic indicators.
     """)
 

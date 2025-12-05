@@ -32,31 +32,15 @@ from utils.tensorboard_loader import (
 # Page configuration
 st.set_page_config(**PAGE_CONFIG)
 
-st.title("🔬 Model Analysis & Training Visualization")
-st.markdown("Deep learning model training visualization and data split analysis.")
+st.markdown("## 🔬 Model Analysis")
 
-st.divider()
+# Use tabs instead of sidebar menu for cleaner navigation
+tab1, tab2, tab3 = st.tabs([
+    "📊 Train/Val/Test Split",
+    "📉 Training Loss",
+    "🔍 Performance"
+])
 
-# Sidebar menu for user to select analysis type
-st.sidebar.header("Analysis Menu")
-analysis_type = st.sidebar.radio(
-    "Select Analysis Type:",
-    [
-        "📊 Train/Val/Test Split Visualization",
-        "📉 Training & Validation Loss (Deep Learning)",
-        "🔍 Deep Learning Model Performance"
-    ]
-)
-
-st.sidebar.divider()
-st.sidebar.markdown("### Instructions")
-st.sidebar.info("""
-**Train/Val/Test Split**: View data splits with statistics
-
-**Training & Validation Loss**: View deep learning training curves from TensorBoard logs
-
-**DL Model Performance**: Compare all 90 deep learning models with metrics
-""")
 
 try:
     # Load data
@@ -83,7 +67,7 @@ try:
     # ===================================================================
     # TRAIN/VAL/TEST SPLIT VISUALIZATION
     # ===================================================================
-    if analysis_type == "📊 Train/Val/Test Split Visualization":
+    with tab1:
         st.markdown("## Train/Validation/Test Data Split")
         st.markdown("""
         This visualization shows how the data is split for model training and evaluation.
@@ -195,549 +179,267 @@ try:
             st.plotly_chart(fig_dist, use_container_width=True)
 
     # ===================================================================
-    # TRAINING & VALIDATION LOSS (keep this section)
+    # TRAINING & VALIDATION LOSS (from lightning_logs)
     # ===================================================================
-    elif analysis_type == "📉 Training & Validation Loss (Deep Learning)":
-        st.markdown("## Interactive Demand Forecasting")
-        st.markdown("Generate and visualize electricity demand forecasts with prediction intervals.")
+    with tab2:
+        st.markdown("## Training & Validation Loss Curves")
+        st.markdown("""
+        Visualize the training progress of deep learning models. These curves show how the model
+        learned over time - **training loss** should decrease, and **validation loss** indicates generalization.
+        """)
 
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            # Allow forecasting for any date (past, present, or future)
-            import datetime
-            today = datetime.date.today()
-            test_start_naive = pd.to_datetime(VALIDATION_CONFIG['test_start']).date()
-            # Get actual data end date
-            data_end_date = df.index.max().date()
-
-            forecast_date = st.date_input(
-                "Forecast Date",
-                value=min(today, data_end_date),  # Default to latest available data
-                min_value=test_start_naive,
-                max_value=data_end_date,  # Limit to available data
-                help=f"Select date to generate forecast for (data available until {data_end_date})"
-            )
-
-        with col2:
-            forecast_horizon = st.slider(
-                "Forecast Horizon (hours)",
-                min_value=1,
-                max_value=24,
-                value=24,
-                help="Number of hours ahead to forecast"
-            )
-
-        with col3:
-            # Get available models from new experiments
-            available_models = get_available_models_v2(target='consumption')
-            if not available_models:
-                st.error("No trained models found")
-                st.stop()
-
-            model_choice = st.selectbox(
-                "Select Model",
-                available_models,
-                help="Choose forecasting model"
-            )
-
-        if st.button("🚀 Generate Forecast", use_container_width=True):
-            with st.spinner(f"Generating {forecast_horizon}h forecast using {model_choice}..."):
-                # Get test data for the selected date with timezone awareness
-                forecast_start = make_tz_aware(forecast_date)
-                forecast_end = forecast_start + pd.Timedelta(hours=forecast_horizon-1)
-
-                # Create forecast timestamps
-                forecast_timestamps = pd.date_range(
-                    start=forecast_start,
-                    end=forecast_end,
-                    freq='H'
-                )
-
-                # Try to get actual data if available
-                try:
-                    test_actual = df.loc[forecast_start:forecast_end, TARGET_VARIABLE]
-                    has_actual = len(test_actual) > 0
-                except:
-                    has_actual = False
-                    test_actual = None
-
-                # Generate predictions (in real implementation, use actual model)
-                # For now, simulate based on historical average
-                if has_actual and len(test_actual) > 0:
-                    # Use actual data to simulate predictions
-                    # Create a temporary DataFrame for simulation
-                    temp_df = pd.DataFrame({TARGET_VARIABLE: test_actual.values}, index=test_actual.index)
-                    result = simulate_predictions(model_choice, temp_df, n_samples=len(test_actual))
-                    predictions = result['predictions']
-                    dates_for_plot = result['dates']
-                    actual_values = result['actual']
-                else:
-                    # No actual data (future forecast) - use historical average
-                    st.info(f"📅 **Future Forecast**: No actual data available for {forecast_date}. Showing prediction only.")
-                    historical_avg = df[TARGET_VARIABLE].mean()
-                    historical_std = df[TARGET_VARIABLE].std()
-                    # Simulate predictions based on historical patterns
-                    predictions = np.random.normal(historical_avg, historical_std * 0.1, forecast_horizon)
-                    dates_for_plot = forecast_timestamps
-                    actual_values = None
-
-                # Create prediction intervals (90%)
-                std_error = 800
-                lower_bound = predictions - 1.645 * std_error
-                upper_bound = predictions + 1.645 * std_error
-
-                # Create forecast plot
-                if actual_values is not None:
-                    fig = create_forecast_plot(
-                        dates=dates_for_plot,
-                        actual=actual_values,
-                        predictions={model_choice: predictions},
-                        intervals={model_choice: (lower_bound, upper_bound)},
-                        title=f"Demand Forecast - {model_choice} ({forecast_date})"
-                    )
-                else:
-                    # Plot predictions only (no actual data)
-                    import plotly.graph_objects as go
-                    fig = go.Figure()
-
-                    # Add prediction intervals
-                    fig.add_trace(go.Scatter(
-                        x=dates_for_plot,
-                        y=upper_bound,
-                        mode='lines',
-                        name='Upper 90% PI',
-                        line=dict(width=0),
-                        showlegend=False,
-                        hoverinfo='skip'
-                    ))
-
-                    fig.add_trace(go.Scatter(
-                        x=dates_for_plot,
-                        y=lower_bound,
-                        mode='lines',
-                        name='Lower 90% PI',
-                        line=dict(width=0),
-                        fillcolor='rgba(31, 119, 180, 0.2)',
-                        fill='tonexty',
-                        showlegend=False,
-                        hoverinfo='skip'
-                    ))
-
-                    # Add predictions
-                    fig.add_trace(go.Scatter(
-                        x=dates_for_plot,
-                        y=predictions,
-                        mode='lines',
-                        name=f'{model_choice} Forecast',
-                        line=dict(color='#1f77b4', width=2, dash='dash'),
-                        hovertemplate=f'<b>{model_choice}</b><br>%{{x}}<br>%{{y:.0f}} MWh<extra></extra>'
-                    ))
-
-                    fig.update_layout(
-                        title=f"Demand Forecast - {model_choice} ({forecast_date})",
-                        xaxis_title="Date",
-                        yaxis_title="Consumption (MWh)",
-                        height=500,
-                        template='plotly_white',
-                        hovermode='x unified'
-                    )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-                # Calculate metrics only if actual data exists
-                if actual_values is not None:
-                    metrics = calculate_all_metrics(actual_values, predictions)
-
-                    st.markdown("### Forecast Metrics")
-                    col1, col2, col3, col4 = st.columns(4)
-
-                    with col1:
-                        st.metric("MAE", f"{metrics['MAE']:.2f} MWh")
-                    with col2:
-                        st.metric("RMSE", f"{metrics['RMSE']:.2f} MWh")
-                    with col3:
-                        st.metric("MAPE", f"{metrics['MAPE']:.2f}%")
-                    with col4:
-                        st.metric("R²", f"{metrics['R2']:.3f}")
-
-                    # Error analysis
-                    errors = actual_values - predictions
-                    fig_error = create_error_analysis_plot(
-                        errors,
-                        dates_for_plot,
-                        title=f"Error Analysis - {model_choice}"
-                    )
-                    st.plotly_chart(fig_error, use_container_width=True)
-                else:
-                    st.markdown("### Forecast Summary")
-                    col1, col2, col3 = st.columns(3)
-
-                    with col1:
-                        st.metric("Predicted Mean", f"{predictions.mean():.2f} MWh")
-                    with col2:
-                        st.metric("Predicted Min", f"{predictions.min():.2f} MWh")
-                    with col3:
-                        st.metric("Predicted Max", f"{predictions.max():.2f} MWh")
-
-                    st.info("💡 **Note**: Metrics cannot be calculated without actual data. This is a future forecast.")
-
-    # ===================================================================
-    # PRICE ESTIMATION (INTERACTIVE)
-    # ===================================================================
-    elif analysis_type == "💰 Price Estimation (Interactive)":
-        st.markdown("## Interactive Price Estimation")
-        st.markdown("Generate and visualize electricity price forecasts.")
-
-        # Check if price data is available
-        price_cols = [col for col in df.columns if 'price' in col.lower()]
-
-        if not price_cols:
-            st.warning("Price data not available in the current dataset.")
+        # Check if tensorboard is available
+        if not TENSORBOARD_AVAILABLE:
+            st.error("❌ TensorBoard not installed. Install with: `pip install tensorboard`")
             st.stop()
 
-        col1, col2, col3 = st.columns(3)
+        # Get lightning_logs directory
+        lightning_logs_dir = Path(__file__).parent.parent.parent / "lightning_logs"
 
-        with col1:
-            price_feature = st.selectbox(
-                "Select Price Feature",
-                price_cols,
-                help="Choose which price metric to forecast"
-            )
-
-        with col2:
-            # Allow forecasting for any date (past, present, or future)
-            import datetime
-            today = datetime.date.today()
-            test_start_naive = pd.to_datetime(VALIDATION_CONFIG['test_start']).date()
-            # Get actual data end date
-            data_end_date = df.index.max().date()
-
-            forecast_date = st.date_input(
-                "Forecast Date",
-                value=min(today, data_end_date),  # Default to latest available data
-                min_value=test_start_naive,
-                max_value=data_end_date,  # Limit to available data
-                help=f"Select date to generate price forecast for (data available until {data_end_date})"
-            )
-
-        with col3:
-            forecast_horizon = st.slider(
-                "Forecast Horizon (hours)",
-                min_value=1,
-                max_value=24,
-                value=24,
-                help="Number of hours ahead to forecast"
-            )
-
-        if st.button("🚀 Generate Price Forecast", use_container_width=True):
-            with st.spinner(f"Generating {forecast_horizon}h price forecast..."):
-                forecast_start = make_tz_aware(forecast_date)
-                forecast_end = forecast_start + pd.Timedelta(hours=forecast_horizon-1)
-
-                test_actual = df.loc[forecast_start:forecast_end, price_feature]
-
-                if len(test_actual) > 0:
-                    # Simulate price predictions
-                    # Create a temporary DataFrame for simulation
-                    temp_df = pd.DataFrame({TARGET_VARIABLE: test_actual.values}, index=test_actual.index)
-                    result = simulate_predictions("CatBoost", temp_df, n_samples=len(test_actual))
-                    predictions = result['predictions']
-
-                    # Create forecast plot
-                    fig = create_forecast_plot(
-                        dates=test_actual.index,
-                        actual=test_actual.values,
-                        predictions={"Price Model": predictions},
-                        title=f"{price_feature.replace('_', ' ').title()} Forecast ({forecast_date})"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    # Calculate metrics
-                    metrics = calculate_all_metrics(test_actual.values, predictions)
-
-                    st.markdown("### Forecast Metrics")
-                    col1, col2, col3, col4 = st.columns(4)
-
-                    with col1:
-                        st.metric("MAE", f"{metrics['MAE']:.2f}")
-                    with col2:
-                        st.metric("RMSE", f"{metrics['RMSE']:.2f}")
-                    with col3:
-                        st.metric("MAPE", f"{metrics['MAPE']:.2f}%")
-                    with col4:
-                        st.metric("R²", f"{metrics['R2']:.3f}")
-
-                else:
-                    st.error("No data available for selected date range.")
-
-    # ===================================================================
-    # TRAINING & VALIDATION LOSS
-    # ===================================================================
-    elif analysis_type == "📉 Training & Validation Loss (Deep Learning)":
-        st.markdown("## Deep Learning Model Training Analysis")
-        st.markdown("Analyze deep learning model configurations and training metrics from the new experiment.")
-
-        # Get deep learning directory
-        from utils.checkpoint_loader import get_available_dl_runs, get_model_config_summary
-        deeplearning_dir = Path(__file__).parent.parent.parent / "reports" / "new_experiment" / "deeplearning"
-
-        if not deeplearning_dir.exists():
-            st.error("❌ Deep learning directory not found")
+        if not lightning_logs_dir.exists():
+            st.error(f"❌ Lightning logs directory not found at: {lightning_logs_dir}")
+            st.info("💡 Training logs are created automatically when you train deep learning models.")
             st.stop()
 
-        # Get available deep learning runs (reads from metrics/ directory)
-        dl_runs = get_available_dl_runs(deeplearning_dir)
+        # Get available runs
+        available_runs = get_available_runs(lightning_logs_dir, filter_empty=True)
 
-        if not dl_runs:
-            st.warning("⚠️ No deep learning training runs found")
+        if not available_runs:
+            st.warning("⚠️ No training runs with loss data found in lightning_logs/")
+            st.info("💡 Make sure you have trained deep learning models. The logs are created during training.")
             st.stop()
 
-        st.success(f"✅ Found {len(dl_runs)} deep learning model configurations")
-
-        # Filter by target
-        target_filter = st.radio(
-            "Filter by target:",
-            ["All", "consumption", "price_real"],
-            horizontal=True
-        )
-
-        filtered_runs = [r for r in dl_runs if target_filter == "All" or r['target'] == target_filter]
-
-        st.info(f"📊 Showing {len(filtered_runs)} models for target: {target_filter}")
-
-        # Select run
+        # Run selector
         col1, col2 = st.columns([2, 1])
 
         with col1:
-            selected_idx = st.selectbox(
-                "Select Model Configuration",
-                range(len(filtered_runs)),
-                format_func=lambda i: filtered_runs[i]['display_name'],
-                help="Choose a deep learning model to analyze"
+            selected_run = st.selectbox(
+                "Select Training Run",
+                available_runs,
+                help="Choose a training run to visualize"
             )
 
-            selected_run = filtered_runs[selected_idx]
-
         with col2:
-            st.markdown("**Model Info:**")
-            st.caption(f"**Type:** {selected_run['model_type']}")
-            st.caption(f"**Target:** {selected_run['target']}")
-            st.caption(f"**Config:** {selected_run['config_name']}")
+            # Load run info (hyperparameters)
+            version_dir = lightning_logs_dir / selected_run
+            run_info = get_run_info(version_dir)
+            if run_info:
+                st.markdown("**Model Info:**")
+                model_name = run_info.get('model_name', 'Unknown')
+                target = run_info.get('target', 'Unknown')
+                st.caption(f"Model: {model_name}")
+                st.caption(f"Target: {target}")
 
-        # Display model configuration
-        st.markdown("### ⚙️ Model Configuration")
+        # Load training metrics
+        metrics = load_training_metrics(version_dir)
 
-        metrics_data = selected_run['metrics']
-        config = metrics_data.get('config', {})
-        config_summary = get_model_config_summary(config)
+        if metrics is None:
+            st.error("❌ Could not load training metrics from this run")
+            st.stop()
 
-        cols = st.columns(4)
-        col_idx = 0
-        for key, value in config_summary.items():
-            with cols[col_idx % 4]:
-                st.metric(key.replace('_', ' ').title(), str(value))
-            col_idx += 1
+        # Display training curves
+        st.markdown("### 📈 Training & Validation Loss Curves")
 
-        # Display training metrics from metrics data
-        st.markdown("### 📊 Training & Validation Metrics")
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
 
-        col1, col2, col3 = st.columns(3)
+        fig = make_subplots(
+            rows=1, cols=2,
+            subplot_titles=("Loss Over Epochs", "Loss Comparison"),
+            specs=[[{"type": "scatter"}, {"type": "bar"}]]
+        )
 
-        validation_metrics = metrics_data.get('validation_metrics', {})
-        test_metrics = metrics_data.get('test_metrics', {})
+        # Extract data
+        train_loss_data = metrics.get('train_loss', [])
+        val_loss_data = metrics.get('val_loss', [])
+        num_epochs = metrics.get('epochs', 0)
+
+        # Plot training loss
+        if train_loss_data:
+            epochs_train = [x[0] for x in train_loss_data]
+            losses_train = [x[1] for x in train_loss_data]
+
+            fig.add_trace(
+                go.Scatter(
+                    x=epochs_train,
+                    y=losses_train,
+                    mode='lines+markers',
+                    name='Training Loss',
+                    line=dict(color='#1f77b4', width=2),
+                    marker=dict(size=6),
+                    hovertemplate='Epoch %{x}<br>Train Loss: %{y:.4f}<extra></extra>'
+                ),
+                row=1, col=1
+            )
+
+        # Plot validation loss
+        if val_loss_data:
+            epochs_val = [x[0] for x in val_loss_data]
+            losses_val = [x[1] for x in val_loss_data]
+
+            fig.add_trace(
+                go.Scatter(
+                    x=epochs_val,
+                    y=losses_val,
+                    mode='lines+markers',
+                    name='Validation Loss',
+                    line=dict(color='#ff7f0e', width=2),
+                    marker=dict(size=6),
+                    hovertemplate='Epoch %{x}<br>Val Loss: %{y:.4f}<extra></extra>'
+                ),
+                row=1, col=1
+            )
+
+        # Bar chart comparison (final values)
+        final_train = losses_train[-1] if train_loss_data else 0
+        final_val = losses_val[-1] if val_loss_data else 0
+        best_train = min(losses_train) if train_loss_data else 0
+        best_val = min(losses_val) if val_loss_data else 0
+
+        fig.add_trace(
+            go.Bar(
+                x=['Final Train', 'Final Val', 'Best Train', 'Best Val'],
+                y=[final_train, final_val, best_train, best_val],
+                marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+                text=[f'{v:.4f}' for v in [final_train, final_val, best_train, best_val]],
+                textposition='outside',
+                showlegend=False,
+                hovertemplate='%{x}: %{y:.4f}<extra></extra>'
+            ),
+            row=1, col=2
+        )
+
+        fig.update_layout(
+            height=450,
+            template='plotly_white',
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+
+        fig.update_xaxes(title_text="Epoch", row=1, col=1)
+        fig.update_yaxes(title_text="Loss", row=1, col=1)
+        fig.update_yaxes(title_text="Loss Value", row=1, col=2)
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Summary metrics
+        st.markdown("### 📊 Training Summary")
+
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            st.markdown("**Validation Performance**")
-            if 'MAE' in validation_metrics:
-                st.metric("Val MAE", f"{validation_metrics['MAE']:.2f}")
-            if 'sMAPE' in validation_metrics:
-                st.metric("Val sMAPE", f"{validation_metrics['sMAPE']:.2f}%")
-            if 'MASE' in validation_metrics:
-                st.metric("Val MASE", f"{validation_metrics['MASE']:.3f}")
+            st.metric("Total Epochs", num_epochs)
 
         with col2:
-            st.markdown("**Test Performance**")
-            if 'MAE' in test_metrics:
-                st.metric("Test MAE", f"{test_metrics['MAE']:.2f}")
-            if 'sMAPE' in test_metrics:
-                st.metric("Test sMAPE", f"{test_metrics['sMAPE']:.2f}%")
-            if 'MASE' in test_metrics:
-                st.metric("Test MASE", f"{test_metrics['MASE']:.3f}")
+            if train_loss_data:
+                improvement = ((losses_train[0] - losses_train[-1]) / losses_train[0]) * 100
+                st.metric("Train Loss Improvement", f"{improvement:.1f}%",
+                         delta=f"{losses_train[0]:.4f} → {losses_train[-1]:.4f}")
 
         with col3:
-            st.markdown("**Training Info**")
-            if 'training_time_seconds' in metrics_data:
-                training_time = metrics_data['training_time_seconds']
-                if training_time < 60:
-                    time_str = f"{training_time:.1f}s"
-                elif training_time < 3600:
-                    time_str = f"{training_time/60:.1f}min"
-                else:
-                    time_str = f"{training_time/3600:.1f}h"
-                st.metric("Training Time", time_str)
-            if 'status' in metrics_data:
-                status_emoji = "✅" if metrics_data['status'] == 'success' else "❌"
-                st.metric("Status", f"{status_emoji} {metrics_data['status']}")
+            if val_loss_data:
+                st.metric("Best Val Loss", f"{best_val:.4f}",
+                         delta=f"Epoch {epochs_val[losses_val.index(best_val)]}")
 
-        # Generalization analysis
-        if 'MASE' in validation_metrics and 'MASE' in test_metrics:
-            st.markdown("### 📈 Generalization Analysis")
-            val_mase = validation_metrics['MASE']
-            test_mase = test_metrics['MASE']
-            gap = test_mase - val_mase
-            gap_pct = (gap / val_mase) * 100 if val_mase > 0 else 0
+        with col4:
+            if train_loss_data and val_loss_data:
+                gap = final_val - final_train
+                gap_pct = (gap / final_train) * 100 if final_train > 0 else 0
+                st.metric("Train-Val Gap", f"{gap:.4f}", delta=f"{gap_pct:+.1f}%")
+
+        # Overfitting analysis
+        if train_loss_data and val_loss_data and len(losses_train) > 1:
+            st.markdown("### 🔍 Overfitting Analysis")
 
             col1, col2 = st.columns(2)
 
             with col1:
-                st.metric("Val → Test Gap", f"{gap:.3f}", f"{gap_pct:+.1f}%")
+                # Check if validation loss increased while training decreased
+                train_decreasing = losses_train[-1] < losses_train[0]
+                val_increasing = losses_val[-1] > min(losses_val) if len(losses_val) > 1 else False
 
-                if gap_pct > 20:
-                    st.warning("⚠️ Significant performance degradation on test set")
-                elif gap_pct > 10:
-                    st.info("ℹ️ Moderate performance drop on test set")
+                if train_decreasing and val_increasing:
+                    st.warning("⚠️ **Potential Overfitting Detected**")
+                    st.caption("Training loss decreased but validation loss increased from its best value.")
+                elif final_val > final_train * 2:
+                    st.warning("⚠️ **Large Train-Val Gap**")
+                    st.caption("Validation loss is much higher than training loss, suggesting overfitting.")
                 else:
-                    st.success("✅ Good generalization to test set")
+                    st.success("✅ **Good Generalization**")
+                    st.caption("Training and validation losses are reasonably close.")
 
             with col2:
-                # Baseline comparison (MASE < 1 means better than naive)
-                if val_mase < 1.0 and test_mase < 1.0:
-                    st.success("✅ Outperforms naive forecast on both val & test")
-                elif val_mase < 1.0 or test_mase < 1.0:
-                    st.info("ℹ️ Outperforms naive forecast on one split")
-                else:
-                    st.warning("⚠️ Underperforms naive forecast")
+                # Learning status
+                if train_loss_data and len(losses_train) > 2:
+                    recent_change = (losses_train[-1] - losses_train[-2]) / losses_train[-2] * 100
+                    if abs(recent_change) < 1:
+                        st.info("📊 **Converged**")
+                        st.caption("Loss has stabilized (< 1% change in last epoch)")
+                    elif recent_change < 0:
+                        st.success("📈 **Still Learning**")
+                        st.caption(f"Loss decreased by {abs(recent_change):.1f}% in last epoch")
+                    else:
+                        st.warning("📉 **Loss Increasing**")
+                        st.caption(f"Loss increased by {recent_change:.1f}% in last epoch")
 
-        # Learning rate from config
-        if 'learning_rate' in config:
-            st.markdown("### 📉 Learning Rate Configuration")
+        # Multi-run comparison
+        st.markdown("### 📊 Compare Multiple Runs")
 
-            lr = config['learning_rate']
-            max_steps = config.get('max_steps', 1000)
+        compare_runs = st.multiselect(
+            "Select runs to compare",
+            available_runs,
+            default=[selected_run] if selected_run else [],
+            max_selections=5,
+            help="Select up to 5 runs to compare their training curves"
+        )
 
-            # Show configured learning rate
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Initial LR", f"{lr:.4f}")
-            with col2:
-                st.metric("Max Steps", f"{max_steps:,}")
-            with col3:
-                batch_size = config.get('batch_size', 'N/A')
-                st.metric("Batch Size", batch_size)
+        if len(compare_runs) > 1:
+            fig_compare = go.Figure()
 
-            # Create LR schedule visualization
-            # Use cosine annealing schedule (more realistic than exponential decay)
-            steps_array = np.arange(0, max_steps)
+            colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 
-            # Cosine annealing: lr_min + 0.5 * (lr_max - lr_min) * (1 + cos(pi * t / T))
-            lr_min = lr * 0.1  # Minimum LR is 10% of initial
-            lr_schedule = lr_min + 0.5 * (lr - lr_min) * (1 + np.cos(np.pi * steps_array / max_steps))
+            for i, run_name in enumerate(compare_runs):
+                run_dir = lightning_logs_dir / run_name
+                run_metrics = load_training_metrics(run_dir)
 
-            import plotly.graph_objects as go
-            fig_lr = go.Figure()
+                if run_metrics and 'train_loss' in run_metrics:
+                    epochs = [x[0] for x in run_metrics['train_loss']]
+                    losses = [x[1] for x in run_metrics['train_loss']]
 
-            fig_lr.add_trace(go.Scatter(
-                x=steps_array,
-                y=lr_schedule,
-                mode='lines',
-                name='Learning Rate',
-                line=dict(color='#1f77b4', width=2),
-                fill='tozeroy',
-                fillcolor='rgba(31, 119, 180, 0.1)'
-            ))
+                    fig_compare.add_trace(go.Scatter(
+                        x=epochs,
+                        y=losses,
+                        mode='lines',
+                        name=f'{run_name} (train)',
+                        line=dict(color=colors[i % len(colors)], width=2),
+                    ))
 
-            # Add initial and final LR markers
-            fig_lr.add_hline(y=lr, line_dash="dash", line_color="green",
-                           annotation_text=f"Initial: {lr:.4f}",
-                           annotation_position="right")
-            fig_lr.add_hline(y=lr_min, line_dash="dash", line_color="red",
-                           annotation_text=f"Min: {lr_min:.4f}",
-                           annotation_position="right")
+                if run_metrics and 'val_loss' in run_metrics:
+                    epochs = [x[0] for x in run_metrics['val_loss']]
+                    losses = [x[1] for x in run_metrics['val_loss']]
 
-            fig_lr.update_layout(
-                title=f"Learning Rate Schedule (Cosine Annealing)",
-                xaxis_title="Training Step",
-                yaxis_title="Learning Rate",
+                    fig_compare.add_trace(go.Scatter(
+                        x=epochs,
+                        y=losses,
+                        mode='lines',
+                        name=f'{run_name} (val)',
+                        line=dict(color=colors[i % len(colors)], width=2, dash='dash'),
+                    ))
+
+            fig_compare.update_layout(
+                title="Training Loss Comparison Across Runs",
+                xaxis_title="Epoch",
+                yaxis_title="Loss",
                 height=400,
                 template='plotly_white',
-                showlegend=False
+                legend=dict(orientation="h", yanchor="bottom", y=-0.3)
             )
 
-            st.plotly_chart(fig_lr, use_container_width=True)
-            st.caption("ℹ️ Visualization uses cosine annealing schedule. Actual schedule depends on PyTorch Lightning scheduler configuration.")
-
-    # ===================================================================
-    # ERROR ANALYSIS
-    # ===================================================================
-    elif analysis_type == "🎯 Error Analysis":
-        st.markdown("## Comprehensive Error Analysis")
-        st.markdown("Analyze prediction errors across different dimensions.")
-
-        # Select test period
-        col1, col2 = st.columns(2)
-
-        with col1:
-            # Use timezone-naive dates for date_input widget
-            test_start_naive = pd.to_datetime(VALIDATION_CONFIG['test_start']).date()
-            test_end_naive = pd.to_datetime(VALIDATION_CONFIG['test_end']).date()
-
-            test_start_date = st.date_input(
-                "Test Start Date",
-                value=test_start_naive,
-                min_value=test_start_naive,
-                max_value=test_end_naive
-            )
-
-        with col2:
-            test_days = st.slider("Number of Days", min_value=7, max_value=90, value=30)
-
-        if st.button("📊 Analyze Errors", use_container_width=True):
-            with st.spinner("Analyzing prediction errors..."):
-                test_start = make_tz_aware(test_start_date)
-                test_end = test_start + pd.Timedelta(days=test_days)
-
-                test_data = df.loc[test_start:test_end, TARGET_VARIABLE]
-
-                if len(test_data) > 0:
-                    # Simulate predictions
-                    temp_df = pd.DataFrame({TARGET_VARIABLE: test_data.values}, index=test_data.index)
-                    result = simulate_predictions("CatBoost", temp_df, n_samples=len(test_data))
-                    predictions = result['predictions']
-                    errors = result['actual'] - predictions
-
-                    # Create comprehensive error analysis
-                    fig = create_error_analysis_plot(
-                        errors,
-                        test_data.index,
-                        title=f"Error Analysis ({test_start_date} to {test_end.date()})"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    # Error statistics
-                    st.markdown("### Error Statistics")
-
-                    col1, col2, col3, col4, col5 = st.columns(5)
-
-                    with col1:
-                        st.metric("Mean Error", f"{errors.mean():.2f} MWh")
-                    with col2:
-                        st.metric("Std Error", f"{errors.std():.2f} MWh")
-                    with col3:
-                        st.metric("MAE", f"{np.abs(errors).mean():.2f} MWh")
-                    with col4:
-                        st.metric("Max Error", f"{np.abs(errors).max():.2f} MWh")
-                    with col5:
-                        mape = np.mean(np.abs(errors / test_data.values)) * 100
-                        st.metric("MAPE", f"{mape:.2f}%")
-
-                else:
-                    st.error("No data available for selected period.")
+            st.plotly_chart(fig_compare, use_container_width=True)
 
     # ===================================================================
     # MODEL PERFORMANCE COMPARISON
     # ===================================================================
-    elif analysis_type == "🔍 Deep Learning Model Performance":
+    with tab3:
         st.markdown("## Model Performance Comparison")
         st.markdown("Compare all trained models organized by target type and model category.")
 
@@ -824,14 +526,18 @@ try:
                         st.metric("Total Configurations", f"{total_configs}")
 
                     st.markdown(f"##### Detailed Metrics (Sorted by {metric_choice_demand})")
-                    baseline_display = baseline_models[['model_name', 'config_name', 'MAE', 'sMAPE', 'MASE',
-                                                        'val_MAE', 'val_MASE', 'n_features', 'training_time']].copy()
-                    baseline_display.columns = ['Model', 'Configuration', 'Test MAE', 'Test sMAPE (%)', 'Test MASE',
-                                                'Val MAE', 'Val MASE', 'Features', 'Train Time (s)']
+                    # Calculate overfitting metric (Val→Test gap)
+                    baseline_models['Overfit %'] = ((baseline_models['MAE'] - baseline_models['val_MAE']) / baseline_models['val_MAE'] * 100)
+
+                    baseline_display = baseline_models[['model_name', 'config_name', 'val_MAE', 'MAE', 'Overfit %',
+                                                        'sMAPE', 'MASE', 'val_MASE', 'n_features', 'training_time']].copy()
+                    baseline_display.columns = ['Model', 'Configuration', 'Val MAE', 'Test MAE', 'Overfit %',
+                                                'Test sMAPE (%)', 'Test MASE', 'Val MASE', 'Features', 'Train Time (s)']
 
                     # Round values
-                    for col in ['Test MAE', 'Test sMAPE (%)', 'Test MASE', 'Val MAE', 'Val MASE', 'Train Time (s)']:
+                    for col in ['Val MAE', 'Test MAE', 'Test sMAPE (%)', 'Test MASE', 'Val MASE', 'Train Time (s)']:
                         baseline_display[col] = baseline_display[col].round(3)
+                    baseline_display['Overfit %'] = baseline_display['Overfit %'].round(1)
 
                     # Map metric choice to display column name
                     metric_to_display_col = {
@@ -851,33 +557,6 @@ try:
                         use_container_width=True,
                         hide_index=True
                     )
-
-                    # Visualization
-                    import plotly.graph_objects as go
-                    fig = go.Figure()
-
-                    # Group by model name and get best config per model for visualization
-                    viz_data = baseline_models.groupby('model_name')[metric_choice_demand].min().reset_index()
-
-                    fig.add_trace(go.Bar(
-                        name=metric_choice_demand,
-                        x=viz_data['model_name'],
-                        y=viz_data[metric_choice_demand],
-                        text=viz_data[metric_choice_demand].round(2),
-                        textposition='outside',
-                        marker_color='#1f77b4'
-                    ))
-
-                    y_axis_label = f"{metric_choice_demand} ({metric_unit})" if metric_unit else metric_choice_demand
-                    fig.update_layout(
-                        title=f"Baseline Models - {metric_choice_demand} Comparison",
-                        xaxis_title="Model",
-                        yaxis_title=y_axis_label,
-                        height=400,
-                        template='plotly_white'
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.warning("No baseline models found for consumption")
 
@@ -904,14 +583,19 @@ try:
                         st.metric("Total Configurations", f"{total_configs_dl}")
 
                     st.markdown(f"##### Detailed Metrics (Sorted by {metric_choice_demand})")
-                    dl_display = dl_models[['model_name', 'config_name', 'MAE', 'sMAPE', 'MASE',
-                                           'val_MAE', 'val_MASE', 'training_time']].copy()
-                    dl_display.columns = ['Model', 'Configuration', 'Test MAE', 'Test sMAPE (%)', 'Test MASE',
-                                         'Val MAE', 'Val MASE', 'Train Time (s)']
+
+                    # Calculate overfitting metric (Val→Test gap)
+                    dl_models['Overfit %'] = ((dl_models['MAE'] - dl_models['val_MAE']) / dl_models['val_MAE'] * 100)
+
+                    dl_display = dl_models[['model_name', 'config_name', 'val_MAE', 'MAE', 'Overfit %',
+                                           'sMAPE', 'MASE', 'val_MASE', 'training_time']].copy()
+                    dl_display.columns = ['Model', 'Configuration', 'Val MAE', 'Test MAE', 'Overfit %',
+                                         'Test sMAPE (%)', 'Test MASE', 'Val MASE', 'Train Time (s)']
 
                     # Round values
-                    for col in ['Test MAE', 'Test sMAPE (%)', 'Test MASE', 'Val MAE', 'Val MASE', 'Train Time (s)']:
+                    for col in ['Val MAE', 'Test MAE', 'Test sMAPE (%)', 'Test MASE', 'Val MASE', 'Train Time (s)']:
                         dl_display[col] = dl_display[col].round(3)
+                    dl_display['Overfit %'] = dl_display['Overfit %'].round(1)
 
                     st.dataframe(
                         dl_display.style.background_gradient(
@@ -921,32 +605,6 @@ try:
                         use_container_width=True,
                         hide_index=True
                     )
-
-                    # Visualization
-                    import plotly.graph_objects as go
-                    fig = go.Figure()
-
-                    # Group by model name and get best config per model for visualization
-                    viz_data_dl = dl_models.groupby('model_name')[metric_choice_demand].min().reset_index()
-
-                    fig.add_trace(go.Bar(
-                        name=metric_choice_demand,
-                        x=viz_data_dl['model_name'],
-                        y=viz_data_dl[metric_choice_demand],
-                        text=viz_data_dl[metric_choice_demand].round(2),
-                        textposition='outside',
-                        marker_color='#ff7f0e'
-                    ))
-
-                    fig.update_layout(
-                        title=f"Deep Learning Models - {metric_choice_demand} Comparison",
-                        xaxis_title="Model",
-                        yaxis_title=y_axis_label,
-                        height=400,
-                        template='plotly_white'
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
 
                     # Performance note
                     if dl_models['MASE'].min() > 1.0:
@@ -980,59 +638,6 @@ try:
                         use_container_width=True,
                         hide_index=True
                     )
-
-                    # Comparison visualization
-                    comparison_df = all_models[['model_name', 'category', 'MAE', 'sMAPE', 'MASE']].copy()
-
-                    from plotly.subplots import make_subplots
-                    import plotly.graph_objects as go
-
-                    fig = make_subplots(
-                        rows=1, cols=3,
-                        subplot_titles=("MAE Comparison", "sMAPE Comparison", "MASE Comparison")
-                    )
-
-                    # Color by category
-                    colors = ['#1f77b4' if cat == 'baseline' else '#ff7f0e'
-                             for cat in comparison_df['category']]
-
-                    # MAE
-                    fig.add_trace(
-                        go.Bar(x=comparison_df['model_name'], y=comparison_df['MAE'],
-                               marker_color=colors, name='MAE',
-                               text=comparison_df['MAE'].round(1),
-                               textposition='outside',
-                               showlegend=False),
-                        row=1, col=1
-                    )
-
-                    # sMAPE
-                    fig.add_trace(
-                        go.Bar(x=comparison_df['model_name'], y=comparison_df['sMAPE'],
-                               marker_color=colors, name='sMAPE',
-                               text=comparison_df['sMAPE'].round(2),
-                               textposition='outside',
-                               showlegend=False),
-                        row=1, col=2
-                    )
-
-                    # MASE with reference line
-                    mase_colors = ['#2ca02c' if x < 1.0 else '#d62728' for x in comparison_df['MASE']]
-                    fig.add_trace(
-                        go.Bar(x=comparison_df['model_name'], y=comparison_df['MASE'],
-                               marker_color=mase_colors, name='MASE',
-                               text=comparison_df['MASE'].round(3),
-                               textposition='outside',
-                               showlegend=False),
-                        row=1, col=3
-                    )
-
-                    fig.update_layout(
-                        height=500,
-                        template='plotly_white'
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
 
                     # Best models summary
                     col1, col2 = st.columns(2)
@@ -1136,6 +741,7 @@ try:
                     highlight_col_price = metric_to_display_col_price.get(metric_choice_price, 'Test MAE')
 
                     st.markdown(f"##### Detailed Metrics (Sorted by {metric_choice_price})")
+
                     baseline_p_display = baseline_price[['model_name', 'config_name', 'MAE', 'sMAPE', 'MASE',
                                                          'val_MAE', 'val_MASE', 'n_features', 'training_time']].copy()
                     baseline_p_display.columns = ['Model', 'Configuration', 'Test MAE', 'Test sMAPE (%)', 'Test MASE',
@@ -1178,6 +784,7 @@ try:
                         st.metric("Total Configurations", f"{total_configs_dl_p}")
 
                     st.markdown(f"##### Detailed Metrics (Sorted by {metric_choice_price})")
+
                     dl_p_display = dl_price[['model_name', 'config_name', 'MAE', 'sMAPE', 'MASE',
                                             'val_MAE', 'val_MASE', 'training_time']].copy()
                     dl_p_display.columns = ['Model', 'Configuration', 'Test MAE', 'Test sMAPE (%)', 'Test MASE',
