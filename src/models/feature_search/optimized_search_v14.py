@@ -589,8 +589,8 @@ def run_v14_experiments():
     logger.info("STEP 1: TRAINING BASE ENSEMBLE")
     logger.info("="*70)
 
-    _, cat_ft_pred, cat_test_pred = train_catboost_transfer(data)
-    _, lgb_ft_pred, lgb_test_pred = train_lightgbm_transfer(data)
+    catboost_model, cat_ft_pred, cat_test_pred = train_catboost_transfer(data)
+    lightgbm_model, lgb_ft_pred, lgb_test_pred = train_lightgbm_transfer(data)
 
     total_weight = CATBOOST_WEIGHT + LIGHTGBM_WEIGHT
     w_cat = CATBOOST_WEIGHT / total_weight
@@ -945,6 +945,44 @@ def run_v14_experiments():
     pred_df.to_csv(output_dir / 'champion_predictions.csv', index=False)
     pred_df.to_parquet(output_dir / 'champion_predictions.parquet', index=False)
 
+    # =========================================================================
+    # SAVE V14 TRAINED MODELS FOR REAL-TIME USE
+    # =========================================================================
+    logger.info("\n" + "="*70)
+    logger.info("SAVING V14 MODELS FOR REAL-TIME DASHBOARD")
+    logger.info("="*70)
+
+    models_dir = output_dir / 'models'
+    models_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save feature list
+    feature_list = data['features']
+    with open(models_dir / 'features.json', 'w') as f:
+        json.dump({
+            'features': feature_list,
+            'base_features': BASE_FEATURES,
+            'n_features': len(feature_list),
+        }, f, indent=2)
+    logger.info(f"  Saved feature list ({len(feature_list)} features)")
+
+    # Save ensemble weights
+    with open(models_dir / 'ensemble_config.json', 'w') as f:
+        json.dump({
+            'catboost_weight': w_cat,
+            'lightgbm_weight': w_lgb,
+            'hourly_aec_params': {str(k): v for k, v in hourly_params_v13.items()},
+        }, f, indent=2)
+    logger.info(f"  Saved ensemble config (CatBoost={w_cat:.3f}, LightGBM={w_lgb:.3f})")
+
+    # Save CatBoost model
+    catboost_model.save_model(str(models_dir / 'catboost_v14.cbm'))
+    logger.info(f"  Saved CatBoost model")
+
+    # Save LightGBM model
+    lightgbm_model.booster_.save_model(str(models_dir / 'lightgbm_v14.txt'))
+    logger.info(f"  Saved LightGBM model")
+
+    logger.info(f"\nV14 models saved to: {models_dir}")
     logger.info(f"\nResults saved to: {output_dir}")
 
     return results

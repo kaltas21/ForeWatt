@@ -10,6 +10,7 @@ from .model_loader_v2 import *
 from .metrics import *
 from .plotting import *
 from .checkpoint_loader import *
+from .styles import *
 
 __all__ = [
     # Config
@@ -51,5 +52,13 @@ __all__ = [
     'create_feature_importance_plot', 'create_box_plot',
     'create_hourly_pattern_plot', 'create_scatter_plot', 'create_gauge_chart',
     'create_split_visualization', 'create_learning_curve_plot',
-    'create_error_analysis_plot'
+    'create_error_analysis_plot',
+
+    # Styles
+    'PROFESSIONAL_CSS', 'HIDE_SIDEBAR_CSS', 'HIDE_OPTIMIZATION_NAV_CSS',
+    'PLOTLY_DARK_TEMPLATE', 'CONSUMPTION_COLORS', 'PRICE_COLORS',
+    'get_model_colors', 'apply_professional_style', 'hide_sidebar',
+    'render_page_header', 'render_metric_card', 'render_info_box',
+    'render_success_box', 'render_warning_box', 'render_section_header',
+    'render_divider'
 ]
