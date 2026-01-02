@@ -1,0 +1,31 @@
+{
+  "features": [
+    "consumption_lag_24h",
+    "consumption_lag_168h",
+    "consumption_rolling_mean_24h",
+    "dow_cos_x",
+    "hour_cos",
+    "hour_sin",
+    "dow_sin_x",
+    "consumption_rolling_std_24h",
+    "is_weekend_x",
+    "is_holiday_day",
+    "consumption_lag_48h",
+    "is_holiday_hour",
+    "temp_lag_24h",
+    "month_cos",
+    "humidity_national",
+    "HDD",
+    "month_sin",
+    "price_ptf_lag_24h",
+    "temp_national",
+    "heat_index",
+    "is_cold",
+    "CDD",
+    "is_hot"
+  ],
+  "n_features": 23,
+  "model_type": "catboost",
+  "target": "consumption",
+  "description": "Consumption forecasting model using CatBoost"
+}

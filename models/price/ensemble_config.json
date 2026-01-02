@@ -1,0 +1,102 @@
+{
+  "catboost_weight": 0.6143790849673203,
+  "lightgbm_weight": 0.38562091503267976,
+  "hourly_aec_params": {
+    "0": {
+      "lookback": 14,
+      "damping": 0.5
+    },
+    "1": {
+      "lookback": 14,
+      "damping": 0.5
+    },
+    "2": {
+      "lookback": 21,
+      "damping": 0.5
+    },
+    "3": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "4": {
+      "lookback": 21,
+      "damping": 0.5
+    },
+    "5": {
+      "lookback": 7,
+      "damping": 0.7
+    },
+    "6": {
+      "lookback": 21,
+      "damping": 0.5
+    },
+    "7": {
+      "lookback": 21,
+      "damping": 0.5
+    },
+    "8": {
+      "lookback": 21,
+      "damping": 0.5
+    },
+    "9": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "10": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "11": {
+      "lookback": 5,
+      "damping": 0.7
+    },
+    "12": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "13": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "14": {
+      "lookback": 21,
+      "damping": 0.6
+    },
+    "15": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "16": {
+      "lookback": 5,
+      "damping": 0.5
+    },
+    "17": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "18": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "19": {
+      "lookback": 21,
+      "damping": 0.5
+    },
+    "20": {
+      "lookback": 14,
+      "damping": 0.5
+    },
+    "21": {
+      "lookback": 21,
+      "damping": 0.7
+    },
+    "22": {
+      "lookback": 7,
+      "damping": 0.5
+    },
+    "23": {
+      "lookback": 7,
+      "damping": 0.5
+    }
+  }
+}
