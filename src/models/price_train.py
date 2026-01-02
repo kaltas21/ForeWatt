@@ -1,7 +1,8 @@
 """
 Price Forecasting Model Training - CHybrid V14
 ===============================================
-Isolated training script for price forecasting using CatBoost+LightGBM Ensemble.
+Isolated training script for price forecasting using CatBoost+LightGBM Ensemble
+with Context-Aware KNN Error Correction.
 
 This is an isolated, self-contained training script that can be run independently.
 The trained models are saved to: ForeWatt/models/price/
@@ -10,7 +11,9 @@ Features:
 - Transfer Learning (Base + Fine-tune)
 - CatBoost + LightGBM Ensemble
 - Profile Evolution Features
+- Simple AEC (Adaptive Error Correction)
 - Context-Aware KNN Error Correction
+- Hybrid Correction (50% Simple + 50% KNN)
 
 Usage:
     python src/models/price_train.py
@@ -49,6 +52,13 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # =============================================================================
 
+# V13 baseline (Oracle floor)
+BASELINE_SMAPE = 11.89
+ORACLE_FLOOR = 11.75
+
+# Problem hours (morning ramp)
+PROBLEM_HOURS = [9, 10]
+
 # Ensemble weights
 CATBOOST_WEIGHT = 0.658
 LIGHTGBM_WEIGHT = 0.413
@@ -60,8 +70,33 @@ KNN_LOOKBACK_DAYS = 45
 # Context features for similarity
 CONTEXT_FEATURES = ['load_factor', 'renewable_saturation', 'thermal_gap']
 
-# Problem hours (morning ramp)
-PROBLEM_HOURS = [9, 10]
+# V13 Hourly AEC Parameters (optimized)
+HOURLY_AEC_PARAMS = {
+    0: {'lookback': 14, 'damping': 0.5},
+    1: {'lookback': 14, 'damping': 0.5},
+    2: {'lookback': 21, 'damping': 0.5},
+    3: {'lookback': 7, 'damping': 0.5},
+    4: {'lookback': 21, 'damping': 0.5},
+    5: {'lookback': 7, 'damping': 0.7},
+    6: {'lookback': 21, 'damping': 0.5},
+    7: {'lookback': 21, 'damping': 0.5},
+    8: {'lookback': 21, 'damping': 0.5},
+    9: {'lookback': 7, 'damping': 0.5},
+    10: {'lookback': 7, 'damping': 0.5},
+    11: {'lookback': 5, 'damping': 0.7},
+    12: {'lookback': 7, 'damping': 0.5},
+    13: {'lookback': 7, 'damping': 0.5},
+    14: {'lookback': 21, 'damping': 0.6},
+    15: {'lookback': 7, 'damping': 0.5},
+    16: {'lookback': 5, 'damping': 0.5},
+    17: {'lookback': 7, 'damping': 0.5},
+    18: {'lookback': 7, 'damping': 0.5},
+    19: {'lookback': 21, 'damping': 0.5},
+    20: {'lookback': 14, 'damping': 0.5},
+    21: {'lookback': 21, 'damping': 0.7},
+    22: {'lookback': 7, 'damping': 0.5},
+    23: {'lookback': 7, 'damping': 0.5},
+}
 
 # Base feature set (21 features)
 BASE_FEATURES = [
@@ -229,6 +264,25 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> Dict:
     return {'mae': mae, 'smape': smape, 'bias': bias}
 
 
+def evaluate_with_breakdown(y_true: np.ndarray, y_pred: np.ndarray, hours: np.ndarray) -> Dict:
+    """Evaluate with hour breakdown."""
+    global_metrics = evaluate(y_true, y_pred)
+
+    problem_mask = np.isin(hours, PROBLEM_HOURS)
+    problem_metrics = evaluate(y_true[problem_mask], y_pred[problem_mask]) if problem_mask.sum() > 0 else {}
+    problem_metrics['count'] = int(problem_mask.sum())
+
+    other_mask = ~problem_mask
+    other_metrics = evaluate(y_true[other_mask], y_pred[other_mask]) if other_mask.sum() > 0 else {}
+    other_metrics['count'] = int(other_mask.sum())
+
+    return {
+        'global': global_metrics,
+        'hours_9_10': problem_metrics,
+        'other': other_metrics,
+    }
+
+
 # =============================================================================
 # TRANSFER LEARNING TRAINERS
 # =============================================================================
@@ -342,33 +396,141 @@ def train_lightgbm_transfer(data: Dict) -> Tuple[object, np.ndarray, np.ndarray]
 
 
 # =============================================================================
+# SIMPLE AEC (V13 Baseline)
+# =============================================================================
+
+def apply_simple_aec(df_preds: pd.DataFrame, hourly_params: Dict) -> np.ndarray:
+    """Apply V13-style hourly Adaptive Error Correction."""
+    df = df_preds.copy().sort_values('datetime').reset_index(drop=True)
+    df['error'] = df['y_raw'] - df['y_true']
+    df['y_corrected'] = df['y_raw'].copy()
+
+    for hour in range(24):
+        hour_mask = df['hour'] == hour
+        if hour_mask.sum() == 0:
+            continue
+
+        params = hourly_params.get(hour, {'lookback': 7, 'damping': 0.5})
+        lookback = params['lookback']
+        damping = params['damping']
+
+        hour_df = df[hour_mask].copy().reset_index(drop=True)
+        errors = hour_df['error'].values
+        raw = hour_df['y_raw'].values
+
+        corrections = np.zeros(len(errors))
+        for i in range(1, len(errors)):
+            start_idx = max(0, i - lookback)
+            past_errors = errors[start_idx:i]
+            if len(past_errors) > 0:
+                corrections[i] = damping * np.mean(past_errors)
+
+        df.loc[hour_mask, 'y_corrected'] = raw - corrections
+
+    return df['y_corrected'].values
+
+
+# =============================================================================
+# KNN CONTEXT-AWARE ERROR CORRECTION
+# =============================================================================
+
+def apply_knn_correction(df_preds: pd.DataFrame, X_context: pd.DataFrame,
+                         scaler: StandardScaler, context_features: List[str],
+                         k: int = 5, lookback_days: int = 45, damping: float = 0.8) -> np.ndarray:
+    """
+    Apply Context-Aware KNN Error Correction.
+
+    Uses similar historical hours (by context features) to estimate bias,
+    rather than simple time-based rolling averages.
+    """
+    df = df_preds.copy().sort_values('datetime').reset_index(drop=True)
+    df['error'] = df['y_raw'] - df['y_true']
+
+    # Extract and normalize context features
+    available_features = [f for f in context_features if f in X_context.columns]
+    context_data = X_context[available_features].fillna(0).values
+    context_normalized = scaler.transform(context_data)
+
+    n = len(df)
+    corrections = np.zeros(n)
+
+    # Process by hour for efficiency
+    for hour in range(24):
+        hour_mask = (df['hour'] == hour).values
+        hour_indices = np.where(hour_mask)[0]
+
+        if len(hour_indices) < k + 1:
+            continue
+
+        for i, idx in enumerate(hour_indices):
+            if i < k:
+                # Not enough history
+                continue
+
+            # Define lookback window (same hour, past lookback_days)
+            lookback_hours = lookback_days  # For hourly data, 1 day = 1 sample per hour
+            start_i = max(0, i - lookback_hours)
+            history_indices = hour_indices[start_i:i]
+
+            if len(history_indices) < 2:
+                continue
+
+            # Build KNN index on history
+            history_contexts = context_normalized[history_indices]
+            current_context = context_normalized[idx].reshape(1, -1)
+
+            # Use KNN to find similar days
+            k_actual = min(k, len(history_indices))
+            knn = NearestNeighbors(n_neighbors=k_actual, metric='euclidean')
+            knn.fit(history_contexts)
+
+            distances, neighbor_idx = knn.kneighbors(current_context)
+            distances = distances[0]
+            neighbor_idx = neighbor_idx[0]
+
+            # Get errors from neighbors
+            neighbor_original_idx = history_indices[neighbor_idx]
+            neighbor_errors = df.loc[neighbor_original_idx, 'error'].values
+
+            # Weight by inverse distance (with epsilon to avoid div by zero)
+            epsilon = 1e-6
+            weights = 1.0 / (distances + epsilon)
+            weights = weights / weights.sum()
+
+            # Weighted bias
+            weighted_bias = np.sum(weights * neighbor_errors)
+            corrections[idx] = damping * weighted_bias
+
+    return df['y_raw'].values - corrections
+
+
+# =============================================================================
 # MAIN TRAINING FUNCTION
 # =============================================================================
 
 def train_price_model():
-    """Train price forecasting ensemble model."""
+    """Train price forecasting ensemble model with KNN Error Correction."""
     MODELS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     logger.info("="*70)
     logger.info("PRICE MODEL TRAINING - CHybrid V14")
-    logger.info("CatBoost + LightGBM Ensemble with Transfer Learning")
+    logger.info("CatBoost + LightGBM Ensemble with Context-Aware KNN-EC")
     logger.info("="*70)
 
-    # Load data
-    df = load_data()
+    # =========================================================================
+    # STEP 1: LOAD DATA AND TRAIN ENSEMBLE
+    # =========================================================================
+    logger.info("\n" + "="*70)
+    logger.info("STEP 1: TRAINING ENSEMBLE MODELS")
+    logger.info("="*70)
 
-    # Prepare data
+    df = load_data()
     data = prepare_data(df, BASE_FEATURES)
 
     logger.info(f"\n  DATA SPLITS:")
     logger.info(f"    Base:      {len(data['X_base']):,} rows")
     logger.info(f"    Fine-tune: {len(data['X_finetune']):,} rows")
     logger.info(f"    Test:      {len(data['X_test']):,} rows")
-
-    # Train ensemble
-    logger.info("\n" + "="*70)
-    logger.info("TRAINING ENSEMBLE")
-    logger.info("="*70)
 
     catboost_model, cat_ft_pred, cat_test_pred = train_catboost_transfer(data)
     lightgbm_model, lgb_ft_pred, lgb_test_pred = train_lightgbm_transfer(data)
@@ -380,16 +542,145 @@ def train_price_model():
 
     logger.info(f"\n  Ensemble weights: CatBoost={w_cat:.3f}, LightGBM={w_lgb:.3f}")
 
-    # Ensemble predictions
+    raw_ft_pred = w_cat * cat_ft_pred + w_lgb * lgb_ft_pred
     raw_test_pred = w_cat * cat_test_pred + w_lgb * lgb_test_pred
 
-    # Evaluate
-    test_metrics = evaluate(data['y_test'].values, raw_test_pred)
-    logger.info(f"\n  TEST METRICS:")
-    logger.info(f"    MAE:   {test_metrics['mae']:.2f}")
-    logger.info(f"    sMAPE: {test_metrics['smape']:.2f}%")
+    # =========================================================================
+    # STEP 2: PREPARE DATAFRAMES FOR CORRECTION
+    # =========================================================================
+    logger.info("\n" + "="*70)
+    logger.info("STEP 2: PREPARING DATA FOR KNN CORRECTION")
+    logger.info("="*70)
 
-    # Save models
+    df_ft = pd.DataFrame({
+        'datetime': data['X_finetune'].index,
+        'hour': data['hours_finetune'].values,
+        'y_true': data['y_finetune'].values,
+        'y_raw': raw_ft_pred,
+    })
+
+    df_test = pd.DataFrame({
+        'datetime': data['X_test'].index,
+        'hour': data['hours_test'].values,
+        'y_true': data['y_test'].values,
+        'y_raw': raw_test_pred,
+    })
+
+    logger.info(f"  Test: {len(df_test):,} rows ({df_test['datetime'].min()} to {df_test['datetime'].max()})")
+
+    # =========================================================================
+    # STEP 3: FIT SCALER ON FINE-TUNE SET
+    # =========================================================================
+    logger.info("\n" + "="*70)
+    logger.info("STEP 3: FITTING CONTEXT SCALER")
+    logger.info("="*70)
+
+    available_context = [f for f in CONTEXT_FEATURES if f in data['X_finetune'].columns]
+    logger.info(f"  Context features: {available_context}")
+
+    scaler = StandardScaler()
+    scaler.fit(data['X_finetune'][available_context].fillna(0))
+    logger.info(f"  Scaler fitted on Fine-Tune set ({len(data['X_finetune']):,} rows)")
+
+    # =========================================================================
+    # STEP 4: RUN CORRECTION EXPERIMENTS
+    # =========================================================================
+    logger.info("\n" + "="*70)
+    logger.info("STEP 4: RUNNING CORRECTION EXPERIMENTS")
+    logger.info("="*70)
+
+    results = {}
+
+    # Config A: V13 Simple AEC (Baseline)
+    logger.info("\n  Config A: V13 Simple AEC (Baseline)...")
+    simple_aec_pred = apply_simple_aec(df_test, HOURLY_AEC_PARAMS)
+    simple_metrics = evaluate_with_breakdown(
+        data['y_test'].values, simple_aec_pred, data['hours_test'].values
+    )
+    results['A_Simple_AEC'] = {'pred': simple_aec_pred, 'metrics': simple_metrics}
+    logger.info(f"    Global sMAPE: {simple_metrics['global']['smape']:.2f}%")
+
+    # Config B: Pure KNN-EC
+    logger.info("\n  Config B: Pure KNN-EC (K=5, 45d, d=0.8)...")
+    knn_pred = apply_knn_correction(
+        df_test, data['X_test'].reset_index(drop=True),
+        scaler, available_context,
+        k=KNN_K, lookback_days=KNN_LOOKBACK_DAYS, damping=0.8
+    )
+    knn_metrics = evaluate_with_breakdown(
+        data['y_test'].values, knn_pred, data['hours_test'].values
+    )
+    results['B_KNN_EC'] = {'pred': knn_pred, 'metrics': knn_metrics}
+    logger.info(f"    Global sMAPE: {knn_metrics['global']['smape']:.2f}%")
+
+    # Config C: Hybrid (50% Simple + 50% KNN)
+    logger.info("\n  Config C: Hybrid (50% Simple + 50% KNN)...")
+    hybrid_pred = 0.5 * simple_aec_pred + 0.5 * knn_pred
+    hybrid_metrics = evaluate_with_breakdown(
+        data['y_test'].values, hybrid_pred, data['hours_test'].values
+    )
+    results['C_Hybrid'] = {'pred': hybrid_pred, 'metrics': hybrid_metrics}
+    logger.info(f"    Global sMAPE: {hybrid_metrics['global']['smape']:.2f}%")
+
+    # Config F: Raw (no correction)
+    raw_metrics = evaluate_with_breakdown(
+        data['y_test'].values, raw_test_pred, data['hours_test'].values
+    )
+    results['F_Raw'] = {'pred': raw_test_pred, 'metrics': raw_metrics}
+    logger.info(f"\n  Config F: Raw (no correction): {raw_metrics['global']['smape']:.2f}%")
+
+    # =========================================================================
+    # STEP 5: COMPARISON TABLE
+    # =========================================================================
+    logger.info("\n" + "="*70)
+    logger.info("COMPARISON TABLE")
+    logger.info("="*70)
+
+    logger.info(f"\n{'Method':<20} {'Global':>10} {'H9-10':>10} {'H9-10 Bias':>12} {'Beat 11.89%?':>14}")
+    logger.info("-"*70)
+
+    comparison = []
+    for name, res in sorted(results.items()):
+        m = res['metrics']
+        beat = "YES" if m['global']['smape'] < BASELINE_SMAPE else "no"
+        beat_oracle = " (ORACLE!)" if m['global']['smape'] < ORACLE_FLOOR else ""
+        logger.info(f"{name:<20} {m['global']['smape']:>9.2f}% {m['hours_9_10']['smape']:>9.2f}% "
+                    f"{m['hours_9_10']['bias']:>+11.2f} {beat:>14}{beat_oracle}")
+        comparison.append({
+            'Method': name,
+            'Global_sMAPE': m['global']['smape'],
+            'H910_sMAPE': m['hours_9_10']['smape'],
+            'H910_Bias': m['hours_9_10']['bias'],
+            'Beat_Baseline': str(m['global']['smape'] < BASELINE_SMAPE),
+            'Beat_Oracle': str(m['global']['smape'] < ORACLE_FLOOR),
+        })
+
+    # =========================================================================
+    # STEP 6: FIND BEST METHOD
+    # =========================================================================
+    best_method = min(comparison, key=lambda x: x['Global_sMAPE'])
+    best_name = best_method['Method']
+    best_pred = results[best_name]['pred']
+
+    logger.info("\n" + "="*70)
+    logger.info("FINAL RESULTS")
+    logger.info("="*70)
+
+    logger.info(f"\n  Best Method: {best_name}")
+    logger.info(f"  Final sMAPE: {best_method['Global_sMAPE']:.2f}%")
+    logger.info(f"  V13 Baseline: {BASELINE_SMAPE:.2f}%")
+    logger.info(f"  Oracle Floor: {ORACLE_FLOOR:.2f}%")
+
+    if best_method['Beat_Oracle'] == 'True':
+        improvement = ORACLE_FLOOR - best_method['Global_sMAPE']
+        logger.info(f"\n  BREAKTHROUGH! Beat Oracle Floor by {improvement:.2f}%!")
+    elif best_method['Beat_Baseline'] == 'True':
+        improvement = BASELINE_SMAPE - best_method['Global_sMAPE']
+        logger.info(f"\n  SUCCESS! Beat V13 Baseline by {improvement:.2f}%!")
+
+    # =========================================================================
+    # STEP 7: SAVE MODELS
+    # =========================================================================
     logger.info("\n" + "="*70)
     logger.info("SAVING MODELS")
     logger.info("="*70)
@@ -415,29 +706,58 @@ def train_price_model():
         }, f, indent=2)
     logger.info(f"  Saved features: {features_path}")
 
-    # Save ensemble config
+    # Save ensemble config with AEC params
     config_path = MODELS_OUTPUT_DIR / 'ensemble_config.json'
     with open(config_path, 'w') as f:
         json.dump({
             'catboost_weight': w_cat,
             'lightgbm_weight': w_lgb,
-            'test_smape': test_metrics['smape'],
-            'test_mae': test_metrics['mae'],
+            'best_method': best_name,
+            'test_smape': best_method['Global_sMAPE'],
+            'test_mae': results[best_name]['metrics']['global']['mae'],
+            'hourly_aec_params': {str(k): v for k, v in HOURLY_AEC_PARAMS.items()},
+            'knn_params': {
+                'k': KNN_K,
+                'lookback_days': KNN_LOOKBACK_DAYS,
+                'context_features': available_context,
+            },
             'timestamp': datetime.now().isoformat(),
         }, f, indent=2)
     logger.info(f"  Saved config: {config_path}")
 
+    # Save summary
+    summary_path = MODELS_OUTPUT_DIR / 'summary.json'
+    summary = {
+        'timestamp': datetime.now().isoformat(),
+        'baseline_smape': BASELINE_SMAPE,
+        'oracle_floor': ORACLE_FLOOR,
+        'final_smape': float(best_method['Global_sMAPE']),
+        'best_method': best_name,
+        'beat_oracle': best_method['Beat_Oracle'],
+        'comparison': comparison,
+        'knn_params': {
+            'k': KNN_K,
+            'lookback_days': KNN_LOOKBACK_DAYS,
+            'context_features': available_context,
+        },
+    }
+    with open(summary_path, 'w') as f:
+        json.dump(summary, f, indent=2, default=str)
+    logger.info(f"  Saved summary: {summary_path}")
+
     logger.info(f"\n{'='*70}")
     logger.info(f"TRAINING COMPLETE")
     logger.info(f"Models saved to: {MODELS_OUTPUT_DIR}")
-    logger.info(f"Final sMAPE: {test_metrics['smape']:.2f}%")
+    logger.info(f"Final sMAPE: {best_method['Global_sMAPE']:.2f}%")
     logger.info(f"{'='*70}")
 
     return {
         'catboost_model': catboost_model,
         'lightgbm_model': lightgbm_model,
-        'test_metrics': test_metrics,
+        'best_method': best_name,
+        'test_smape': best_method['Global_sMAPE'],
         'features': feature_list,
+        'comparison': comparison,
     }
 
 

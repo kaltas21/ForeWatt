@@ -1,6 +1,9 @@
 {
   "catboost_weight": 0.6143790849673203,
   "lightgbm_weight": 0.38562091503267976,
+  "best_method": "C_Hybrid",
+  "test_smape": 11.631578556090123,
+  "test_mae": 48.19018739511305,
   "hourly_aec_params": {
     "0": {
       "lookback": 14,
@@ -98,5 +101,15 @@
       "lookback": 7,
       "damping": 0.5
     }
-  }
+  },
+  "knn_params": {
+    "k": 5,
+    "lookback_days": 45,
+    "context_features": [
+      "load_factor",
+      "renewable_saturation",
+      "thermal_gap"
+    ]
+  },
+  "timestamp": "2026-01-02T06:15:53.982999"
 }

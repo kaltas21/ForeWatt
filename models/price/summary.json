@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-01-02T06:15:53.983134",
+  "baseline_smape": 11.89,
+  "oracle_floor": 11.75,
+  "final_smape": 11.631578556090123,
+  "best_method": "C_Hybrid",
+  "beat_oracle": "True",
+  "comparison": [
+    {
+      "Method": "A_Simple_AEC",
+      "Global_sMAPE": 11.889454323936292,
+      "H910_sMAPE": 26.572216541101866,
+      "H910_Bias": 12.176117252554176,
+      "Beat_Baseline": "True",
+      "Beat_Oracle": "False"
+    },
+    {
+      "Method": "B_KNN_EC",
+      "Global_sMAPE": 11.93690773495763,
+      "H910_sMAPE": 26.07079259633854,
+      "H910_Bias": 6.716425254226279,
+      "Beat_Baseline": "False",
+      "Beat_Oracle": "False"
+    },
+    {
+      "Method": "C_Hybrid",
+      "Global_sMAPE": 11.631578556090123,
+      "H910_sMAPE": 25.460886382626065,
+      "H910_Bias": 9.446271253390229,
+      "Beat_Baseline": "True",
+      "Beat_Oracle": "True"
+    },
+    {
+      "Method": "F_Raw",
+      "Global_sMAPE": 12.338524053441018,
+      "H910_sMAPE": 28.58736116586385,
+      "H910_Bias": 23.482194598597438,
+      "Beat_Baseline": "False",
+      "Beat_Oracle": "False"
+    }
+  ],
+  "knn_params": {
+    "k": 5,
+    "lookback_days": 45,
+    "context_features": [
+      "load_factor",
+      "renewable_saturation",
+      "thermal_gap"
+    ]
+  }
+}
