@@ -1,33 +1,34 @@
-# ForeWatt Forecast API - Cloud Run Dockerfile
+# ForeWatt API Dockerfile
+# For Cloud Run deployment
+
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for ML libraries
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
+    build-essential \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for caching
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy source code
+COPY main.py .
+COPY src/ ./src/
+COPY models/ ./models/
 
-# Create forecast storage directory
-RUN mkdir -p data/forecasts/price data/forecasts/consumption
+# Copy forecast parquet files (for validation/history view)
+COPY data/forecasts/ ./data/forecasts/
 
-# Set environment variables
-ENV PORT=8080
-ENV PYTHONUNBUFFERED=1
+# Create master data directory (master data loaded from GCS/EPIAS at runtime)
+RUN mkdir -p data/gold/master
 
 # Expose port
+ENV PORT=8080
 EXPOSE 8080
 
 # Run the application

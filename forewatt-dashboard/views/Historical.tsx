@@ -1,20 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { ModelType, HistoricalData } from '../types';
-import { generateHistoricalData } from '../services/mockData';
-import { HistoricalChart } from '../components/Charts';
-import { Card, Button, Toggle } from '../components/ui';
-import { Calendar, Download, RefreshCw, Filter, ChevronDown } from 'lucide-react';
+import { fetchHistoricalData, fetchDataStatus } from '../services/api';
+import { HistoricalChart, HourlyPatternsChart, ValueDistributionChart } from '../components/Charts';
+import { Card, Button, Toggle, Badge } from '../components/ui';
+import { Calendar, Download, RefreshCw, Filter, ChevronDown, WifiOff, Database } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const RANGES = [
-    { label: 'Last 3 Days', value: '3d', days: 3 },
-    { label: 'Last 7 Days', value: '7d', days: 7 },
-    { label: 'Last 15 Days', value: '15d', days: 15 },
-    { label: 'Last 1 Month', value: '1m', days: 30 },
-    { label: 'Last 3 Months', value: '3m', days: 90 },
-    { label: 'Last 6 Months', value: '6m', days: 180 },
-    { label: 'Last 1 Year', value: '1y', days: 365 },
+    { label: 'Latest 3 Days', value: '3d', days: 3 },
+    { label: 'Latest 7 Days', value: '7d', days: 7 },
+    { label: 'Latest 15 Days', value: '15d', days: 15 },
+    { label: 'Latest 1 Month', value: '1m', days: 30 },
+    { label: 'Latest 3 Months', value: '3m', days: 90 },
+    { label: 'Latest 6 Months', value: '6m', days: 180 },
+    { label: 'Latest 1 Year', value: '1y', days: 365 },
     { label: 'Custom Range', value: 'custom', days: 0 }
 ];
 
@@ -23,7 +23,14 @@ export const HistoricalView = ({ model }: { model: ModelType }) => {
     // State
     const [data, setData] = useState<HistoricalData | null>(null);
     const [loading, setLoading] = useState(false);
-    
+    const [error, setError] = useState<string | null>(null);
+
+    // Data status (last date in parquet)
+    const [dataStatus, setDataStatus] = useState<{ lastDate: Date | null; firstDate: Date | null }>({
+        lastDate: null,
+        firstDate: null
+    });
+
     // Filters
     const [rangeType, setRangeType] = useState('7d');
     const [startDate, setStartDate] = useState('');
@@ -31,55 +38,100 @@ export const HistoricalView = ({ model }: { model: ModelType }) => {
     const [showActual, setShowActual] = useState(true);
     const [showForecast, setShowForecast] = useState(true);
 
-    // Initial load and range changes
+    // Use current date as reference for "Last X days" - EPIAS provides live data
     useEffect(() => {
-        handleFetch();
-    }, [model, rangeType]); // Re-fetch when model or preset changes
+        // Always use current time as the end date for "Last X days" selections
+        // This ensures "Last 7 days" means the actual last 7 days, not historical parquet dates
+        const now = new Date();
+        setDataStatus({
+            lastDate: now,
+            firstDate: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+        });
+        console.log('History page using current date as reference:', now);
+    }, []);
 
-    // Update custom inputs when preset selected (for visual consistency)
+    // Initial load and range changes - wait for dataStatus to be loaded
     useEffect(() => {
+        if (dataStatus.lastDate) {
+            handleFetch();
+        }
+    }, [model, rangeType, dataStatus.lastDate]);
+
+    // Update custom inputs when preset selected (use last parquet date as end)
+    useEffect(() => {
+        if (!dataStatus.lastDate) return;
+
         const selectedRange = RANGES.find(r => r.value === rangeType);
         if (selectedRange && selectedRange.value !== 'custom') {
-            const end = new Date();
-            const start = new Date();
+            // Use last parquet date as end date (not current date)
+            const end = new Date(dataStatus.lastDate);
+            const start = new Date(end);
             start.setDate(end.getDate() - selectedRange.days);
-            
+
             // Format for datetime-local input: YYYY-MM-DDThh:mm
             setEndDate(end.toISOString().slice(0, 16));
             setStartDate(start.toISOString().slice(0, 16));
         }
-    }, [rangeType]);
+    }, [rangeType, dataStatus.lastDate]);
 
-    const handleFetch = () => {
+    const handleFetch = async () => {
         setLoading(true);
-        // Simulate network request
-        setTimeout(() => {
-            let start: Date, end: Date;
-            
-            if (rangeType === 'custom') {
-                start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-                end = endDate ? new Date(endDate) : new Date();
-            } else {
-                const range = RANGES.find(r => r.value === rangeType)!;
-                end = new Date();
-                start = new Date();
-                start.setDate(end.getDate() - range.days);
-            }
+        setError(null);
 
-            const newData = generateHistoricalData(model, start, end);
+        let start: Date, end: Date;
+
+        if (rangeType === 'custom') {
+            start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            end = endDate ? new Date(endDate) : (dataStatus.lastDate || new Date());
+        } else {
+            const range = RANGES.find(r => r.value === rangeType)!;
+            // Use last parquet date as end date
+            end = dataStatus.lastDate || new Date();
+            start = new Date(end);
+            start.setDate(end.getDate() - range.days);
+        }
+
+        try {
+            const newData = await fetchHistoricalData(model, start, end);
             setData(newData);
-            setLoading(false);
-        }, 500);
+        } catch (err) {
+            console.error('API error:', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        }
+        setLoading(false);
     };
 
+    if (loading && !data) {
+        return <div className="p-10 flex justify-center h-full items-center"><RefreshCw className="animate-spin text-primary-500 w-10 h-10" /></div>;
+    }
+
+    if (error && !data) {
+        return (
+            <div className="p-10 flex flex-col justify-center h-full items-center gap-4">
+                <WifiOff className="text-red-500 w-12 h-12" />
+                <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
+                <Button onClick={handleFetch} disabled={loading}>
+                    <RefreshCw size={16} className={loading ? 'animate-spin mr-2' : 'mr-2'} />
+                    Retry
+                </Button>
+            </div>
+        );
+    }
+
     if(!data) return null;
+
+    const hasData = data.data && data.data.length > 0;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{t('history.title')}</h2>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">{t('history.subtitle')}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-slate-500 dark:text-slate-400">{t('history.subtitle')}</p>
+                        <Badge color="green">Live Data</Badge>
+                        {!hasData && <Badge color="yellow">Limited Data</Badge>}
+                    </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <Button variant="outline" className="hidden sm:flex"><Download size={16} className="mr-2"/> {t('common.export')}</Button>
@@ -134,57 +186,71 @@ export const HistoricalView = ({ model }: { model: ModelType }) => {
                 </div>
             </Card>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                 {Object.entries(data.statistics).map(([key, val]) => (
-                     <Card key={key} className="p-4 text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                         <div className="text-xs uppercase text-slate-500 dark:text-slate-400 font-bold mb-1 tracking-wider">{t(`history.${key}`) || key}</div>
-                         <div className="text-xl font-bold text-slate-800 dark:text-white font-mono">
-                            {val.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-                         </div>
-                     </Card>
-                 ))}
-            </div>
+            {hasData ? (
+                <>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                         {Object.entries(data.statistics)
+                             .filter(([_, val]) => val != null && typeof val === 'number')
+                             .map(([key, val]) => (
+                             <Card key={key} className="p-4 text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                 <div className="text-xs uppercase text-slate-500 dark:text-slate-400 font-bold mb-1 tracking-wider">{t(`history.${key}`) || key}</div>
+                                 <div className="text-xl font-bold text-slate-800 dark:text-white font-mono">
+                                    {(val as number).toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                                 </div>
+                             </Card>
+                         ))}
+                    </div>
 
-            <Card className="p-6 border-slate-200 dark:border-slate-800">
-                <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
-                        <Filter size={20} className="text-primary-500" />
-                        {t('history.visualization')}
-                    </h3>
-                    <div className="flex items-center gap-6 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
-                        <Toggle label={t('history.showActual')} checked={showActual} onChange={setShowActual} />
-                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
-                        <Toggle label={t('history.showForecast')} checked={showForecast} onChange={setShowForecast} />
-                    </div>
-                </div>
-                
-                {loading ? (
-                    <div className="h-[500px] flex items-center justify-center text-slate-400">
-                        <RefreshCw className="animate-spin mb-2" size={32} />
-                        <span className="sr-only">Loading...</span>
-                    </div>
-                ) : (
-                    <HistoricalChart data={data} showActual={showActual} showForecast={showForecast} />
-                )}
-            </Card>
+                    <Card className="p-6 border-slate-200 dark:border-slate-800">
+                        <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+                            <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                <Filter size={20} className="text-primary-500" />
+                                {t('history.visualization')}
+                            </h3>
+                            <div className="flex items-center gap-6 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <Toggle label={t('history.showActual')} checked={showActual} onChange={setShowActual} />
+                                <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
+                                <Toggle label={t('history.showForecast')} checked={showForecast} onChange={setShowForecast} />
+                            </div>
+                        </div>
 
-            {/* Detailed Analysis Placeholders */}
-            <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6 h-[350px] flex flex-col items-center justify-center bg-white dark:bg-slate-900 border-dashed border-2 border-slate-200 dark:border-slate-800">
-                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                         <Calendar size={32} className="text-slate-400" />
+                        {loading ? (
+                            <div className="h-[500px] flex items-center justify-center text-slate-400">
+                                <RefreshCw className="animate-spin mb-2" size={32} />
+                                <span className="sr-only">Loading...</span>
+                            </div>
+                        ) : (
+                            <HistoricalChart data={data} showActual={showActual} showForecast={showForecast} />
+                        )}
+                    </Card>
+
+                    {/* Detailed Analysis Charts */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <Card className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <h4 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <Calendar size={20} className="text-primary-500" />
+                                {t('history.hourlyPatterns')}
+                            </h4>
+                            <HourlyPatternsChart data={data} />
+                        </Card>
+                        <Card className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <h4 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <Filter size={20} className="text-primary-500" />
+                                {t('history.valueDist')}
+                            </h4>
+                            <ValueDistributionChart data={data} />
+                        </Card>
                     </div>
-                    <h4 className="font-semibold text-slate-900 dark:text-white mb-2">{t('history.hourlyPatterns')}</h4>
-                    <p className="text-slate-500 text-sm text-center max-w-xs">Average consumption/price distributed by hour of day for the selected period.</p>
+                </>
+            ) : (
+                <Card className="p-10 text-center">
+                    <Calendar size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">No Data Available</h3>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                        No forecast data found for the selected date range. Try selecting a shorter range or wait for more forecasts to be generated.
+                    </p>
                 </Card>
-                <Card className="p-6 h-[350px] flex flex-col items-center justify-center bg-white dark:bg-slate-900 border-dashed border-2 border-slate-200 dark:border-slate-800">
-                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                         <Filter size={32} className="text-slate-400" />
-                    </div>
-                    <h4 className="font-semibold text-slate-900 dark:text-white mb-2">{t('history.valueDist')}</h4>
-                    <p className="text-slate-500 text-sm text-center max-w-xs">Histogram and percentile analysis of the selected data range.</p>
-                </Card>
-            </div>
+            )}
         </div>
     )
 }

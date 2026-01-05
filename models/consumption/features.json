@@ -26,9 +26,22 @@
   ],
   "n_features": 23,
   "model_type": "catboost",
+  "model_version": "V2",
   "target": "consumption",
-  "test_mae": 836.295969573079,
-  "test_smape": 2.029413756873219,
-  "test_mase": 0.793100869919441,
-  "timestamp": "2026-01-02T06:09:12.007544"
+  "hyperparameters": {
+    "depth": 5,
+    "iterations": 1000,
+    "l2_leaf_reg": 15.0,
+    "subsample": 0.8,
+    "rsm": 0.8
+  },
+  "train_mae": 495.83240247357014,
+  "train_smape": 1.4288787254173685,
+  "val_mae": 727.7770144053691,
+  "val_smape": 1.8437562112422594,
+  "test_mae": 855.7864745068402,
+  "test_smape": 2.1028592538048283,
+  "test_mase": 0.8115846806521727,
+  "overfit_ratio": 1.4716849067723319,
+  "timestamp": "2026-01-05T01:00:16.085088"
 }

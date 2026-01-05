@@ -75,17 +75,25 @@ CONSUMPTION_FEATURES = [
     'price_ptf_lag_24h',
 ]
 
-# CatBoost hyperparameters (optimized)
+# CatBoost hyperparameters (V2 - reduced overfitting)
+# Changes from V1:
+#   - depth: 8 → 5 (reduced model capacity)
+#   - l2_leaf_reg: 5.0 → 15.0 (increased regularization)
+#   - iterations: 2000 → 1000 (fewer trees)
+#   - early_stopping_rounds: 100 → 50 (more aggressive early stopping)
+#   - Added subsample and rsm for stochasticity
 CATBOOST_PARAMS = {
-    'iterations': 2000,
-    'depth': 8,
+    'iterations': 1000,
+    'depth': 5,  # Reduced from 8
     'learning_rate': 0.03,
-    'l2_leaf_reg': 5.0,
-    'border_count': 254,
+    'l2_leaf_reg': 15.0,  # Increased from 5.0
+    'border_count': 128,  # Reduced from 254
     'random_seed': 42,
     'loss_function': 'RMSE',
     'eval_metric': 'MAE',
-    'early_stopping_rounds': 100,
+    'early_stopping_rounds': 50,  # More aggressive
+    'subsample': 0.8,  # Row sampling (stochasticity)
+    'rsm': 0.8,  # Feature sampling per tree (colsample_bylevel equivalent)
 }
 
 
@@ -302,6 +310,22 @@ def train_consumption_model():
         CATBOOST_PARAMS
     )
 
+    # Evaluate on train set (for overfitting analysis)
+    logger.info("\n" + "="*60)
+    logger.info("TRAIN EVALUATION (Overfitting Check)")
+    logger.info("="*60)
+
+    train_pred = model.predict(data['X_train'])
+    train_metrics = evaluate(
+        data['y_train'].values,
+        train_pred,
+        data['y_train'].values
+    )
+
+    logger.info(f"\n  Train metrics:")
+    logger.info(f"    MAE:   {train_metrics['MAE']:.2f}")
+    logger.info(f"    sMAPE: {train_metrics['sMAPE']:.2f}%")
+
     # Evaluate on test set
     logger.info("\n" + "="*60)
     logger.info("TEST EVALUATION")
@@ -318,6 +342,19 @@ def train_consumption_model():
     logger.info(f"    MAE:   {test_metrics['MAE']:.2f}")
     logger.info(f"    sMAPE: {test_metrics['sMAPE']:.2f}%")
     logger.info(f"    MASE:  {test_metrics['MASE']:.4f}")
+
+    # Overfitting ratio
+    overfit_ratio = test_metrics['sMAPE'] / train_metrics['sMAPE'] if train_metrics['sMAPE'] > 0 else 0
+    logger.info(f"\n  Overfitting Analysis:")
+    logger.info(f"    Train sMAPE: {train_metrics['sMAPE']:.2f}%")
+    logger.info(f"    Test sMAPE:  {test_metrics['sMAPE']:.2f}%")
+    logger.info(f"    Overfit Ratio: {overfit_ratio:.2f}x")
+    if overfit_ratio < 1.2:
+        logger.info(f"    Status: GOOD generalization")
+    elif overfit_ratio < 1.5:
+        logger.info(f"    Status: SLIGHT overfitting")
+    else:
+        logger.info(f"    Status: SIGNIFICANT overfitting - consider more regularization")
 
     # Save model
     logger.info("\n" + "="*60)
@@ -346,10 +383,23 @@ def train_consumption_model():
             'features': data['feature_names'],
             'n_features': len(data['feature_names']),
             'model_type': 'catboost',
+            'model_version': 'V2',
             'target': 'consumption',
+            'hyperparameters': {
+                'depth': CATBOOST_PARAMS['depth'],
+                'iterations': CATBOOST_PARAMS['iterations'],
+                'l2_leaf_reg': CATBOOST_PARAMS['l2_leaf_reg'],
+                'subsample': CATBOOST_PARAMS.get('subsample', 1.0),
+                'rsm': CATBOOST_PARAMS.get('rsm', 1.0),
+            },
+            'train_mae': train_metrics['MAE'],
+            'train_smape': train_metrics['sMAPE'],
+            'val_mae': val_metrics['MAE'],
+            'val_smape': val_metrics['sMAPE'],
             'test_mae': test_metrics['MAE'],
             'test_smape': test_metrics['sMAPE'],
             'test_mase': test_metrics['MASE'],
+            'overfit_ratio': overfit_ratio,
             'timestamp': datetime.now().isoformat(),
         }, f, indent=2)
     logger.info(f"  Saved features config: {features_path}")
@@ -362,8 +412,10 @@ def train_consumption_model():
 
     return {
         'model': model,
-        'test_metrics': test_metrics,
+        'train_metrics': train_metrics,
         'val_metrics': val_metrics,
+        'test_metrics': test_metrics,
+        'overfit_ratio': overfit_ratio,
         'features': data['feature_names'],
         'feature_importance': importance_df,
     }

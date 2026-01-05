@@ -1,26 +1,111 @@
 
 import React, { useState, useEffect } from 'react';
 import { ModelType, ComparisonData } from '../types';
-import { generateComparisonData } from '../services/mockData';
-import { ComparisonChart } from '../components/Charts';
-import { Card, Button } from '../components/ui';
-import { ArrowLeftRight, Calendar, TrendingUp, TrendingDown, Percent, Activity } from 'lucide-react';
+import { fetchComparisonData, fetchDayTypeComparison } from '../services/api';
+import { ComparisonChart, DayTypeComparisonChart } from '../components/Charts';
+import { Card, Button, Badge } from '../components/ui';
+import { ArrowLeftRight, Calendar, TrendingUp, TrendingDown, Percent, Activity, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+
+interface DayTypeData {
+    weekday: { label: string; value: number }[];
+    weekend: { label: string; value: number }[];
+    diffPercent: number;
+}
+
+// Helper to check if data is valid for rendering
+const isValidDayTypeData = (data: DayTypeData | null): data is DayTypeData => {
+    return data !== null &&
+           Array.isArray(data.weekday) &&
+           data.weekday.length > 0 &&
+           data.weekday.some(d => d.value > 0);
+};
 
 export const CompareView = ({ model }: { model: ModelType }) => {
     const { t } = useLanguage();
     const [data, setData] = useState<ComparisonData | null>(null);
+    const [dayTypeData, setDayTypeData] = useState<DayTypeData | null>(null);
+    const [dayTypeError, setDayTypeError] = useState<string | null>(null);
     const [preset, setPreset] = useState('day-over-day');
+    const [loading, setLoading] = useState(false);
+    const [dayTypeLoading, setDayTypeLoading] = useState(false);
 
     useEffect(() => {
-        // Fetch new data based on preset
-        const labelA = 'This Period';
-        const labelB = preset === 'day-over-day' ? 'Yesterday' 
-                     : preset === 'week-over-week' ? 'Last Week' 
-                     : 'Last Month';
-        
-        setData(generateComparisonData(model, labelA, labelB));
+        const loadData = async () => {
+            setLoading(true);
+            setDayTypeError(null);
+            try {
+                const now = new Date();
+                let periodA, periodB;
+
+                if (preset === 'day-over-day') {
+                    periodA = {
+                        start: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+                        end: now,
+                        label: 'Today'
+                    };
+                    periodB = {
+                        start: new Date(now.getTime() - 48 * 60 * 60 * 1000),
+                        end: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+                        label: 'Yesterday'
+                    };
+                } else if (preset === 'week-over-week') {
+                    periodA = {
+                        start: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+                        end: now,
+                        label: 'This Week'
+                    };
+                    periodB = {
+                        start: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
+                        end: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+                        label: 'Last Week'
+                    };
+                } else {
+                    periodA = {
+                        start: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+                        end: now,
+                        label: 'This Month'
+                    };
+                    periodB = {
+                        start: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+                        end: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+                        label: 'Last Month'
+                    };
+                }
+
+                // Load comparison data first (faster)
+                const comparisonResult = await fetchComparisonData(model, periodA, periodB);
+                setData(comparisonResult);
+                setLoading(false);
+
+                // Load day type data separately with its own loading state
+                setDayTypeLoading(true);
+                try {
+                    const dayTypeResult = await fetchDayTypeComparison(model, 30);
+                    console.log('Day type data loaded:', dayTypeResult);
+                    setDayTypeData(dayTypeResult);
+                } catch (dayTypeErr) {
+                    console.error('Failed to fetch day type data:', dayTypeErr);
+                    setDayTypeError(dayTypeErr instanceof Error ? dayTypeErr.message : 'Failed to load day type data');
+                }
+                setDayTypeLoading(false);
+
+            } catch (error) {
+                console.error('Failed to fetch comparison data:', error);
+                setLoading(false);
+            }
+        };
+
+        loadData();
     }, [model, preset]);
+
+    if (loading && !data) {
+        return (
+            <div className="p-10 flex justify-center h-full items-center">
+                <RefreshCw className="animate-spin text-primary-500 w-10 h-10" />
+            </div>
+        );
+    }
 
     if (!data) return null;
 
@@ -119,11 +204,38 @@ export const CompareView = ({ model }: { model: ModelType }) => {
 
             <div className="grid md:grid-cols-2 gap-6">
                 <Card className="p-6">
-                    <h4 className="font-semibold text-slate-900 dark:text-white mb-4">{t('compare.dayType')}</h4>
-                    <p className="text-sm text-slate-500 mb-4">Comparing typical weekday profiles vs weekend profiles shows a 15% drop in consumption.</p>
-                    <div className="h-40 bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-200 dark:border-slate-700">
-                        <span className="text-slate-400 text-sm">Pattern Chart Placeholder</span>
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-slate-900 dark:text-white">{t('compare.dayType')}</h4>
+                        {isValidDayTypeData(dayTypeData) && (
+                            <Badge color={dayTypeData.diffPercent > 0 ? 'green' : 'blue'}>
+                                {dayTypeData.diffPercent > 0 ? '+' : ''}{dayTypeData.diffPercent.toFixed(1)}% weekday
+                            </Badge>
+                        )}
                     </div>
+                    <p className="text-sm text-slate-500 mb-4">
+                        {isValidDayTypeData(dayTypeData)
+                            ? `Weekday average is ${Math.abs(dayTypeData.diffPercent).toFixed(1)}% ${dayTypeData.diffPercent > 0 ? 'higher' : 'lower'} than weekend average.`
+                            : dayTypeError
+                            ? 'Failed to load day type comparison data.'
+                            : 'Comparing typical weekday profiles vs weekend profiles.'
+                        }
+                    </p>
+                    {dayTypeLoading ? (
+                        <div className="h-40 bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-200 dark:border-slate-700">
+                            <RefreshCw className="animate-spin text-slate-400" size={20} />
+                        </div>
+                    ) : dayTypeError ? (
+                        <div className="h-40 bg-red-50 dark:bg-red-900/20 rounded-lg flex flex-col items-center justify-center border border-dashed border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
+                            <p className="text-sm font-medium">Error loading data</p>
+                            <p className="text-xs mt-1">{dayTypeError}</p>
+                        </div>
+                    ) : isValidDayTypeData(dayTypeData) ? (
+                        <DayTypeComparisonChart data={dayTypeData} />
+                    ) : (
+                        <div className="h-40 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center border border-dashed border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400">
+                            <p className="text-sm">No pattern data available for this period</p>
+                        </div>
+                    )}
                 </Card>
                 <Card className="p-6">
                     <h4 className="font-semibold text-slate-900 dark:text-white mb-4">{t('compare.stats')}</h4>

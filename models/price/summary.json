@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-02T06:15:53.983134",
+  "timestamp": "2026-01-05T01:02:05.828079",
   "baseline_smape": 11.89,
   "oracle_floor": 11.75,
   "final_smape": 11.631578556090123,
@@ -18,7 +18,7 @@
       "Method": "B_KNN_EC",
       "Global_sMAPE": 11.93690773495763,
       "H910_sMAPE": 26.07079259633854,
-      "H910_Bias": 6.716425254226279,
+      "H910_Bias": 6.716425254226278,
       "Beat_Baseline": "False",
       "Beat_Oracle": "False"
     },
@@ -39,6 +39,18 @@
       "Beat_Oracle": "False"
     }
   ],
+  "cross_validation": {
+    "n_splits": 5,
+    "cv_mean_ensemble": 22.102889657979446,
+    "cv_std_ensemble": 14.80509003895445,
+    "cv_scores": [
+      6.050301481624917,
+      37.44252464068023,
+      42.37548286609673,
+      11.733293160837382,
+      12.912846140657978
+    ]
+  },
   "knn_params": {
     "k": 5,
     "lookback_days": 45,

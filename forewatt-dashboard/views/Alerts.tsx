@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
-import { generateAlertHistory } from '../services/mockData';
+import React, { useState, useEffect } from 'react';
+import { checkAlertThresholds, fetchDataStatus } from '../services/api';
+import { Alert } from '../types';
 import { Card, Button, Toggle, Badge } from '../components/ui';
-import { 
-    Bell, AlertTriangle, CheckCircle, Info, Trash2, 
-    TrendingUp, TrendingDown, Activity, Zap, BarChart3, 
-    Edit2, Save, X
+import {
+    Bell, AlertTriangle, CheckCircle, Info, Trash2,
+    TrendingUp, TrendingDown, Activity, Zap, BarChart3,
+    Edit2, Save, X, RefreshCw, Database
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -18,15 +19,18 @@ interface AlertConfig {
     unit: string;
     condition: 'above' | 'below';
     severity: 'critical' | 'warning' | 'info';
+    model: 'price' | 'consumption';
     icon: any;
 }
 
 export const AlertsView = () => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'history' | 'config'>('config');
-    const [alerts, setAlerts] = useState(generateAlertHistory());
+    const [alerts, setAlerts] = useState<Alert[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [dataStatus, setDataStatus] = useState<{ lastDate: string | null }>({ lastDate: null });
     
-    // Config State
+    // Config State - with model field for actual data checking
     const [configs, setConfigs] = useState<AlertConfig[]>([
         {
             id: 'price-high',
@@ -37,6 +41,7 @@ export const AlertsView = () => {
             unit: 'TL/MWh',
             condition: 'above',
             severity: 'critical',
+            model: 'price',
             icon: TrendingUp
         },
         {
@@ -48,6 +53,7 @@ export const AlertsView = () => {
             unit: 'TL/MWh',
             condition: 'below',
             severity: 'warning',
+            model: 'price',
             icon: TrendingDown
         },
         {
@@ -59,31 +65,55 @@ export const AlertsView = () => {
             unit: 'MWh',
             condition: 'above',
             severity: 'critical',
+            model: 'consumption',
             icon: Zap
         },
         {
-            id: 'forecast-dev',
-            title: 'Forecast Deviation',
-            description: 'Alerts when real-time actuals deviate significantly from the forecasted values.',
-            enabled: true,
-            threshold: 15,
-            unit: '%',
-            condition: 'above',
+            id: 'consumption-low',
+            title: 'Low Consumption',
+            description: 'Triggered when consumption drops below expected minimum levels.',
+            enabled: false,
+            threshold: 25000,
+            unit: 'MWh',
+            condition: 'below',
             severity: 'warning',
-            icon: Activity
-        },
-        {
-            id: 'anomaly-score',
-            title: 'High Anomaly Score',
-            description: 'Notifies when the unsupervised model detects a high-confidence anomaly.',
-            enabled: true,
-            threshold: 0.85,
-            unit: 'Score',
-            condition: 'above',
-            severity: 'info',
-            icon: AlertTriangle
+            model: 'consumption',
+            icon: TrendingDown
         }
     ]);
+
+    // Load data status and check alerts on mount
+    useEffect(() => {
+        const loadDataStatus = async () => {
+            try {
+                const status = await fetchDataStatus();
+                setDataStatus({ lastDate: status.last_timestamp });
+            } catch (err) {
+                console.warn('Failed to fetch data status:', err);
+            }
+        };
+        loadDataStatus();
+    }, []);
+
+    // Check alerts against real data
+    const checkAlerts = async () => {
+        setLoading(true);
+        try {
+            const triggeredAlerts = await checkAlertThresholds(configs);
+            // Limit to most recent 50 alerts to avoid UI overload
+            setAlerts(triggeredAlerts.slice(0, 50));
+        } catch (err) {
+            console.error('Failed to check alerts:', err);
+        }
+        setLoading(false);
+    };
+
+    // Auto-check alerts when configs change or on mount
+    useEffect(() => {
+        if (activeTab === 'history') {
+            checkAlerts();
+        }
+    }, [activeTab]);
 
     // Editing State for Thresholds
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -243,8 +273,30 @@ export const AlertsView = () => {
                 </div>
             ) : (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    {/* Data Status & Refresh */}
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                            <Database size={16} />
+                            <span>
+                                Checking alerts against data up to:{' '}
+                                <span className="font-mono font-medium text-slate-900 dark:text-white">
+                                    {dataStatus.lastDate ? new Date(dataStatus.lastDate).toLocaleDateString() : 'Loading...'}
+                                </span>
+                            </span>
+                        </div>
+                        <Button variant="outline" onClick={checkAlerts} disabled={loading} className="h-8 text-xs">
+                            <RefreshCw size={14} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+                            {loading ? 'Checking...' : 'Refresh Alerts'}
+                        </Button>
+                    </div>
                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {alerts.length > 0 ? (
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-24 text-slate-400">
+                                <RefreshCw size={48} className="mb-4 text-primary-500 animate-spin" />
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Checking Alerts...</h3>
+                                <p>Analyzing data against configured thresholds</p>
+                            </div>
+                        ) : alerts.length > 0 ? (
                             alerts.map(alert => (
                                 <div key={alert.id} className={`p-6 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 flex flex-col md:flex-row gap-4 md:items-center justify-between ${!alert.read ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''}`}>
                                     <div className="flex items-start gap-4">
@@ -284,9 +336,10 @@ export const AlertsView = () => {
                             ))
                         ) : (
                             <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-                                <CheckCircle size={64} className="mb-4 text-slate-200 dark:text-slate-800" />
+                                <CheckCircle size={64} className="mb-4 text-green-200 dark:text-green-800" />
                                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">{t('alerts.allCaughtUp')}</h3>
                                 <p>{t('alerts.noAlerts')}</p>
+                                <p className="text-xs mt-2">No alerts triggered based on current thresholds</p>
                             </div>
                         )}
                     </div>

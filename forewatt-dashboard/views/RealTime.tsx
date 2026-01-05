@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { ModelType, RealTimeData } from '../types';
-import { generateRealTimeData, generateSmartSummary } from '../services/mockData';
+import { fetchRealTimeData, generateSmartSummary } from '../services/api';
 import { RealTimeChart } from '../components/Charts';
 import { Card, Button, Toggle, Badge } from '../components/ui';
-import { RefreshCw, Download, Copy, AlertCircle, Clock, Sparkles } from 'lucide-react';
+import { RefreshCw, Download, Copy, AlertCircle, Clock, Sparkles, WifiOff } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface Props {
@@ -16,21 +16,27 @@ export const RealTimeView: React.FC<Props> = ({ model, onDataUpdate }) => {
   const { t } = useLanguage();
   const [data, setData] = useState<RealTimeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCI, setShowCI] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [summary, setSummary] = useState('');
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    // Simulate API delay
-    setTimeout(() => {
-      const newData = generateRealTimeData(model);
+    setError(null);
+    try {
+      // Backend now returns 12 hours of real EPIAS actuals + 12 hours of forecasts
+      const newData = await fetchRealTimeData(model);
+
       setData(newData);
-      setSummary(generateSmartSummary(newData));
+      setSummary(await generateSmartSummary(newData));
       onDataUpdate(newData);
-      setLastRefreshed(new Date());
-      setLoading(false);
-    }, 800);
+    } catch (err) {
+      console.error('API error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+    }
+    setLastRefreshed(new Date());
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -39,11 +45,28 @@ export const RealTimeView: React.FC<Props> = ({ model, onDataUpdate }) => {
     return () => clearInterval(interval);
   }, [model]);
 
-  if (!data) return <div className="p-10 flex justify-center h-full items-center"><RefreshCw className="animate-spin text-primary-500 w-10 h-10" /></div>;
+  if (loading && !data) {
+    return <div className="p-10 flex justify-center h-full items-center"><RefreshCw className="animate-spin text-primary-500 w-10 h-10" /></div>;
+  }
+
+  if (error && !data) {
+    return (
+      <div className="p-10 flex flex-col justify-center h-full items-center gap-4">
+        <WifiOff className="text-red-500 w-12 h-12" />
+        <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
+        <Button onClick={fetchData} disabled={loading}>
+          <RefreshCw size={16} className={loading ? 'animate-spin mr-2' : 'mr-2'} />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      
+
       {/* AI Summary Card */}
       <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 border-indigo-100 dark:border-indigo-900/50 p-5 flex items-start gap-4 shadow-sm">
          <div className="p-2 bg-white dark:bg-indigo-900/50 rounded-lg shadow-sm text-indigo-500">

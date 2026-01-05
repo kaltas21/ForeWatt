@@ -53,13 +53,15 @@ export interface AnomalyData {
 }
 
 export interface HistoricalData {
-    data: {timestamp: string; actual: number; forecast: number}[];
+    data: {timestamp: string; actual: number; forecast: number | null}[];
     statistics: {
         mean: number;
         median: number;
         std: number;
         min: number;
         max: number;
+        mape?: number;  // Mean Absolute Percentage Error (if forecasts exist)
+        forecastCount?: number;  // Number of data points with forecasts
     }
 }
 

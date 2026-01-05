@@ -165,11 +165,22 @@ class ForecastStorage:
         for file_path in parquet_files:
             df = pd.read_parquet(file_path)
 
+            # Convert categorical columns to string to avoid concat issues
+            for col in df.columns:
+                if pd.api.types.is_categorical_dtype(df[col]):
+                    df[col] = df[col].astype(str)
+
             # Convert to datetime if needed
             if not pd.api.types.is_datetime64_any_dtype(df['forecast_time']):
                 df['forecast_time'] = pd.to_datetime(df['forecast_time'])
             if not pd.api.types.is_datetime64_any_dtype(df['target_time']):
                 df['target_time'] = pd.to_datetime(df['target_time'])
+
+            # Make timezone-naive for comparison (remove UTC info)
+            if df['forecast_time'].dt.tz is not None:
+                df['forecast_time'] = df['forecast_time'].dt.tz_localize(None)
+            if df['target_time'].dt.tz is not None:
+                df['target_time'] = df['target_time'].dt.tz_localize(None)
 
             # Apply date filters
             if start_date is not None:

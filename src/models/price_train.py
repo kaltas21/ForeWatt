@@ -36,6 +36,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import TimeSeriesSplit
 
 warnings.filterwarnings('ignore')
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
@@ -66,6 +67,9 @@ LIGHTGBM_WEIGHT = 0.413
 # KNN Parameters
 KNN_K = 5
 KNN_LOOKBACK_DAYS = 45
+
+# Cross-Validation Parameters
+CV_N_SPLITS = 5  # Number of time-series CV folds
 
 # Context features for similarity
 CONTEXT_FEATURES = ['load_factor', 'renewable_saturation', 'thermal_gap']
@@ -396,6 +400,93 @@ def train_lightgbm_transfer(data: Dict) -> Tuple[object, np.ndarray, np.ndarray]
 
 
 # =============================================================================
+# CROSS-VALIDATION TRAINING
+# =============================================================================
+
+def train_with_cv(X: pd.DataFrame, y: pd.Series, n_splits: int = 5) -> Dict:
+    """
+    Train models using TimeSeriesSplit cross-validation for better generalization.
+
+    Returns CV scores and final models trained on all data.
+    """
+    from catboost import CatBoostRegressor
+    import lightgbm as lgb
+
+    logger.info(f"\n  Training with {n_splits}-fold TimeSeriesSplit CV...")
+
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+
+    cv_scores_cat = []
+    cv_scores_lgb = []
+    cv_scores_ensemble = []
+
+    for fold, (train_idx, val_idx) in enumerate(tscv.split(X)):
+        X_tr, X_val = X.iloc[train_idx], X.iloc[val_idx]
+        y_tr, y_val = y.iloc[train_idx], y.iloc[val_idx]
+
+        # CatBoost
+        cat_model = CatBoostRegressor(
+            loss_function='MAE',
+            iterations=1500,
+            depth=7,  # Reduced from 8 for less overfitting
+            learning_rate=0.02,
+            l2_leaf_reg=5,  # Increased regularization
+            random_state=42,
+            verbose=False,
+            early_stopping_rounds=100,
+        )
+        cat_model.fit(X_tr, y_tr, eval_set=(X_val, y_val), verbose=False)
+        cat_pred = cat_model.predict(X_val)
+        cat_smape = 100 * np.mean(2 * np.abs(y_val - cat_pred) / (np.abs(y_val) + np.abs(cat_pred) + 1e-8))
+        cv_scores_cat.append(cat_smape)
+
+        # LightGBM
+        lgb_model = lgb.LGBMRegressor(
+            objective='mae',
+            n_estimators=1500,
+            max_depth=7,  # Reduced from 8
+            learning_rate=0.02,
+            num_leaves=63,  # Reduced from 127
+            subsample=0.8,  # More regularization
+            colsample_bytree=0.8,
+            reg_lambda=5.0,  # L2 regularization
+            random_state=42,
+            verbosity=-1,
+        )
+        lgb_model.fit(
+            X_tr, y_tr,
+            eval_set=[(X_val, y_val)],
+            callbacks=[lgb.early_stopping(100, verbose=False)]
+        )
+        lgb_pred = lgb_model.predict(X_val)
+        lgb_smape = 100 * np.mean(2 * np.abs(y_val - lgb_pred) / (np.abs(y_val) + np.abs(lgb_pred) + 1e-8))
+        cv_scores_lgb.append(lgb_smape)
+
+        # Ensemble
+        total_w = CATBOOST_WEIGHT + LIGHTGBM_WEIGHT
+        ens_pred = (CATBOOST_WEIGHT * cat_pred + LIGHTGBM_WEIGHT * lgb_pred) / total_w
+        ens_smape = 100 * np.mean(2 * np.abs(y_val - ens_pred) / (np.abs(y_val) + np.abs(ens_pred) + 1e-8))
+        cv_scores_ensemble.append(ens_smape)
+
+        logger.info(f"    Fold {fold+1}: CatBoost={cat_smape:.2f}%, LightGBM={lgb_smape:.2f}%, Ensemble={ens_smape:.2f}%")
+
+    logger.info(f"\n  CV Results:")
+    logger.info(f"    CatBoost:  {np.mean(cv_scores_cat):.2f}% (+/- {np.std(cv_scores_cat):.2f}%)")
+    logger.info(f"    LightGBM:  {np.mean(cv_scores_lgb):.2f}% (+/- {np.std(cv_scores_lgb):.2f}%)")
+    logger.info(f"    Ensemble:  {np.mean(cv_scores_ensemble):.2f}% (+/- {np.std(cv_scores_ensemble):.2f}%)")
+
+    return {
+        'cv_scores_catboost': cv_scores_cat,
+        'cv_scores_lightgbm': cv_scores_lgb,
+        'cv_scores_ensemble': cv_scores_ensemble,
+        'mean_catboost': np.mean(cv_scores_cat),
+        'mean_lightgbm': np.mean(cv_scores_lgb),
+        'mean_ensemble': np.mean(cv_scores_ensemble),
+        'std_ensemble': np.std(cv_scores_ensemble),
+    }
+
+
+# =============================================================================
 # SIMPLE AEC (V13 Baseline)
 # =============================================================================
 
@@ -518,14 +609,26 @@ def train_price_model():
     logger.info("="*70)
 
     # =========================================================================
-    # STEP 1: LOAD DATA AND TRAIN ENSEMBLE
+    # STEP 0: CROSS-VALIDATION FOR ROBUST ESTIMATION
     # =========================================================================
     logger.info("\n" + "="*70)
-    logger.info("STEP 1: TRAINING ENSEMBLE MODELS")
+    logger.info("STEP 0: CROSS-VALIDATION (TimeSeriesSplit)")
     logger.info("="*70)
 
     df = load_data()
     data = prepare_data(df, BASE_FEATURES)
+
+    # Run CV on base+finetune data to get robust error estimates
+    X_cv = pd.concat([data['X_base'], data['X_finetune']])
+    y_cv = pd.concat([data['y_base'], data['y_finetune']])
+    cv_results = train_with_cv(X_cv, y_cv, n_splits=CV_N_SPLITS)
+
+    # =========================================================================
+    # STEP 1: LOAD DATA AND TRAIN ENSEMBLE
+    # =========================================================================
+    logger.info("\n" + "="*70)
+    logger.info("STEP 1: TRAINING ENSEMBLE MODELS (Transfer Learning)")
+    logger.info("="*70)
 
     logger.info(f"\n  DATA SPLITS:")
     logger.info(f"    Base:      {len(data['X_base']):,} rows")
@@ -735,6 +838,12 @@ def train_price_model():
         'best_method': best_name,
         'beat_oracle': best_method['Beat_Oracle'],
         'comparison': comparison,
+        'cross_validation': {
+            'n_splits': CV_N_SPLITS,
+            'cv_mean_ensemble': float(cv_results['mean_ensemble']),
+            'cv_std_ensemble': float(cv_results['std_ensemble']),
+            'cv_scores': [float(s) for s in cv_results['cv_scores_ensemble']],
+        },
         'knn_params': {
             'k': KNN_K,
             'lookback_days': KNN_LOOKBACK_DAYS,
