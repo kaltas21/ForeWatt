@@ -1,0 +1,66 @@
+{
+  "experiment_name": "features_price_lags_only",
+  "timestamp": "2026-01-18T05:37:34.172263",
+  "config": {
+    "model_type": "ensemble",
+    "correction": "hybrid",
+    "catboost_weight": 0.658,
+    "lightgbm_weight": 0.413
+  },
+  "data": {
+    "n_base": "34155",
+    "n_finetune": "4392",
+    "n_test": "12429",
+    "n_features": 14,
+    "features": [
+      "price_ptf_rolling_std_24h",
+      "price_ptf_rolling_mean_24h",
+      "price_ptf_rolling_min_24h",
+      "price_ptf_rolling_max_24h",
+      "price_ptf_lag_24h",
+      "price_ptf_lag_168h",
+      "price_volatility_lag24h",
+      "realtime_premium_lag24h",
+      "daily_avg_price",
+      "hourly_ratio",
+      "profile_14d",
+      "profile_28d",
+      "profile_momentum",
+      "daily_avg_momentum"
+    ]
+  },
+  "metrics": {
+    "raw": {
+      "MAE": 62.18958320800402,
+      "RMSE": 87.21728857752753,
+      "MAPE": 39.89689714000973,
+      "sMAPE": 14.251182552613331,
+      "MBE": -11.422624794056084,
+      "R2": 0.7938015791279599,
+      "MaxError": 552.5137842493311,
+      "MedianAE": 43.47327847497468,
+      "MASE": 0.4593321839021998,
+      "Error_P10": 7.945207296254308,
+      "Error_P50": 43.47327847497468,
+      "Error_P90": 141.05288681547572,
+      "Error_P95": 188.39941015520276,
+      "Error_P99": 285.9602371834014
+    },
+    "final": {
+      "MAE": 57.78949010715578,
+      "RMSE": 82.13601984871701,
+      "MAPE": 41.37281545010657,
+      "sMAPE": 13.505339687217893,
+      "MBE": -7.80082427092012,
+      "R2": 0.8171278879846798,
+      "MaxError": 533.7595859376645,
+      "MedianAE": 39.28270118068667,
+      "MASE": 0.426833101754862,
+      "Error_P10": 7.091052959291439,
+      "Error_P50": 39.28270118068667,
+      "Error_P90": 132.8928142282278,
+      "Error_P95": 177.4037187172229,
+      "Error_P99": 274.5679989674075
+    }
+  }
+}

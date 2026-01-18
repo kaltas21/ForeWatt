@@ -1,0 +1,72 @@
+{
+  "run_session_id": "20251127_092842",
+  "timestamp": "2025-11-27T11:08:55.919665",
+  "total_successful": 90,
+  "total_failed": 0,
+  "total_time_seconds": 6013.194090127945,
+  "total_time_hours": 1.6703316917022069,
+  "targets": [
+    "price_real",
+    "consumption"
+  ],
+  "results_file": "/root/ForeWatt/reports/new_experiment/deeplearning/results.csv",
+  "logs_dir": "/root/ForeWatt/reports/new_experiment/deeplearning/logs",
+  "metrics_dir": "/root/ForeWatt/reports/new_experiment/deeplearning/metrics",
+  "mlruns_dir": "/root/ForeWatt/reports/new_experiment/deeplearning/mlruns",
+  "best_results": {
+    "price_real": {
+      "overall": {
+        "model_type": "nhits",
+        "config_hash": "9626ebea245b",
+        "test_smape": 16.01158432349266,
+        "test_mae": 108.79625149008616,
+        "test_mase": 0.6726970325949955
+      },
+      "patchtst": {
+        "config_hash": "7a7302103a64",
+        "test_smape": 17.17451759506207,
+        "test_mae": 116.01752437759468,
+        "test_mase": 0.7173468139657104
+      },
+      "nhits": {
+        "config_hash": "9626ebea245b",
+        "test_smape": 16.01158432349266,
+        "test_mae": 108.79625149008616,
+        "test_mase": 0.6726970325949955
+      },
+      "tft": {
+        "config_hash": "3ae35a039d01",
+        "test_smape": 16.792977849581412,
+        "test_mae": 111.1731454581389,
+        "test_mase": 0.6873935823124986
+      }
+    },
+    "consumption": {
+      "overall": {
+        "model_type": "tft",
+        "config_hash": "75f7ce48a647",
+        "test_smape": 11.070055009191176,
+        "test_mae": 4451.097639973958,
+        "test_mase": 2.33284352721386
+      },
+      "patchtst": {
+        "config_hash": "64090c1d42b7",
+        "test_smape": 12.400659990016168,
+        "test_mae": 5015.24509765625,
+        "test_mase": 2.628516157090384
+      },
+      "nhits": {
+        "config_hash": "cc0890a7ae6e",
+        "test_smape": 12.21692309192337,
+        "test_mae": 4945.176650390626,
+        "test_mase": 2.591792917816196
+      },
+      "tft": {
+        "config_hash": "75f7ce48a647",
+        "test_smape": 11.070055009191176,
+        "test_mae": 4451.097639973958,
+        "test_mase": 2.33284352721386
+      }
+    }
+  }
+}

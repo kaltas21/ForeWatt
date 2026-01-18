@@ -1,0 +1,103 @@
+{
+  "experiment_name": "features_all",
+  "timestamp": "2026-01-18T04:07:46.978513",
+  "data": {
+    "n_train": 40823,
+    "n_val": 7204,
+    "n_test": 2949,
+    "n_features": 23,
+    "features": [
+      "consumption_lag_24h",
+      "consumption_lag_48h",
+      "consumption_lag_168h",
+      "consumption_rolling_mean_24h",
+      "consumption_rolling_std_24h",
+      "temp_national",
+      "humidity_national",
+      "HDD",
+      "CDD",
+      "heat_index",
+      "is_hot",
+      "is_cold",
+      "temp_lag_24h",
+      "hour_sin",
+      "hour_cos",
+      "dow_sin_x",
+      "dow_cos_x",
+      "month_sin",
+      "month_cos",
+      "is_weekend_x",
+      "is_holiday_day",
+      "is_holiday_hour",
+      "price_ptf_lag_24h"
+    ]
+  },
+  "training": {
+    "best_iteration": 999,
+    "tree_count": 1000,
+    "params": {
+      "iterations": 1000,
+      "depth": 5,
+      "learning_rate": 0.03,
+      "l2_leaf_reg": 15.0,
+      "border_count": 128,
+      "random_seed": 42,
+      "loss_function": "RMSE",
+      "eval_metric": "MAE",
+      "early_stopping_rounds": 50,
+      "subsample": 0.8,
+      "rsm": 0.8
+    }
+  },
+  "metrics": {
+    "train": {
+      "MAE": 518.802529443027,
+      "RMSE": 748.9507392682584,
+      "MAPE": 1.46645969130089,
+      "sMAPE": 1.46086403423463,
+      "MBE": 0.20601030240332224,
+      "R2": 0.9853489334684977,
+      "MaxError": 9174.153251574258,
+      "MedianAE": 371.17267610066483,
+      "MASE": 0.4751314535365583,
+      "Error_P10": 67.23097421039274,
+      "Error_P50": 371.17267610066483,
+      "Error_P90": 1116.8186240546277,
+      "Error_P95": 1482.2337756227519,
+      "Error_P99": 2547.012134482964
+    },
+    "val": {
+      "MAE": 706.0881551738331,
+      "RMSE": 1037.6727062137502,
+      "MAPE": 1.8630124459605404,
+      "sMAPE": 1.861265624353318,
+      "MBE": -104.00986811913991,
+      "R2": 0.9669122016663674,
+      "MaxError": 8454.975248980889,
+      "MedianAE": 487.3129479085874,
+      "MASE": 0.646651996575379,
+      "Error_P10": 86.20710788007673,
+      "Error_P50": 487.3129479085874,
+      "Error_P90": 1555.888313141508,
+      "Error_P95": 2075.5801952856455,
+      "Error_P99": 3553.7285912178822
+    },
+    "test": {
+      "MAE": 709.9892211826519,
+      "RMSE": 936.9878602069238,
+      "MAPE": 1.6063332433875155,
+      "sMAPE": 1.615013983626027,
+      "MBE": -302.956727636107,
+      "R2": 0.9827131302033909,
+      "MaxError": 4185.955620101682,
+      "MedianAE": 555.3041486047659,
+      "MASE": 0.6502246837885698,
+      "Error_P10": 99.30670702549688,
+      "Error_P50": 555.3041486047659,
+      "Error_P90": 1516.754883335069,
+      "Error_P95": 1886.3451174202323,
+      "Error_P99": 2874.8311007068296
+    }
+  },
+  "overfitting_ratio": 1.1055197101023564
+}

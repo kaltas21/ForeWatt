@@ -1,0 +1,63 @@
+{
+  "experiment_name": "features_calendar_only",
+  "timestamp": "2026-01-18T04:18:59.376978",
+  "config": {
+    "model_type": "ensemble",
+    "correction": "hybrid",
+    "catboost_weight": 0.658,
+    "lightgbm_weight": 0.413
+  },
+  "data": {
+    "n_base": "43839",
+    "n_finetune": "4344",
+    "n_test": "2949",
+    "n_features": 11,
+    "features": [
+      "hour_sin",
+      "hour_cos",
+      "dow_sin_x",
+      "dow_cos_x",
+      "is_weekend_x",
+      "daily_avg_price",
+      "hourly_ratio",
+      "profile_14d",
+      "profile_28d",
+      "profile_momentum",
+      "daily_avg_momentum"
+    ]
+  },
+  "metrics": {
+    "raw": {
+      "MAE": 52.90650394989366,
+      "RMSE": 79.67636906460856,
+      "MAPE": 42.96538781821989,
+      "sMAPE": 11.989999987522669,
+      "MBE": 3.5921708973968234,
+      "R2": 0.7842526141715123,
+      "MaxError": 512.0008764875681,
+      "MedianAE": 32.56191545620868,
+      "MASE": 0.3043194333624795,
+      "Error_P10": 5.4086689018802305,
+      "Error_P50": 32.56191545620868,
+      "Error_P90": 126.4493614745463,
+      "Error_P95": 176.46264113161297,
+      "Error_P99": 283.37529449296886
+    },
+    "final": {
+      "MAE": 48.68298016607269,
+      "RMSE": 73.98634479665613,
+      "MAPE": 40.80279797992708,
+      "sMAPE": 11.427542657216792,
+      "MBE": 2.3440886510192884,
+      "R2": 0.8139671595878296,
+      "MaxError": 504.36730264870613,
+      "MedianAE": 29.085115060795374,
+      "MASE": 0.2800256269544313,
+      "Error_P10": 4.928132416610129,
+      "Error_P50": 29.085115060795374,
+      "Error_P90": 115.01841376579213,
+      "Error_P95": 162.76426495530046,
+      "Error_P99": 262.89402782735027
+    }
+  }
+}

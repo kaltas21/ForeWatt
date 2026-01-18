@@ -1,0 +1,94 @@
+{
+  "experiment_name": "features_lag_calendar",
+  "timestamp": "2026-01-18T05:33:49.958787",
+  "data": {
+    "n_train": 32765,
+    "n_val": 5782,
+    "n_test": 12429,
+    "n_features": 14,
+    "features": [
+      "consumption_lag_24h",
+      "consumption_lag_48h",
+      "consumption_lag_168h",
+      "consumption_rolling_mean_24h",
+      "consumption_rolling_std_24h",
+      "hour_sin",
+      "hour_cos",
+      "dow_sin_x",
+      "dow_cos_x",
+      "month_sin",
+      "month_cos",
+      "is_weekend_x",
+      "is_holiday_day",
+      "is_holiday_hour"
+    ]
+  },
+  "training": {
+    "best_iteration": 999,
+    "tree_count": 1000,
+    "params": {
+      "iterations": 1000,
+      "depth": 5,
+      "learning_rate": 0.03,
+      "l2_leaf_reg": 15.0,
+      "border_count": 128,
+      "random_seed": 42,
+      "loss_function": "RMSE",
+      "eval_metric": "MAE",
+      "early_stopping_rounds": 50,
+      "subsample": 0.8,
+      "rsm": 0.8
+    }
+  },
+  "metrics": {
+    "train": {
+      "MAE": 522.3264507328239,
+      "RMSE": 753.2760142648606,
+      "MAPE": 1.4869004434646163,
+      "sMAPE": 1.481550475382829,
+      "MBE": 0.17205679214214015,
+      "R2": 0.9841828762545312,
+      "MaxError": 8748.412308981191,
+      "MedianAE": 369.76531715241435,
+      "MASE": 0.491187579918664,
+      "Error_P10": 66.74566397017189,
+      "Error_P50": 369.76531715241435,
+      "Error_P90": 1136.489161576037,
+      "Error_P95": 1511.342894747428,
+      "Error_P99": 2539.345613887492
+    },
+    "val": {
+      "MAE": 603.4445042941758,
+      "RMSE": 874.6802396124377,
+      "MAPE": 1.6793385082515246,
+      "sMAPE": 1.6733970018073112,
+      "MBE": 3.4480229505361137,
+      "R2": 0.971758566691046,
+      "MaxError": 7053.6351470563495,
+      "MedianAE": 428.66932077591446,
+      "MASE": 0.5674697217872438,
+      "Error_P10": 77.4830420596707,
+      "Error_P50": 428.66932077591446,
+      "Error_P90": 1306.2255182204206,
+      "Error_P95": 1705.0858922749276,
+      "Error_P99": 3086.69258203732
+    },
+    "test": {
+      "MAE": 799.2249254036823,
+      "RMSE": 1176.3026062416643,
+      "MAPE": 1.9574249655135454,
+      "sMAPE": 1.9586872316604993,
+      "MBE": -104.09376078873072,
+      "R2": 0.9695451294238477,
+      "MaxError": 8717.568017929636,
+      "MedianAE": 541.1303150527019,
+      "MASE": 0.7515785508639946,
+      "Error_P10": 91.22736311668852,
+      "Error_P50": 541.1303150527019,
+      "Error_P90": 1795.8574281324352,
+      "Error_P95": 2457.392351271034,
+      "Error_P99": 4293.852709213495
+    }
+  },
+  "overfitting_ratio": 1.322052312226743
+}

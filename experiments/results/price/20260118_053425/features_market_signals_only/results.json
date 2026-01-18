@@ -1,0 +1,67 @@
+{
+  "experiment_name": "features_market_signals_only",
+  "timestamp": "2026-01-18T05:38:02.714360",
+  "config": {
+    "model_type": "ensemble",
+    "correction": "hybrid",
+    "catboost_weight": 0.658,
+    "lightgbm_weight": 0.413
+  },
+  "data": {
+    "n_base": "34272",
+    "n_finetune": "4392",
+    "n_test": "12429",
+    "n_features": 15,
+    "features": [
+      "thermal_gap",
+      "thermal_gap_lag_24h",
+      "renewable_saturation",
+      "spark_spread_proxy_lag_24h",
+      "system_short_signal",
+      "load_factor",
+      "consumption_forecast",
+      "reserve_margin_ratio",
+      "daily_avg_price",
+      "hourly_ratio",
+      "profile_14d",
+      "profile_28d",
+      "profile_momentum",
+      "daily_avg_momentum",
+      "solar_ratio"
+    ]
+  },
+  "metrics": {
+    "raw": {
+      "MAE": 70.21130962979244,
+      "RMSE": 98.32903192215336,
+      "MAPE": 104.33143922607799,
+      "sMAPE": 15.198264475754428,
+      "MBE": 35.35129428489263,
+      "R2": 0.7379140742463,
+      "MaxError": 589.3220193256391,
+      "MedianAE": 48.72418695781869,
+      "MASE": 0.4543216766513872,
+      "Error_P10": 9.351023901622126,
+      "Error_P50": 48.72418695781869,
+      "Error_P90": 162.4321977149779,
+      "Error_P95": 216.95116300815698,
+      "Error_P99": 322.46229558586856
+    },
+    "final": {
+      "MAE": 54.70411769713551,
+      "RMSE": 77.17803606366414,
+      "MAPE": 61.79402912315351,
+      "sMAPE": 12.842217776841025,
+      "MBE": 12.805445181671184,
+      "R2": 0.8385390071753438,
+      "MaxError": 550.1527781749521,
+      "MedianAE": 37.09940027440973,
+      "MASE": 0.3539781069879311,
+      "Error_P10": 6.967388809346176,
+      "Error_P50": 37.09940027440973,
+      "Error_P90": 126.00443768812964,
+      "Error_P95": 166.75910966731269,
+      "Error_P99": 249.21373192769437
+    }
+  }
+}

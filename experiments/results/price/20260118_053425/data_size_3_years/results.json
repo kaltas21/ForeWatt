@@ -1,0 +1,80 @@
+{
+  "experiment_name": "data_size_3_years",
+  "timestamp": "2026-01-18T05:35:42.727939",
+  "config": {
+    "model_type": "ensemble",
+    "correction": "hybrid",
+    "catboost_weight": 0.658,
+    "lightgbm_weight": 0.413
+  },
+  "data": {
+    "n_base": "25536",
+    "n_finetune": "4392",
+    "n_test": "12429",
+    "n_features": 28,
+    "features": [
+      "hour_sin",
+      "hour_cos",
+      "dow_sin_x",
+      "dow_cos_x",
+      "is_weekend_x",
+      "price_ptf_rolling_std_24h",
+      "price_ptf_rolling_mean_24h",
+      "price_ptf_rolling_min_24h",
+      "price_ptf_rolling_max_24h",
+      "price_ptf_lag_24h",
+      "price_ptf_lag_168h",
+      "thermal_gap",
+      "thermal_gap_lag_24h",
+      "renewable_saturation",
+      "spark_spread_proxy_lag_24h",
+      "system_short_signal",
+      "load_factor",
+      "consumption_forecast",
+      "reserve_margin_ratio",
+      "price_volatility_lag24h",
+      "realtime_premium_lag24h",
+      "daily_avg_price",
+      "hourly_ratio",
+      "profile_14d",
+      "profile_28d",
+      "profile_momentum",
+      "daily_avg_momentum",
+      "solar_ratio"
+    ]
+  },
+  "metrics": {
+    "raw": {
+      "MAE": 53.890076634236856,
+      "RMSE": 77.64733922208454,
+      "MAPE": 53.8863244725434,
+      "sMAPE": 12.650437279198275,
+      "MBE": 3.3865735912213357,
+      "R2": 0.8365694173542978,
+      "MaxError": 570.4726717224333,
+      "MedianAE": 35.35931215542746,
+      "MASE": 0.2926044085598799,
+      "Error_P10": 5.685079254887275,
+      "Error_P50": 35.35931215542746,
+      "Error_P90": 124.8624657299928,
+      "Error_P95": 166.95891288311847,
+      "Error_P99": 260.40871649406
+    },
+    "final": {
+      "MAE": 48.86610043766799,
+      "RMSE": 70.20503696526222,
+      "MAPE": 37.70655332118929,
+      "sMAPE": 11.822296797690596,
+      "MBE": 1.2021100070321618,
+      "R2": 0.8663968439457401,
+      "MaxError": 533.8784734511611,
+      "MedianAE": 32.679729827863525,
+      "MASE": 0.2653259618507873,
+      "Error_P10": 5.017074003980714,
+      "Error_P50": 32.679729827863525,
+      "Error_P90": 113.97803498296395,
+      "Error_P95": 150.25857284033157,
+      "Error_P99": 228.28586400044023
+    }
+  }
+}
